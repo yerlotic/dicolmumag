@@ -10,6 +10,7 @@
 #include <linux/limits.h>
 #include <assert.h>
 #include <fontconfig/fontconfig.h>
+#define SUPPORT_URL "https://youtu.be/dQw4w9WgXcQ"
 
 #define TESTING
 
@@ -57,14 +58,6 @@ int runMagick(ClayVideoDemo_Data *data) {
     Nob_Cmd cmd = {0};
     Nob_Cmd to_free = {0};
     Nob_String_Builder buf = {0};
-    nob_cmd_append(&cmd, "magick", "-version");
-
-    if (!nob_cmd_run_sync_and_reset(&cmd)) {
-        fprintf(stderr, "Bro, where is yr magick??\n");
-        free(ashlar_path);
-        nob_cmd_free(cmd);
-        return false;
-    }
     nob_cmd_append(&cmd, "magick");
     nob_cmd_append(&cmd, "-verbose");
 
@@ -103,7 +96,6 @@ int runMagick(ClayVideoDemo_Data *data) {
     if (nob_cmd_run_sync_and_reset(&cmd)) {
         data->resultFile = output_path;
         if (data->state & MAGICK_OPEN_ON_DONE) {
-            // TODO: pls add dynamic result image
             nob_cmd_append(&cmd, "xdg-open", output_path);
             nob_cmd_run_async(cmd);
         }
@@ -114,7 +106,7 @@ int runMagick(ClayVideoDemo_Data *data) {
     // Freeing memory
     free(ashlar_path);
     free(resize_str);
-    for (int i = 0; i < to_free.count; i++) {
+    for (size_t i = 0; i < to_free.count; i++) {
         // free(&to_free.items[i]);
         printf("char: %c, pointer: %p\n", *to_free.items[i], to_free.items[i]);
         printf("string: %s\n", to_free.items[i]);
@@ -127,68 +119,68 @@ int runMagick(ClayVideoDemo_Data *data) {
 
 // https://gitlab.com/camconn/fontconfig-example
 int defaultFont(char** res) {
-  FcConfig*       conf;
-  FcFontSet*      fs;
-  FcObjectSet*    os = 0;
-  FcPattern*      pat;
-  FcResult        result;
+    FcConfig*       conf;
+    FcFontSet*      fs;
+    FcObjectSet*    os = 0;
+    FcPattern*      pat;
+    FcResult        result;
 
-  conf = FcInitLoadConfigAndFonts();
-  pat = FcNameParse((FcChar8*) "");
+    conf = FcInitLoadConfigAndFonts();
+    pat = FcNameParse((FcChar8*) "");
 
-  if (!pat) {
-    fprintf(stderr, "Pattern is empty\n");
+    if (!pat) {
+        fprintf(stderr, "Pattern is empty\n");
 
-    return -1;
-  }
-
-  FcConfigSubstitute(conf, pat, FcMatchPattern);
-  FcDefaultSubstitute(pat);
-
-  fs = FcFontSetCreate();
-  os = FcObjectSetBuild(FC_FILE, (char*)0);
-
-  FcFontSet *font_patterns;
-  font_patterns = FcFontSort(conf, pat, FcTrue, 0, &result);
-
-  if (!font_patterns || font_patterns->nfont == 0) {
-    fprintf(stderr, "Fontconfig could not find ANY fonts on the system?\n");
-    return -1;
-  }
-
-  FcPattern *font_pattern;
-  font_pattern = FcFontRenderPrepare(conf, pat, font_patterns->fonts[0]);
-  if (font_pattern){
-    FcFontSetAdd(fs, font_pattern);
-  } else {
-    fprintf(stderr, "Could not prepare matched font for loading.\n");
-    return -1;
-  }
-
-  FcFontSetSortDestroy(font_patterns);
-  FcPatternDestroy(pat);
-
-  if (fs) {
-    if (fs->nfont > 0) {
-      FcValue v;
-      FcPattern *font;
-
-      font = FcPatternFilter(fs->fonts[0], os);
-
-      FcPatternGet(font, FC_FILE, 0, &v);
-      char* filepath = (char*)v.u.f;
-      *res = strdup(filepath);
-      FcPatternDestroy(font);
+        return -1;
     }
-    FcFontSetDestroy(fs);
-  } else {
-    fprintf(stderr, "could not obtain fs\n");
-  }
 
-  if (os)
-    FcObjectSetDestroy(os);
+    FcConfigSubstitute(conf, pat, FcMatchPattern);
+    FcDefaultSubstitute(pat);
 
-  return 0;
+    fs = FcFontSetCreate();
+    os = FcObjectSetBuild(FC_FILE, (char*)0);
+
+    FcFontSet *font_patterns;
+    font_patterns = FcFontSort(conf, pat, FcTrue, 0, &result);
+
+    if (!font_patterns || font_patterns->nfont == 0) {
+        fprintf(stderr, "Fontconfig could not find ANY fonts on the system?\n");
+        return -1;
+    }
+
+    FcPattern *font_pattern;
+    font_pattern = FcFontRenderPrepare(conf, pat, font_patterns->fonts[0]);
+    if (font_pattern){
+        FcFontSetAdd(fs, font_pattern);
+    } else {
+        fprintf(stderr, "Could not prepare matched font for loading.\n");
+        return -1;
+    }
+
+    FcFontSetSortDestroy(font_patterns);
+    FcPatternDestroy(pat);
+
+    if (fs) {
+        if (fs->nfont > 0) {
+            FcValue v;
+            FcPattern *font;
+
+            font = FcPatternFilter(fs->fonts[0], os);
+
+            FcPatternGet(font, FC_FILE, 0, &v);
+            char* filepath = (char*)v.u.f;
+            *res = strdup(filepath);
+            FcPatternDestroy(font);
+        }
+        FcFontSetDestroy(fs);
+    } else {
+        fprintf(stderr, "could not obtain fs\n");
+    }
+
+    if (os)
+        FcObjectSetDestroy(os);
+
+    return 0;
 }
 
 Clay_RenderCommandArray CreateLayout(Clay_Context* context, ClayVideoDemo_Data *data) {
@@ -213,16 +205,18 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, ClayVideoDemo_Data *
             GetFrameTime()
     );
 
+    Nob_Cmd cmd = {0};
     sprintf(data->resize_str, "%d", data->resize);
     if (released("Quit")) {
         data->shouldClose = true;
         printf("close\n");
-    } else if (pressed("Select_Images")) {
+    } else if (released("Support")) {
+        nob_cmd_append(&cmd, "xdg-open", SUPPORT_URL);
+        nob_cmd_run_async(cmd);
     } else if (released("Select_Images")) {
         runMagick(data);
     } else if (released("Open result")) {
         if (data->resultFile[0] != '\0') {
-            Nob_Cmd cmd = {0};
             nob_cmd_append(&cmd, "xdg-open", data->resultFile);
             nob_cmd_run_async(cmd);
             nob_cmd_free(cmd);
@@ -234,14 +228,28 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, ClayVideoDemo_Data *
             data->resize += 50;
         else if (IsMouseButtonPressed(1) || scrollDelta.y < 0 || IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_DOWN))
             data->resize -= 50;
-
-        // fprintf(stderr, "pressed resize: %d\n", data->resize);
     }
 
     return ClayVideoDemo_CreateLayout(data);
 }
 
+bool testMagick() {
+    Nob_Cmd cmd = {0};
+    nob_cmd_append(&cmd, "magick", "-version");
+
+    if (!nob_cmd_run_sync_and_reset(&cmd)) {
+        fprintf(stderr, "Bro, where is yr magick??\n");
+        nob_cmd_free(cmd);
+        return false;
+    }
+    return true;
+}
+
 int main(void) {
+    if (!testMagick()) {
+        fprintf(stderr, "Sorry, no magick — no worky\n");
+        return -1;
+    }
     char* title = "Magick deez nuts";
     // vsync makes resizes slower, we don't want this
     // but antialiasing is nice
