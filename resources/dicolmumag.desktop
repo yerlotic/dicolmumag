@@ -1,0 +1,9 @@
+[Desktop Entry]
+Terminal=false
+Name=Dicolmumag
+GenericName=Collage maker
+Comment=Imagemagick gui for creating collages
+Exec=app
+Icon=dicolmumag
+Type=Application
+Categories=2DGraphics;Graphics;Photography;
