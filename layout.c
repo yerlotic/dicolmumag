@@ -86,7 +86,7 @@ enum {
 } MagickState;
 
 typedef struct {
-    int32_t selectedDocumentIndex;
+    uint32_t selectedDocumentIndex;
     float yOffset;
     ClayVideoDemo_Arena frameArena;
     bool shouldClose;
@@ -111,7 +111,7 @@ void HandleSidebarInteraction(
     SidebarClickData *clickData = (SidebarClickData*)userData;
     // If this button was clicked
     if (pointerData.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME) {
-        if (clickData->requestedDocumentIndex >= 0 && clickData->requestedDocumentIndex < documents.length) {
+        if (clickData->requestedDocumentIndex < documents.length) {
             if (clickData->requestedDocumentIndex == 0) {
                 *clickData->state = *clickData->state ^ MAGICK_BEST_FIT;
             } else if (clickData->requestedDocumentIndex == 1) {
@@ -235,7 +235,6 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
             }
             RenderHeaderButton(CLAY_STRING("Select_Images"));
             CLAY({ .layout = { .sizing = { CLAY_SIZING_GROW(0) }}}) {}
-            RenderHeaderButton(CLAY_STRING(u8"Upload"));
 
             CLAY({
                 .layout = { .padding = { 16, 16, 8, 8 }},
@@ -259,20 +258,7 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                     .fontSize = button_font_size,
                     .textColor = COLOR_TEXT,
                 }));
-                // CLAY_TEXT(clay_str,
-                //         // (CLAY__INIT(Clay_String) { .isStaticallyAllocated = true, .length = strlen(str), .chars = (str) }),
-                //         CLAY_TEXT_CONFIG({
-                //             .fontId = FONT_ID_BODY_16,
-                //             .fontSize = button_font_size,
-                //             .textColor = COLOR_TEXT,
-                // }));
-                // CLAY({
-                //
-                // }) {
-                //
-                // }
             }
-            RenderHeaderButton(CLAY_STRING("Media"));
             RenderHeaderButton(CLAY_STRING("Support"));
         }
 
@@ -305,9 +291,9 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                     SidebarClickData *clickData = (SidebarClickData *)(data->frameArena.memory + data->frameArena.offset);
                     *clickData = (SidebarClickData) { .requestedDocumentIndex = i, .selectedDocumentIndex = &data->selectedDocumentIndex, .state = &data->state };
                     data->frameArena.offset += sizeof(SidebarClickData);
-                    if (i == 0 && data->state & MAGICK_BEST_FIT ||
-                        i == 1 && data->state & MAGICK_TRANSPARENT_BG ||
-                        i == 2 && data->state & MAGICK_OPEN_ON_DONE) {
+                    if ((i == 0 && data->state & MAGICK_BEST_FIT) ||
+                        (i == 1 && data->state & MAGICK_TRANSPARENT_BG) ||
+                        (i == 2 && data->state & MAGICK_OPEN_ON_DONE)) {
                         CLAY({
                             .layout = sidebarButtonLayout,
                             .backgroundColor = OPACITY(COLOR_GREEN, 35),
