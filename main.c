@@ -61,6 +61,7 @@ int runMagick(ClayVideoDemo_Data *data) {
     nob_cmd_append(&cmd, "magick");
     nob_cmd_append(&cmd, "-verbose");
 
+    // parse files
     for (int i = 0; ; i++) {
         c = input_path[i];
         if (c == MULTI_SEPARATOR || c == '\0') {
@@ -76,18 +77,27 @@ int runMagick(ClayVideoDemo_Data *data) {
         if (c == '\0') break;
     }
 
-    char *resize_str = malloc(2 * strlen(data->resize_str) + 3); // x, \0 and modifier maybe
-    *resize_str = '\0';
-    strcat(resize_str, data->resize_str);
-    strcat(resize_str, "x");
-    strcat(resize_str, data->resize_str);
-    // strcat(resize_str, "x"); // modifier
-    nob_cmd_append(&cmd, "-resize", resize_str);
-    if (data->state & MAGICK_TRANSPARENT_BG)
+    // resize images
+    // NOTE: should be after all images
+    char *resize_str;
+    if (data->state & MAGICK_RESIZE) {
+        resize_str = malloc(2 * strlen(data->resize_str) + 3); // x, \0 and modifier maybe
+        *resize_str = '\0';
+        strcat(resize_str, data->resize_str);
+        strcat(resize_str, "x");
+        strcat(resize_str, data->resize_str);
+        // strcat(resize_str, "x"); // modifier
+        nob_cmd_append(&cmd, "-resize", resize_str);
+    }
+    if (data->state & MAGICK_TRANSPARENT_BG) {
         nob_cmd_append(&cmd, "-background", "transparent");
+    } else {
+        nob_cmd_append(&cmd, "-background", "NavajoWhite");
+    }
     if (data->state & MAGICK_BEST_FIT)
         nob_cmd_append(&cmd, "-define", "ashlar:best-fit=true");
-    nob_cmd_append(&cmd, "-gravity", "center");
+    // nob_cmd_append(&cmd, "-gravity", "center");
+    nob_cmd_append(&cmd, "-gravity", "forget");
     nob_cmd_append(&cmd, ashlar_path);
     fprintf(stderr, "First : %s\n", cmd.items[0]);
     fprintf(stderr, "Second: %s\n", cmd.items[1]);
@@ -105,11 +115,10 @@ int runMagick(ClayVideoDemo_Data *data) {
     }
     // Freeing memory
     free(ashlar_path);
-    free(resize_str);
+    if (data->state & MAGICK_RESIZE) 
+        free(resize_str);
     for (size_t i = 0; i < to_free.count; i++) {
         // free(&to_free.items[i]);
-        printf("char: %c, pointer: %p\n", *to_free.items[i], to_free.items[i]);
-        printf("string: %s\n", to_free.items[i]);
         free((void *) to_free.items[i]);
     }
     nob_cmd_free(cmd);
@@ -183,6 +192,14 @@ int defaultFont(char** res) {
     return 0;
 }
 
+int scrollDirection(Vector2 scrollDelta) {
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) || scrollDelta.y > 0 || IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_UP))
+        return 1;
+    else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) || scrollDelta.y < 0 || IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_DOWN))
+        return -1;
+    return 0;
+}
+
 Clay_RenderCommandArray CreateLayout(Clay_Context* context, ClayVideoDemo_Data *data) {
     Clay_SetCurrentContext(context);
 #ifdef TESTING
@@ -207,6 +224,7 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, ClayVideoDemo_Data *
 
     Nob_Cmd cmd = {0};
     sprintf(data->resize_str, "%d", data->resize);
+    
     if (released("Quit")) {
         data->shouldClose = true;
         printf("close\n");
@@ -224,10 +242,7 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, ClayVideoDemo_Data *
             fprintf(stderr, "No file was made\n");
         }
     } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("Resize")))) {
-        if (IsMouseButtonPressed(0) || scrollDelta.y > 0 || IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_UP))
-            data->resize += 50;
-        else if (IsMouseButtonPressed(1) || scrollDelta.y < 0 || IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_DOWN))
-            data->resize -= 50;
+        data->resize += 50 * scrollDirection(scrollDelta);
     }
 
     return ClayVideoDemo_CreateLayout(data);
