@@ -11,6 +11,8 @@ const int sidebar_font_size = 23;
 const int document_font_size = 30;
 const int title_font_size = 40;
 
+#define ADVANCED_SETTINGS 4
+
 #define BUTTON_RADIUS CLAY_CORNER_RADIUS(10)
 #define LAYOUT_RADIUS CLAY_CORNER_RADIUS(10)
 
@@ -70,7 +72,7 @@ typedef struct {
 Document documentsRaw[5];
 
 DocumentArray documents = {
-    .length = 3,
+    .length = 5,
     .documents = documentsRaw
 };
 
@@ -83,6 +85,7 @@ enum {
     MAGICK_BEST_FIT       = 1 << 0,
     MAGICK_TRANSPARENT_BG = 1 << 1,
     MAGICK_OPEN_ON_DONE   = 1 << 2,
+    MAGICK_RESIZE         = 1 << 3,
 } MagickState;
 
 typedef struct {
@@ -94,6 +97,7 @@ typedef struct {
     char* resultFile;
     uint16_t resize;  // max: 6 bytes for string repr
     char resize_str[6]; // max: 6 bytes for string repr
+    char cur_char[6]; // max: 6 bytes for string repr
 } ClayVideoDemo_Data;
 
 
@@ -118,6 +122,8 @@ void HandleSidebarInteraction(
                 *clickData->state = (*clickData->state ^ MAGICK_TRANSPARENT_BG);
             } else if (clickData->requestedDocumentIndex == 2) {
                 *clickData->state = (*clickData->state ^ MAGICK_OPEN_ON_DONE);
+            } else if (clickData->requestedDocumentIndex == 3) {
+                *clickData->state = (*clickData->state ^ MAGICK_RESIZE);
             }
             // Select the corresponding document
             *clickData->selectedDocumentIndex = clickData->requestedDocumentIndex;
@@ -126,10 +132,12 @@ void HandleSidebarInteraction(
 }
 
 ClayVideoDemo_Data ClayVideoDemo_Initialize() {
+    // Update DocumentArray
     documents.documents[0] = (Document){ .title = CLAY_STRING("Best fit"), .contents = CLAY_STRING("This ashlar option aligns images on both sides of the resulting image") };
     documents.documents[1] = (Document){ .title = CLAY_STRING("Transparent background"), .contents = CLAY_STRING("Makes the background transparent") };
     documents.documents[2] = (Document){ .title = CLAY_STRING("Open when done"), .contents = CLAY_STRING("Enable this to see the result right after it's done!\n\nNothing more\nsurely") };
-    // documents.documents[3] = (Document){ .title = CLAY_STRING("Article 4"), .contents = CLAY_STRING("Article 4") };
+    documents.documents[3] = (Document){ .title = CLAY_STRING("Enable Resize"), .contents = CLAY_STRING("This option enables resizes") };
+    documents.documents[ADVANCED_SETTINGS] = (Document){ .title = CLAY_STRING("Advanced settings"), .contents = CLAY_STRING("This section contains advanced settings") };
     // documents.documents[4] = (Document){ .title = CLAY_STRING("Article 5"), .contents = CLAY_STRING("Article 5") };
 
     ClayVideoDemo_Data data = {
@@ -235,7 +243,6 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
             }
             RenderHeaderButton(CLAY_STRING("Select_Images"));
             CLAY({ .layout = { .sizing = { CLAY_SIZING_GROW(0) }}}) {}
-
             CLAY({
                 .layout = { .padding = { 16, 16, 8, 8 }},
                 .backgroundColor = BUTTON_COLOR,
@@ -291,9 +298,12 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                     SidebarClickData *clickData = (SidebarClickData *)(data->frameArena.memory + data->frameArena.offset);
                     *clickData = (SidebarClickData) { .requestedDocumentIndex = i, .selectedDocumentIndex = &data->selectedDocumentIndex, .state = &data->state };
                     data->frameArena.offset += sizeof(SidebarClickData);
-                    if ((i == 0 && data->state & MAGICK_BEST_FIT) ||
+                    if (
+                        (i == 0 && data->state & MAGICK_BEST_FIT) ||
                         (i == 1 && data->state & MAGICK_TRANSPARENT_BG) ||
-                        (i == 2 && data->state & MAGICK_OPEN_ON_DONE)) {
+                        (i == 2 && data->state & MAGICK_OPEN_ON_DONE) ||
+                        (i == 3 && data->state & MAGICK_RESIZE)
+                       ) {
                         CLAY({
                             .layout = sidebarButtonLayout,
                             .backgroundColor = OPACITY(COLOR_GREEN, 35),
@@ -307,7 +317,7 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                             }));
                         }
                     } else {
-                        CLAY({ .layout = sidebarButtonLayout, .backgroundColor = TOGGLE_COLOR, .cornerRadius = CLAY_CORNER_RADIUS(8) }) {
+                        CLAY({ .layout = sidebarButtonLayout, .backgroundColor = BUTTON_COLOR, .cornerRadius = CLAY_CORNER_RADIUS(8) }) {
                             Clay_OnHover(HandleSidebarInteraction, (intptr_t)clickData);
                             CLAY_TEXT(document.title, CLAY_TEXT_CONFIG({
                                         .fontId = FONT_ID_BODY_16,
@@ -341,6 +351,14 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                     .fontSize = document_font_size,
                     .textColor = COLOR_TEXT
                 }));
+                if (data->selectedDocumentIndex == ADVANCED_SETTINGS) {
+                    CLAY_TEXT(CLAY_STRING("This is a special page, mind u"), CLAY_TEXT_CONFIG({
+                        .fontId = FONT_ID_BODY_16,
+                        .fontSize = document_font_size,
+                        .textColor = COLOR_TEXT
+                    }));
+                    // CLAY({ .})
+                }
             }
         }
     }
