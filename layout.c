@@ -15,6 +15,7 @@ const int title_font_size = 40;
 
 #define BUTTON_RADIUS CLAY_CORNER_RADIUS(10)
 #define LAYOUT_RADIUS CLAY_CORNER_RADIUS(10)
+#define DEFAULT_TEXT CLAY_TEXT_CONFIG({ .fontId = FONT_ID_BODY_16, .fontSize = document_font_size, .textColor = COLOR_TEXT })
 
 void RenderHeaderButton(Clay_String text) {
     CLAY({
@@ -84,42 +85,29 @@ void RenderColorChannel(Clay_String text, Clay_Color color, char *value) {
     CLAY({
         .layout = {
             .layoutDirection = CLAY_LEFT_TO_RIGHT,
-            // .padding = { 16, 16, 8, 8 },
-            // .childAlignment = {
-            //     .x = CLAY_ALIGN_X_CENTER,
-            //     .y = CLAY_ALIGN_Y_CENTER,
-            // },
-            // .sizing = CLAY_SIZING_FIT(200, 200)
         },
-        // .backgroundColor = BUTTON_COLOR,
         .id = CLAY_SID(text),
-        // .cornerRadius = BUTTON_RADIUS,
     }) {
         CLAY_TEXT(text, CLAY_TEXT_CONFIG({
             .fontId = FONT_ID_BODY_16,
             .fontSize = document_font_size,
             .textColor = color,
         }));
-        CLAY_TEXT(CLAY_STRING(":"), CLAY_TEXT_CONFIG({
-            .fontId = FONT_ID_BODY_16,
-            .fontSize = document_font_size,
-            .textColor = COLOR_TEXT,
-        }));
+        CLAY_TEXT(CLAY_STRING(":"), DEFAULT_TEXT);
         RenderNumberPicker(CLAY_STRING("pick"), value);
     }
 }
 
-void RenderColor(Clay_Color color, Clay_Color border_color) {
+void RenderColor(Clay_Color color) {
     uint8_t border_width = 5;
     uint8_t radius = 5;
     uint8_t size = 50;
     CLAY({}) {
         CLAY({
-            // .id = CLAY_ID("ScrollInner"),
             .cornerRadius = CLAY_CORNER_RADIUS(radius),
             .backgroundColor = color,
             .border = {
-                .color = border_color,
+                .color = BUTTON_COLOR,
                 .width = {
                     .top = border_width,
                     .bottom = border_width,
@@ -223,6 +211,17 @@ void HandleSidebarInteraction(
     }
 }
 
+void RenderMagickColor(ClayVideoDemo_Data *data) {
+    if (data->state & MAGICK_TRANSPARENT_BG) {
+        RenderColor((Clay_Color) { .r = 0, .g = 0, .b = 0, .a = 0 });
+    } else {
+        RenderColor((Clay_Color) { .r = data->color.r,
+                                   .g = data->color.g,
+                                   .b = data->color.b,
+                                   .a = data->color.a });
+    }
+}
+
 ClayVideoDemo_Data ClayVideoDemo_Initialize() {
     // Update DocumentArray
     documents.documents[0] = (Document){ .title = CLAY_STRING("Best fit"), .contents = CLAY_STRING("This ashlar option aligns images on both sides of the resulting image") };
@@ -235,12 +234,12 @@ ClayVideoDemo_Data ClayVideoDemo_Initialize() {
     ClayVideoDemo_Data data = {
         .frameArena = { .memory = (intptr_t)malloc(1024) },
         .shouldClose = false,
-        .state = MAGICK_BEST_FIT | MAGICK_TRANSPARENT_BG | MAGICK_OPEN_ON_DONE,
+        .state = MAGICK_BEST_FIT | MAGICK_TRANSPARENT_BG | MAGICK_OPEN_ON_DONE | MAGICK_RESIZE,
         .selectedDocumentIndex = 0,
         .resultFile = "",
         .resize_str = "",
         .resize = 1000,
-        .color = { .r = 0, .b = 0, .g = 0, .a = 255 },
+        .color = { .r = 0, .b = 0, .g = 0, .a = 100 },
     };
     return data;
 }
@@ -260,7 +259,6 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
     // Build UI here
     CLAY({
         .id = CLAY_ID("OuterContainer"),
-        // .backgroundColor = { 43, 41, 51, 255 },
         .backgroundColor = COLOR_MANTLE,
         .layout = {
             .layoutDirection = CLAY_TOP_TO_BOTTOM,
@@ -439,23 +437,8 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                     .fontSize = title_font_size,
                     .textColor = COLOR_TEXT
                 }));
-                CLAY_TEXT(selectedDocument.contents, CLAY_TEXT_CONFIG({
-                    .fontId = FONT_ID_BODY_16,
-                    .fontSize = document_font_size,
-                    .textColor = COLOR_TEXT
-                }));
+                CLAY_TEXT(selectedDocument.contents, DEFAULT_TEXT);
                 if (data->selectedDocumentIndex == ADVANCED_SETTINGS) {
-                    if (data->state & MAGICK_TRANSPARENT_BG) {
-                        RenderColor((Clay_Color) { .r = 0, .g = 0, .b = 0, .a = 0 }, COLOR_SURFACE0);
-                    } else {
-                        RenderColor((Clay_Color) {
-                                .r = data->color.r,
-                                .g = data->color.g,
-                                .b = data->color.b,
-                                .a = data->color.a
-                            },
-                            COLOR_SURFACE0);
-                    }
                         
                     CLAY({
                         .id = CLAY_ID("ColorSettings"),
@@ -465,11 +448,11 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                             .childGap = 16,
                         },
                     }) {
-                        CLAY_TEXT(CLAY_STRING("Background Color: "), CLAY_TEXT_CONFIG({
-                            .fontId = FONT_ID_BODY_16,
-                            .fontSize = document_font_size,
-                            .textColor = COLOR_TEXT
-                        }));
+                        CLAY({.layout = { .layoutDirection = CLAY_TOP_TO_BOTTOM }}) {
+                            CLAY_TEXT(CLAY_STRING("Background Color: "), DEFAULT_TEXT);
+                            RenderMagickColor(data);
+                            CLAY_TEXT(CLAY_STRING("Disable transparent background for this to work"), DEFAULT_TEXT);
+                        }
                         CLAY({
                             .id = CLAY_ID("ColorSettingsRGB"),
                             .backgroundColor = contentBackgroundColor,

@@ -218,9 +218,6 @@ int scrollDirection(Vector2 scrollDelta) {
 
 Clay_RenderCommandArray CreateLayout(Clay_Context* context, ClayVideoDemo_Data *data) {
     Clay_SetCurrentContext(context);
-#ifdef TESTING
-    // Clay_SetDebugModeEnabled(true);
-#endif
     // Run once per frame
     Clay_SetLayoutDimensions((Clay_Dimensions) {
             .width = GetScreenWidth(),
@@ -245,7 +242,7 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, ClayVideoDemo_Data *
     sprintf(data->color_str.r, "%d", data->color.r);
     sprintf(data->color_str.g, "%d", data->color.g);
     sprintf(data->color_str.b, "%d", data->color.b);
-    sprintf(data->color_str.a, "%f", ((float) data->color.a)/255);
+    sprintf(data->color_str.a, "%d", data->color.a);
 
     SetMouseCursor(MOUSE_CURSOR_DEFAULT);
     int c;
@@ -273,21 +270,15 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, ClayVideoDemo_Data *
     // Number pickers handling
     } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("Resize")))) {
         data->resize += 50 * scrollDirection(scrollDelta);
-        SetMouseCursor(MOUSE_CURSOR_RESIZE_EW);
     } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("r")))) {
-        fprintf(stderr, "rrrr, %d\n", data->color.r);
         data->color.r += scrollDirection(scrollDelta);
     } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("g")))) {
-        fprintf(stderr, "gggg, %d\n", data->color.g);
         data->color.g += scrollDirection(scrollDelta);
     } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("b")))) {
-        fprintf(stderr, "bbbb, %d\n", data->color.b);
         data->color.b += scrollDirection(scrollDelta);
     } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("a")))) {
-        fprintf(stderr, "aaaa, %d\n", data->color.a);
         data->color.a += scrollDirection(scrollDelta);
-        // data->resize += 50 * scrollDirection(scrollDelta);
-        // SetMouseCursor(MOUSE_CURSOR_RESIZE_EW);
+        if (data->color.a > 100) data->color.a = 100;
     }
 
     return ClayVideoDemo_CreateLayout(data);
@@ -340,6 +331,9 @@ int main(void) {
     SetTargetFPS(GetMonitorRefreshRate(GetCurrentMonitor()));
     // Disable ESC to exit
     SetExitKey(KEY_NULL);
+#ifdef TESTING
+    // Clay_SetDebugModeEnabled(true);
+#endif
     while (!WindowShouldClose()) {
         Clay_RenderCommandArray renderCommandsTop = CreateLayout(clayContext, &data);
         if (data.shouldClose) break;
