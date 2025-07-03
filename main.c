@@ -58,6 +58,7 @@ int runMagick(ClayVideoDemo_Data *data) {
     Nob_Cmd cmd = {0};
     Nob_Cmd to_free = {0};
     Nob_String_Builder buf = {0};
+    Nob_String_Builder background = {0};
     nob_cmd_append(&cmd, "magick");
     nob_cmd_append(&cmd, "-verbose");
 
@@ -92,7 +93,21 @@ int runMagick(ClayVideoDemo_Data *data) {
     if (data->state & MAGICK_TRANSPARENT_BG) {
         nob_cmd_append(&cmd, "-background", "transparent");
     } else {
-        nob_cmd_append(&cmd, "-background", "NavajoWhite");
+        nob_sb_append_cstr(&background, "rgba(");
+        nob_sb_append_cstr(&background, data->color_str.r);
+        nob_sb_append_cstr(&background, ",");
+        nob_sb_append_cstr(&background, data->color_str.g);
+        nob_sb_append_cstr(&background, ",");
+        nob_sb_append_cstr(&background, data->color_str.b);
+        nob_sb_append_cstr(&background, ",");
+        nob_sb_append_cstr(&background, data->color_str.a);
+        nob_sb_append_cstr(&background, ")");
+        nob_sb_append_null(&background);
+
+        char* pointer = strdup(background.items);
+        nob_cmd_append(&to_free, pointer);
+        nob_cmd_append(&cmd, "-background", pointer);
+        nob_sb_free(background);
     }
     if (data->state & MAGICK_BEST_FIT)
         nob_cmd_append(&cmd, "-define", "ashlar:best-fit=true");
@@ -119,6 +134,7 @@ int runMagick(ClayVideoDemo_Data *data) {
         free(resize_str);
     for (size_t i = 0; i < to_free.count; i++) {
         // free(&to_free.items[i]);
+        fprintf(stderr, "Deleting: \"%s\"\n", to_free.items[i]);
         free((void *) to_free.items[i]);
     }
     nob_cmd_free(cmd);
@@ -224,6 +240,19 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, ClayVideoDemo_Data *
 
     Nob_Cmd cmd = {0};
     sprintf(data->resize_str, "%d", data->resize);
+
+
+    sprintf(data->color_str.r, "%d", data->color.r);
+    sprintf(data->color_str.g, "%d", data->color.g);
+    sprintf(data->color_str.b, "%d", data->color.b);
+    sprintf(data->color_str.a, "%f", ((float) data->color.a)/255);
+
+    SetMouseCursor(MOUSE_CURSOR_DEFAULT);
+    int c;
+    if ((c = GetKeyPressed()) != 0) {
+        fprintf(stderr, "%d\n", c);
+        fprintf(stderr, "%c\n", c);
+    }
     
     if (released("Quit")) {
         data->shouldClose = true;
@@ -241,8 +270,24 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, ClayVideoDemo_Data *
         } else {
             fprintf(stderr, "No file was made\n");
         }
+    // Number pickers handling
     } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("Resize")))) {
         data->resize += 50 * scrollDirection(scrollDelta);
+        SetMouseCursor(MOUSE_CURSOR_RESIZE_EW);
+    } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("r")))) {
+        fprintf(stderr, "rrrr, %d\n", data->color.r);
+        data->color.r += scrollDirection(scrollDelta);
+    } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("g")))) {
+        fprintf(stderr, "gggg, %d\n", data->color.g);
+        data->color.g += scrollDirection(scrollDelta);
+    } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("b")))) {
+        fprintf(stderr, "bbbb, %d\n", data->color.b);
+        data->color.b += scrollDirection(scrollDelta);
+    } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("a")))) {
+        fprintf(stderr, "aaaa, %d\n", data->color.a);
+        data->color.a += scrollDirection(scrollDelta);
+        // data->resize += 50 * scrollDirection(scrollDelta);
+        // SetMouseCursor(MOUSE_CURSOR_RESIZE_EW);
     }
 
     return ClayVideoDemo_CreateLayout(data);
@@ -292,6 +337,9 @@ int main(void) {
     ClayVideoDemo_Data data = ClayVideoDemo_Initialize();
     Clay_SetMeasureTextFunction(Raylib_MeasureText, fonts);
 
+    SetTargetFPS(GetMonitorRefreshRate(GetCurrentMonitor()));
+    // Disable ESC to exit
+    SetExitKey(KEY_NULL);
     while (!WindowShouldClose()) {
         Clay_RenderCommandArray renderCommandsTop = CreateLayout(clayContext, &data);
         if (data.shouldClose) break;

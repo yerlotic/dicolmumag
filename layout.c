@@ -59,6 +59,84 @@ void RenderDropdownMenuItem(Clay_String text) {
     }
 }
 
+void RenderNumberPicker(Clay_String name, char* value) {
+    CLAY({
+        .layout = { .padding = { 16, 16, 8, 8 }},
+        .backgroundColor = BUTTON_COLOR,
+        // .id = CLAY_SID(name),
+        .cornerRadius = BUTTON_RADIUS,
+    }) {
+        Clay_String clay_str = (Clay_String) {
+            .length = strlen(value),
+            .chars = value,
+            .isStaticallyAllocated = true,
+            // .isStaticallyAllocated = false,
+        };
+        CLAY_TEXT(clay_str, CLAY_TEXT_CONFIG({
+            .fontId = FONT_ID_BODY_16,
+            .fontSize = button_font_size,
+            .textColor = COLOR_TEXT,
+        }));
+    }
+}
+
+void RenderColorChannel(Clay_String text, Clay_Color color, char *value) {
+    CLAY({
+        .layout = {
+            .layoutDirection = CLAY_LEFT_TO_RIGHT,
+            // .padding = { 16, 16, 8, 8 },
+            // .childAlignment = {
+            //     .x = CLAY_ALIGN_X_CENTER,
+            //     .y = CLAY_ALIGN_Y_CENTER,
+            // },
+            // .sizing = CLAY_SIZING_FIT(200, 200)
+        },
+        // .backgroundColor = BUTTON_COLOR,
+        .id = CLAY_SID(text),
+        // .cornerRadius = BUTTON_RADIUS,
+    }) {
+        CLAY_TEXT(text, CLAY_TEXT_CONFIG({
+            .fontId = FONT_ID_BODY_16,
+            .fontSize = document_font_size,
+            .textColor = color,
+        }));
+        CLAY_TEXT(CLAY_STRING(":"), CLAY_TEXT_CONFIG({
+            .fontId = FONT_ID_BODY_16,
+            .fontSize = document_font_size,
+            .textColor = COLOR_TEXT,
+        }));
+        RenderNumberPicker(CLAY_STRING("pick"), value);
+    }
+}
+
+void RenderColor(Clay_Color color, Clay_Color border_color) {
+    uint8_t border_width = 5;
+    uint8_t radius = 5;
+    uint8_t size = 50;
+    CLAY({}) {
+        CLAY({
+            // .id = CLAY_ID("ScrollInner"),
+            .cornerRadius = CLAY_CORNER_RADIUS(radius),
+            .backgroundColor = color,
+            .border = {
+                .color = border_color,
+                .width = {
+                    .top = border_width,
+                    .bottom = border_width,
+                    .left = border_width,
+                    .right = border_width,
+                },
+            },
+            .layout = {
+                .sizing = {
+                    .height = CLAY_SIZING_FIXED(size),
+                    .width = CLAY_SIZING_FIXED(size)
+                },
+            },
+        }) {}
+    }
+}
+
 typedef struct {
     Clay_String title;
     Clay_String contents;
@@ -88,6 +166,18 @@ enum {
     MAGICK_RESIZE         = 1 << 3,
 } MagickState;
 
+typedef struct rgba {
+    uint8_t r, g, b, a;
+} rgba;
+
+typedef struct rgba_str {
+    // 3 for digits [0-255], 1 for \0
+    char r[4], g[4], b[4], a[4];
+} rgba_str;
+// typedef struct ClayVideoDemo_Strings {
+//
+// } ClayVideoDemo_Strings;
+
 typedef struct {
     uint32_t selectedDocumentIndex;
     float yOffset;
@@ -98,6 +188,8 @@ typedef struct {
     uint16_t resize;  // max: 6 bytes for string repr
     char resize_str[6]; // max: 6 bytes for string repr
     char cur_char[6]; // max: 6 bytes for string repr
+    rgba color;
+    rgba_str color_str;
 } ClayVideoDemo_Data;
 
 
@@ -148,6 +240,7 @@ ClayVideoDemo_Data ClayVideoDemo_Initialize() {
         .resultFile = "",
         .resize_str = "",
         .resize = 1000,
+        .color = { .r = 0, .b = 0, .g = 0, .a = 255 },
     };
     return data;
 }
@@ -352,12 +445,44 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                     .textColor = COLOR_TEXT
                 }));
                 if (data->selectedDocumentIndex == ADVANCED_SETTINGS) {
-                    CLAY_TEXT(CLAY_STRING("This is a special page, mind u"), CLAY_TEXT_CONFIG({
-                        .fontId = FONT_ID_BODY_16,
-                        .fontSize = document_font_size,
-                        .textColor = COLOR_TEXT
-                    }));
-                    // CLAY({ .})
+                    if (data->state & MAGICK_TRANSPARENT_BG) {
+                        RenderColor((Clay_Color) { .r = 0, .g = 0, .b = 0, .a = 0 }, COLOR_SURFACE0);
+                    } else {
+                        RenderColor((Clay_Color) {
+                                .r = data->color.r,
+                                .g = data->color.g,
+                                .b = data->color.b,
+                                .a = data->color.a
+                            },
+                            COLOR_SURFACE0);
+                    }
+                        
+                    CLAY({
+                        .id = CLAY_ID("ColorSettings"),
+                        .backgroundColor = contentBackgroundColor,
+                        .layout = {
+                            .layoutDirection = CLAY_LEFT_TO_RIGHT,
+                            .childGap = 16,
+                        },
+                    }) {
+                        CLAY_TEXT(CLAY_STRING("Background Color: "), CLAY_TEXT_CONFIG({
+                            .fontId = FONT_ID_BODY_16,
+                            .fontSize = document_font_size,
+                            .textColor = COLOR_TEXT
+                        }));
+                        CLAY({
+                            .id = CLAY_ID("ColorSettingsRGB"),
+                            .backgroundColor = contentBackgroundColor,
+                            .layout = {
+                                .layoutDirection = CLAY_TOP_TO_BOTTOM,
+                            },
+                        }) {
+                            RenderColorChannel(CLAY_STRING("r"), COLOR_RED,   data->color_str.r);
+                            RenderColorChannel(CLAY_STRING("g"), COLOR_GREEN, data->color_str.g);
+                            RenderColorChannel(CLAY_STRING("b"), COLOR_BLUE,  data->color_str.b);
+                            RenderColorChannel(CLAY_STRING("a"), COLOR_TEXT,  data->color_str.a);
+                        }
+                    }
                 }
             }
         }
