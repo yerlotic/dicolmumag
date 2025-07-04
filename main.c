@@ -34,7 +34,10 @@ typedef struct {
 
 #define pressed(id) IsMouseButtonPressed(0) && Clay_PointerOver(Clay_GetElementId(CLAY_STRING(id)))
 #define released(id) IsMouseButtonReleased(0) && Clay_PointerOver(Clay_GetElementId(CLAY_STRING(id)))
-
+#define CLAY_DIMENSIONS (Clay_Dimensions) { .width = GetScreenWidth(), \
+                                            .height = GetScreenHeight() }
+// #define CLAY_DIMENSIONS (Clay_Dimensions) { .width = GetRenderWidth(), \
+//                                             .height = GetRenderHeight() }
 void HandleClayErrors(Clay_ErrorData errorData) {
     printf("[CLAY] [ERROR] %s\n", errorData.errorText.chars);
 }
@@ -68,7 +71,7 @@ int runMagick(ClayVideoDemo_Data *data) {
         if (c == MULTI_SEPARATOR || c == '\0') {
             nob_sb_append_null(&buf);
             // moving buffer to another place on the heap
-            char *pointer = strcpy(malloc(sizeof(buf.items) * buf.count), buf.items);
+            char *pointer = strdup(buf.items);
             nob_cmd_append(&cmd, pointer);
             nob_cmd_append(&to_free, pointer);
             buf.count = 0;
@@ -100,7 +103,10 @@ int runMagick(ClayVideoDemo_Data *data) {
         nob_sb_append_cstr(&background, ",");
         nob_sb_append_cstr(&background, data->color_str.b);
         nob_sb_append_cstr(&background, ",");
-        nob_sb_append_cstr(&background, data->color_str.a);
+        // 1.00 - 5 chars
+        char alpha[5] = {0};
+        sprintf(alpha, "%0.2f", (float)data->color.a/100);
+        nob_sb_append_cstr(&background, alpha);
         nob_sb_append_cstr(&background, ")");
         nob_sb_append_null(&background);
 
@@ -111,8 +117,7 @@ int runMagick(ClayVideoDemo_Data *data) {
     }
     if (data->state & MAGICK_BEST_FIT)
         nob_cmd_append(&cmd, "-define", "ashlar:best-fit=true");
-    // nob_cmd_append(&cmd, "-gravity", "center");
-    nob_cmd_append(&cmd, "-gravity", "forget");
+    nob_cmd_append(&cmd, "-gravity", "center");
     nob_cmd_append(&cmd, ashlar_path);
     fprintf(stderr, "First : %s\n", cmd.items[0]);
     fprintf(stderr, "Second: %s\n", cmd.items[1]);
@@ -219,10 +224,18 @@ int scrollDirection(Vector2 scrollDelta) {
 Clay_RenderCommandArray CreateLayout(Clay_Context* context, ClayVideoDemo_Data *data) {
     Clay_SetCurrentContext(context);
     // Run once per frame
-    Clay_SetLayoutDimensions((Clay_Dimensions) {
-            .width = GetScreenWidth(),
-            .height = GetScreenHeight()
-    });
+    // Clay_SetLayoutDimensions((Clay_Dimensions) {
+    //     .width = GetScreenWidth(),
+    //     .height = GetScreenHeight()
+    // });
+    // Clay_SetLayoutDimensions((Clay_Dimensions) {
+    //     .width = GetRenderWidth() * GetWindowScaleDPI().x,
+    //     .height = GetRenderHeight() * GetWindowScaleDPI().y
+    // });
+    Clay_SetLayoutDimensions(CLAY_DIMENSIONS);
+    fprintf(stderr, "DEFAULT: %d, %d\n", GetScreenWidth(), GetScreenHeight());
+    fprintf(stderr, "HIGHDPI: %d, %d\n", GetRenderWidth(), GetRenderHeight());
+    fprintf(stderr, "SCALE  : %f, %f\n", GetWindowScaleDPI().x,GetWindowScaleDPI().y);
     Vector2 mousePosition = GetMousePosition();
     Vector2 scrollDelta = GetMouseWheelMoveV();
     Clay_SetPointerState(
@@ -236,21 +249,6 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, ClayVideoDemo_Data *
     );
 
     Nob_Cmd cmd = {0};
-    sprintf(data->resize_str, "%d", data->resize);
-
-
-    sprintf(data->color_str.r, "%d", data->color.r);
-    sprintf(data->color_str.g, "%d", data->color.g);
-    sprintf(data->color_str.b, "%d", data->color.b);
-    sprintf(data->color_str.a, "%d", data->color.a);
-
-    SetMouseCursor(MOUSE_CURSOR_DEFAULT);
-    int c;
-    if ((c = GetKeyPressed()) != 0) {
-        fprintf(stderr, "%d\n", c);
-        fprintf(stderr, "%c\n", c);
-    }
-    
     if (released("Quit")) {
         data->shouldClose = true;
         printf("close\n");
@@ -270,15 +268,21 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, ClayVideoDemo_Data *
     // Number pickers handling
     } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("Resize")))) {
         data->resize += 50 * scrollDirection(scrollDelta);
+        sprintf(data->resize_str, "%d", data->resize);
     } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("r")))) {
         data->color.r += scrollDirection(scrollDelta);
+        sprintf(data->color_str.r, "%d", data->color.r);
     } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("g")))) {
         data->color.g += scrollDirection(scrollDelta);
+        sprintf(data->color_str.g, "%d", data->color.g);
     } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("b")))) {
         data->color.b += scrollDirection(scrollDelta);
+        sprintf(data->color_str.b, "%d", data->color.b);
     } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("a")))) {
         data->color.a += scrollDirection(scrollDelta);
-        if (data->color.a > 100) data->color.a = 100;
+        if (data->color.a == 255) data->color.a = 100;
+        if (data->color.a > 100) data->color.a = 0;  // wrap
+        sprintf(data->color_str.a, "%d", data->color.a);
     }
 
     return ClayVideoDemo_CreateLayout(data);
@@ -298,13 +302,21 @@ bool testMagick() {
 
 int main(void) {
     if (!testMagick()) {
+        // yes, this is an mdash
         fprintf(stderr, "Sorry, no magick — no worky\n");
         return -1;
     }
     char* title = "Magick deez nuts";
     // vsync makes resizes slower, we don't want this
     // but antialiasing is nice
+    //
+    // HIGHDPI with raylib and SDL backend crops text weirdly
+    // without HIGHDPI GetScreen... and GetRender... are identical
+    // raylib with GLFW: bad crop every time
+    // HIGHDPI scales everything nicely
+    // 
     Clay_Raylib_Initialize(1024, 768, title, FLAG_WINDOW_RESIZABLE | FLAG_MSAA_4X_HINT);
+    // Clay_Raylib_Initialize(1024, 768, title, FLAG_WINDOW_RESIZABLE | FLAG_MSAA_4X_HINT | FLAG_WINDOW_HIGHDPI);
 
     Font fonts[1];
     char *fontpath = {0};
@@ -318,13 +330,10 @@ int main(void) {
     fonts[FONT_ID_BODY_16] = LoadFontEx(fontpath, FONT_LOAD_SIZE, codepoints, 512);
     free(fontpath);
     SetTextureFilter(fonts[FONT_ID_BODY_16].texture, TEXTURE_FILTER_BILINEAR);
-    uint64_t clayRequiredMemory = Clay_MinMemorySize();
 
+    uint64_t clayRequiredMemory = Clay_MinMemorySize();
     Clay_Arena clayMemory = Clay_CreateArenaWithCapacityAndMemory(clayRequiredMemory, malloc(clayRequiredMemory));
-    Clay_Context *clayContext = Clay_Initialize(clayMemory, (Clay_Dimensions) {
-       .width = GetScreenWidth(),
-       .height = GetScreenHeight()
-    }, (Clay_ErrorHandler) { HandleClayErrors }); // This final argument is new since the video was published
+    Clay_Context *clayContext = Clay_Initialize(clayMemory, CLAY_DIMENSIONS, (Clay_ErrorHandler) { HandleClayErrors }); // This final argument is new since the video was published
     ClayVideoDemo_Data data = ClayVideoDemo_Initialize();
     Clay_SetMeasureTextFunction(Raylib_MeasureText, fonts);
 
@@ -335,12 +344,12 @@ int main(void) {
     // Clay_SetDebugModeEnabled(true);
 #endif
     while (!WindowShouldClose()) {
-        Clay_RenderCommandArray renderCommandsTop = CreateLayout(clayContext, &data);
+        Clay_RenderCommandArray renderCommands = CreateLayout(clayContext, &data);
         if (data.shouldClose) break;
 
         BeginDrawing();
         ClearBackground(BLACK);
-        Clay_Raylib_Render(renderCommandsTop, fonts);
+        Clay_Raylib_Render(renderCommands, fonts);
 #ifdef TESTING
         DrawFPS(0,0);
 #endif // TESTING

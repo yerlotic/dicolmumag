@@ -878,7 +878,12 @@ void nob_cmd_render(Nob_Cmd cmd, Nob_String_Builder *render)
         const char *arg = cmd.items[i];
         if (arg == NULL) break;
         if (i > 0) nob_sb_append_cstr(render, " ");
-        if (!strchr(arg, ' ')) {
+        if (!strchr(arg, ' ') &&
+            !strchr(arg, '\\') &&
+            !strchr(arg, '&') &&
+            !strchr(arg, '*') &&
+            !strchr(arg, '(') &&
+            !strchr(arg, ')')) {
             nob_sb_append_cstr(render, arg);
         } else {
             nob_da_append(render, '\'');

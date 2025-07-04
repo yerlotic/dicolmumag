@@ -7,6 +7,7 @@ include(FetchContent)
 set(FETCHCONTENT_QUIET FALSE)
 set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE) # don't build the supplied examples
 set(BUILD_GAMES    OFF CACHE BOOL "" FORCE) # don't build the supplied example games
+# set(PLATFORM       SDL)
 
 FetchContent_Declare(
     raylib
@@ -23,16 +24,18 @@ add_executable(app main.c)
 target_compile_options(app PUBLIC)
 target_include_directories(app PUBLIC .)
 
-target_link_libraries(app PUBLIC raylib fontconfig)
+target_link_libraries(app PUBLIC raylib fontconfig m)
 
 # set(CMAKE_C_FLAGS "-Werror -Wall -Wextra -Wpedantic -fwrapv -fanalyzer")
 set(CMAKE_C_FLAGS "-Wall -Wextra -Wpedantic -fwrapv")
-set(USE_EXTERNAL_GLFW ON)
+# set(USE_EXTERNAL_GLFW ON)
 
-set(USE_EXTERNAL_GLFW ON)
-set(BUILD_EXAMPLES OFF)
-set(CUSTOMIZE_BUILD ON)
-set(BUILD_SHARED_LIBS ON)
+# set(CUSTOMIZE_BUILD ON)
+# set(PLATFORM PLATFORM_DESKTOP)
+# set(GRAPHICS GRAPHICS_API_SDL)
+# set(PLATFORM PLATFORM_DESKTOP_SDL3)
+
+# set(BUILD_SHARED_LIBS ON)
 set(CMAKE_BUILD_TYPE DEBUG)
 
 # set(CMAKE_C_FLAGS_DEBUG "-Werror -Wall -Wextra -Wpedantic -fwrapv -fanalyzer -Wformat=2 -Wformat-overflow=2 -Wformat-truncation=2 -Wformat-security -Wnull-dereference -Wstack-protector -Wtrampolines -Walloca -Wvla -Warray-bounds=2 -Wimplicit-fallthrough=3 -Wtraditional-conversion -Wshift-overflow=2 -Wcast-qual -Wstringop-overflow=4 -Wconversion -Warith-conversion -Wlogical-op -Wduplicated-cond -Wduplicated-branches -Wformat-signedness -Wshadow -Wstrict-overflow=4 -Wundef -Wstrict-prototypes -Wswitch-default -Wswitch-enum -Wstack-usage=1000000 -Wcast-align=strict -fstack-protector-strong -fstack-clash-protection -fPIE -fsanitize=bounds -fsanitize-undefined-trap-on-error -Wl,-z,relro -Wl,-z,now -Wl,-z,noexecstack -Wl,-z,separate-code")

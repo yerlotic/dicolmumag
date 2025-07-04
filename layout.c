@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+
+// #define LATTE
 #include "colors.h"
 
 const int FONT_ID_BODY_16 = 0;
@@ -13,6 +15,7 @@ const int title_font_size = 40;
 
 #define ADVANCED_SETTINGS 4
 
+#define CLAY_DYNAMIC_STRING(string) (CLAY__INIT(Clay_String) { .isStaticallyAllocated = false, .length = strlen(string), .chars = (string) })
 #define BUTTON_RADIUS CLAY_CORNER_RADIUS(10)
 #define LAYOUT_RADIUS CLAY_CORNER_RADIUS(10)
 #define DEFAULT_TEXT CLAY_TEXT_CONFIG({ .fontId = FONT_ID_BODY_16, .fontSize = document_font_size, .textColor = COLOR_TEXT })
@@ -67,13 +70,7 @@ void RenderNumberPicker(Clay_String name, char* value) {
         // .id = CLAY_SID(name),
         .cornerRadius = BUTTON_RADIUS,
     }) {
-        Clay_String clay_str = (Clay_String) {
-            .length = strlen(value),
-            .chars = value,
-            .isStaticallyAllocated = true,
-            // .isStaticallyAllocated = false,
-        };
-        CLAY_TEXT(clay_str, CLAY_TEXT_CONFIG({
+        CLAY_TEXT(CLAY_DYNAMIC_STRING(value), CLAY_TEXT_CONFIG({
             .fontId = FONT_ID_BODY_16,
             .fontSize = button_font_size,
             .textColor = COLOR_TEXT,
@@ -88,12 +85,14 @@ void RenderColorChannel(Clay_String text, Clay_Color color, char *value) {
         },
         .id = CLAY_SID(text),
     }) {
-        CLAY_TEXT(text, CLAY_TEXT_CONFIG({
-            .fontId = FONT_ID_BODY_16,
-            .fontSize = document_font_size,
-            .textColor = color,
-        }));
-        CLAY_TEXT(CLAY_STRING(":"), DEFAULT_TEXT);
+        CLAY({ .layout = { .sizing = { .width = 25 }}}) {
+            CLAY_TEXT(text, CLAY_TEXT_CONFIG({
+                .fontId = FONT_ID_BODY_16,
+                .fontSize = document_font_size,
+                .textColor = color,
+            }));
+            CLAY_TEXT(CLAY_STRING(":"), DEFAULT_TEXT);
+        }
         RenderNumberPicker(CLAY_STRING("pick"), value);
     }
 }
@@ -102,27 +101,20 @@ void RenderColor(Clay_Color color) {
     uint8_t border_width = 5;
     uint8_t radius = 5;
     uint8_t size = 50;
-    CLAY({}) {
-        CLAY({
-            .cornerRadius = CLAY_CORNER_RADIUS(radius),
-            .backgroundColor = color,
-            .border = {
-                .color = BUTTON_COLOR,
-                .width = {
-                    .top = border_width,
-                    .bottom = border_width,
-                    .left = border_width,
-                    .right = border_width,
-                },
+    CLAY({
+        .cornerRadius = CLAY_CORNER_RADIUS(radius),
+        .backgroundColor = color,
+        .border = {
+            .color = TERNARY_COLOR(Clay_Hovered(), COLOR_SURFACE1, COLOR_SURFACE0),
+            .width = CLAY_BORDER_OUTSIDE(border_width)
+        },
+        .layout = {
+            .sizing = {
+                .height = CLAY_SIZING_FIXED(size),
+                .width = CLAY_SIZING_FIXED(size)
             },
-            .layout = {
-                .sizing = {
-                    .height = CLAY_SIZING_FIXED(size),
-                    .width = CLAY_SIZING_FIXED(size)
-                },
-            },
-        }) {}
-    }
+        },
+    }) {}
 }
 
 typedef struct {
@@ -229,17 +221,18 @@ ClayVideoDemo_Data ClayVideoDemo_Initialize() {
     documents.documents[2] = (Document){ .title = CLAY_STRING("Open when done"), .contents = CLAY_STRING("Enable this to see the result right after it's done!\n\nNothing more\nsurely") };
     documents.documents[3] = (Document){ .title = CLAY_STRING("Enable Resize"), .contents = CLAY_STRING("This option enables resizes") };
     documents.documents[ADVANCED_SETTINGS] = (Document){ .title = CLAY_STRING("Advanced settings"), .contents = CLAY_STRING("This section contains advanced settings") };
-    // documents.documents[4] = (Document){ .title = CLAY_STRING("Article 5"), .contents = CLAY_STRING("Article 5") };
 
     ClayVideoDemo_Data data = {
         .frameArena = { .memory = (intptr_t)malloc(1024) },
         .shouldClose = false,
         .state = MAGICK_BEST_FIT | MAGICK_TRANSPARENT_BG | MAGICK_OPEN_ON_DONE | MAGICK_RESIZE,
         .selectedDocumentIndex = 0,
-        .resultFile = "",
-        .resize_str = "",
+        .resultFile = "res.png",
         .resize = 1000,
+        .resize_str = "1000",
         .color = { .r = 0, .b = 0, .g = 0, .a = 100 },
+        // This should be set because these strings are only updated when color is updated
+        .color_str = { .r = "0", .b = "0", .g = "0", .a = "100" },
     };
     return data;
 }
@@ -334,6 +327,8 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
             }
             RenderHeaderButton(CLAY_STRING("Select_Images"));
             CLAY({ .layout = { .sizing = { CLAY_SIZING_GROW(0) }}}) {}
+            CLAY_TEXT(CLAY_DYNAMIC_STRING(data->resultFile), DEFAULT_TEXT);
+            CLAY({ .layout = { .sizing = { CLAY_SIZING_GROW(0) }}}) {}
             CLAY({
                 .layout = { .padding = { 16, 16, 8, 8 }},
                 .backgroundColor = BUTTON_COLOR,
@@ -345,13 +340,7 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                     .fontSize = button_font_size,
                     .textColor = COLOR_TEXT,
                 }));
-                Clay_String clay_str = (Clay_String) {
-                    .length = strlen(data->resize_str),
-                    .chars = data->resize_str,
-                    .isStaticallyAllocated = true,
-                    // .isStaticallyAllocated = false,
-                };
-                CLAY_TEXT(clay_str, CLAY_TEXT_CONFIG({
+                CLAY_TEXT(CLAY_DYNAMIC_STRING(data->resize_str), CLAY_TEXT_CONFIG({
                     .fontId = FONT_ID_BODY_16,
                     .fontSize = button_font_size,
                     .textColor = COLOR_TEXT,
@@ -373,7 +362,7 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                     .padding = CLAY_PADDING_ALL(16),
                     .childGap = 8,
                     .sizing = {
-                        .width = CLAY_SIZING_FIXED(250),
+                        .width = CLAY_SIZING_FIXED(260),
                         .height = CLAY_SIZING_GROW(0)
                     },
                 },
@@ -445,19 +434,21 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                         .backgroundColor = contentBackgroundColor,
                         .layout = {
                             .layoutDirection = CLAY_LEFT_TO_RIGHT,
-                            .childGap = 16,
                         },
                     }) {
                         CLAY({.layout = { .layoutDirection = CLAY_TOP_TO_BOTTOM }}) {
                             CLAY_TEXT(CLAY_STRING("Background Color: "), DEFAULT_TEXT);
                             RenderMagickColor(data);
-                            CLAY_TEXT(CLAY_STRING("Disable transparent background for this to work"), DEFAULT_TEXT);
                         }
                         CLAY({
                             .id = CLAY_ID("ColorSettingsRGB"),
                             .backgroundColor = contentBackgroundColor,
                             .layout = {
                                 .layoutDirection = CLAY_TOP_TO_BOTTOM,
+                                .sizing = {
+                                    .width = CLAY_SIZING_GROW(105),
+                                },
+                                .padding = CLAY_PADDING_ALL(10),
                             },
                         }) {
                             RenderColorChannel(CLAY_STRING("r"), COLOR_RED,   data->color_str.r);
@@ -465,6 +456,8 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                             RenderColorChannel(CLAY_STRING("b"), COLOR_BLUE,  data->color_str.b);
                             RenderColorChannel(CLAY_STRING("a"), COLOR_TEXT,  data->color_str.a);
                         }
+                        if (data->state & MAGICK_TRANSPARENT_BG)
+                            CLAY_TEXT(CLAY_STRING("Transparent background setting overrides this option"), DEFAULT_TEXT);
                     }
                 }
             }

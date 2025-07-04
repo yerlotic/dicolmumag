@@ -99,6 +99,7 @@ static inline Clay_Dimensions Raylib_MeasureText(Clay_StringSlice text, Clay_Tex
 
     float scaleFactor = config->fontSize/(float)fontToUse.baseSize;
 
+    // https://github.com/nicbarker/clay/pull/313
     int byte_index = 0;
     while (byte_index < text.length) {
         if (text.chars[byte_index] == '\n') {
