@@ -18,7 +18,9 @@ const int title_font_size = 40;
 #define CLAY_DYNAMIC_STRING(string) (CLAY__INIT(Clay_String) { .isStaticallyAllocated = false, .length = strlen(string), .chars = (string) })
 #define BUTTON_RADIUS CLAY_CORNER_RADIUS(10)
 #define LAYOUT_RADIUS CLAY_CORNER_RADIUS(10)
-#define DEFAULT_TEXT CLAY_TEXT_CONFIG({ .fontId = FONT_ID_BODY_16, .fontSize = document_font_size, .textColor = COLOR_TEXT })
+#define SANE_TEXT_CONFIG(font_size) CLAY_TEXT_CONFIG({ .fontId = FONT_ID_BODY_16, .fontSize = (font_size), .textColor = COLOR_TEXT })
+#define DEFAULT_TEXT SANE_TEXT_CONFIG(document_font_size)
+#define BUTTON_TEXT  SANE_TEXT_CONFIG(button_font_size)
 
 void RenderHeaderButton(Clay_String text) {
     CLAY({
@@ -55,11 +57,7 @@ void RenderDropdownMenuItem(Clay_String text) {
                 .width = CLAY_SIZING_GROW(0)
             },
     }}) {
-        CLAY_TEXT(text, CLAY_TEXT_CONFIG({
-            .fontId = FONT_ID_BODY_16,
-            .fontSize = button_font_size,
-            .textColor = COLOR_TEXT,
-        }));
+        CLAY_TEXT(text, BUTTON_TEXT);
     }
 }
 
@@ -70,11 +68,7 @@ void RenderNumberPicker(Clay_String name, char* value) {
         // .id = CLAY_SID(name),
         .cornerRadius = BUTTON_RADIUS,
     }) {
-        CLAY_TEXT(CLAY_DYNAMIC_STRING(value), CLAY_TEXT_CONFIG({
-            .fontId = FONT_ID_BODY_16,
-            .fontSize = button_font_size,
-            .textColor = COLOR_TEXT,
-        }));
+        CLAY_TEXT(CLAY_DYNAMIC_STRING(value), BUTTON_TEXT);
     }
 }
 
@@ -154,6 +148,15 @@ typedef struct rgba_str {
     // 3 for digits [0-255], 1 for \0
     char r[4], g[4], b[4], a[4];
 } rgba_str;
+
+typedef struct resize_t {
+    uint16_t w, h;
+} resize_t;
+
+typedef struct resize_str_t {
+    char w[6], h[6];  // max: 6 bytes for string repr
+} resize_str_t;
+
 // typedef struct ClayVideoDemo_Strings {
 //
 // } ClayVideoDemo_Strings;
@@ -165,8 +168,8 @@ typedef struct {
     bool shouldClose;
     int state;
     char* resultFile;
-    uint16_t resize;  // max: 6 bytes for string repr
-    char resize_str[6]; // max: 6 bytes for string repr
+    resize_t resize;
+    resize_str_t resize_str; 
     char cur_char[6]; // max: 6 bytes for string repr
     rgba color;
     rgba_str color_str;
@@ -225,11 +228,11 @@ ClayVideoDemo_Data ClayVideoDemo_Initialize() {
     ClayVideoDemo_Data data = {
         .frameArena = { .memory = (intptr_t)malloc(1024) },
         .shouldClose = false,
-        .state = MAGICK_BEST_FIT | MAGICK_TRANSPARENT_BG | MAGICK_OPEN_ON_DONE | MAGICK_RESIZE,
-        .selectedDocumentIndex = 0,
+        .state = MAGICK_BEST_FIT | MAGICK_OPEN_ON_DONE | MAGICK_RESIZE,
+        .selectedDocumentIndex = ADVANCED_SETTINGS,
         .resultFile = "res.png",
-        .resize = 1000,
-        .resize_str = "1000",
+        .resize = {.w = 1000, .h = 1000},
+        .resize_str = {.w = "1000", .h = "1000"},
         .color = { .r = 0, .b = 0, .g = 0, .a = 100 },
         // This should be set because these strings are only updated when color is updated
         .color_str = { .r = "0", .b = "0", .g = "0", .a = "100" },
@@ -284,11 +287,7 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                 .backgroundColor = BUTTON_COLOR,
                 .cornerRadius = BUTTON_RADIUS,
             }) {
-                CLAY_TEXT(CLAY_STRING("File"), CLAY_TEXT_CONFIG({
-                    .fontId = FONT_ID_BODY_16,
-                    .fontSize = button_font_size,
-                    .textColor = COLOR_TEXT,
-                }));
+                CLAY_TEXT(CLAY_STRING("File"), BUTTON_TEXT);
 
                 bool fileMenuVisible =
                     Clay_PointerOver(Clay_GetElementId(CLAY_STRING("FileButton")))
@@ -332,19 +331,11 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
             CLAY({
                 .layout = { .padding = { 16, 16, 8, 8 }},
                 .backgroundColor = BUTTON_COLOR,
-                .id = CLAY_ID("Resize"),
+                .id = CLAY_ID("ResizeAll"),
                 .cornerRadius = BUTTON_RADIUS,
             }) {
-                CLAY_TEXT(CLAY_STRING("Resize: "), CLAY_TEXT_CONFIG({
-                    .fontId = FONT_ID_BODY_16,
-                    .fontSize = button_font_size,
-                    .textColor = COLOR_TEXT,
-                }));
-                CLAY_TEXT(CLAY_DYNAMIC_STRING(data->resize_str), CLAY_TEXT_CONFIG({
-                    .fontId = FONT_ID_BODY_16,
-                    .fontSize = button_font_size,
-                    .textColor = COLOR_TEXT,
-                }));
+                CLAY_TEXT(CLAY_STRING("Resize: "), BUTTON_TEXT);
+                CLAY_TEXT(CLAY_DYNAMIC_STRING(data->resize_str.w), BUTTON_TEXT);
             }
             RenderHeaderButton(CLAY_STRING("Support"));
         }
@@ -428,10 +419,8 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                 }));
                 CLAY_TEXT(selectedDocument.contents, DEFAULT_TEXT);
                 if (data->selectedDocumentIndex == ADVANCED_SETTINGS) {
-                        
                     CLAY({
                         .id = CLAY_ID("ColorSettings"),
-                        .backgroundColor = contentBackgroundColor,
                         .layout = {
                             .layoutDirection = CLAY_LEFT_TO_RIGHT,
                         },
@@ -442,7 +431,6 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                         }
                         CLAY({
                             .id = CLAY_ID("ColorSettingsRGB"),
-                            .backgroundColor = contentBackgroundColor,
                             .layout = {
                                 .layoutDirection = CLAY_TOP_TO_BOTTOM,
                                 .sizing = {
@@ -458,6 +446,23 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                         }
                         if (data->state & MAGICK_TRANSPARENT_BG)
                             CLAY_TEXT(CLAY_STRING("Transparent background setting overrides this option"), DEFAULT_TEXT);
+                    }
+                    CLAY({.id = CLAY_ID("ResizeSettings")}) {
+                        CLAY_TEXT(CLAY_STRING("Resize: "), DEFAULT_TEXT);
+                        CLAY({
+                            .layout = { .padding = { 0, 0, 8, 8 }}, // using zeroes here to make child numbers more easily scrollable
+                            .backgroundColor = BUTTON_COLOR,
+                            .id = CLAY_ID("Resize"),
+                            .cornerRadius = BUTTON_RADIUS,
+                        }) {
+                            CLAY({ .id = CLAY_ID("ResizeW"), .layout = { .padding = {.left = 16} } }) {
+                                CLAY_TEXT(CLAY_DYNAMIC_STRING(data->resize_str.w), BUTTON_TEXT);
+                            }
+                            CLAY({ .id = CLAY_ID("ResizeEach")}) { CLAY_TEXT(CLAY_STRING("x"), BUTTON_TEXT); }
+                            CLAY({ .id = CLAY_ID("ResizeH"), .layout = { .padding = {.right = 16} } }) {
+                                CLAY_TEXT(CLAY_DYNAMIC_STRING(data->resize_str.h), BUTTON_TEXT);
+                            }
+                        }
                     }
                 }
             }
