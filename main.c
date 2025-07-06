@@ -85,11 +85,12 @@ int runMagick(ClayVideoDemo_Data *data) {
     // NOTE: should be after all images
     char *resize_str;
     if (data->state & MAGICK_RESIZE) {
-        resize_str = malloc(2 * strlen(data->resize_str) + 3); // x, \0 and modifier maybe
+        // https://usage.imagemagick.org/resize
+        resize_str = malloc(strlen(data->resize_str.h) + strlen(data->resize_str.w) + 3); // 'x', '\0' and modifier maybe
         *resize_str = '\0';
-        strcat(resize_str, data->resize_str);
+        strcat(resize_str, data->resize_str.w);
         strcat(resize_str, "x");
-        strcat(resize_str, data->resize_str);
+        strcat(resize_str, data->resize_str.h);
         // strcat(resize_str, "x"); // modifier
         nob_cmd_append(&cmd, "-resize", resize_str);
     }
@@ -213,7 +214,7 @@ int defaultFont(char** res) {
     return 0;
 }
 
-int scrollDirection(Vector2 scrollDelta) {
+int8_t scrollDirection(Vector2 scrollDelta) {
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) || scrollDelta.y > 0 || IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_UP))
         return 1;
     else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) || scrollDelta.y < 0 || IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_DOWN))
@@ -233,9 +234,6 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, ClayVideoDemo_Data *
     //     .height = GetRenderHeight() * GetWindowScaleDPI().y
     // });
     Clay_SetLayoutDimensions(CLAY_DIMENSIONS);
-    fprintf(stderr, "DEFAULT: %d, %d\n", GetScreenWidth(), GetScreenHeight());
-    fprintf(stderr, "HIGHDPI: %d, %d\n", GetRenderWidth(), GetRenderHeight());
-    fprintf(stderr, "SCALE  : %f, %f\n", GetWindowScaleDPI().x,GetWindowScaleDPI().y);
     Vector2 mousePosition = GetMousePosition();
     Vector2 scrollDelta = GetMouseWheelMoveV();
     Clay_SetPointerState(
@@ -266,9 +264,25 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, ClayVideoDemo_Data *
             fprintf(stderr, "No file was made\n");
         }
     // Number pickers handling
-    } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("Resize")))) {
-        data->resize += 50 * scrollDirection(scrollDelta);
-        sprintf(data->resize_str, "%d", data->resize);
+    } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("ResizeAll")))) {
+        int8_t scroll = scrollDirection(scrollDelta);
+        // Don't update in no interaction happened
+        if (scroll != 0) {
+            data->resize.h = data->resize.w = data->resize.w + 50 * scroll;
+            sprintf(data->resize_str.w, "%d", data->resize.w);
+            sprintf(data->resize_str.h, "%d", data->resize.h);
+        }
+    } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("ResizeW")))) {
+        data->resize.w += 50 * scrollDirection(scrollDelta);
+        sprintf(data->resize_str.w, "%d", data->resize.w);
+    } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("ResizeH")))) {
+        data->resize.h += 50 * scrollDirection(scrollDelta);
+        sprintf(data->resize_str.h, "%d", data->resize.h);
+    } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("ResizeEach")))) {
+        data->resize.w += 50 * scrollDirection(scrollDelta);
+        data->resize.h += 50 * scrollDirection(scrollDelta);
+        sprintf(data->resize_str.w, "%d", data->resize.w);
+        sprintf(data->resize_str.h, "%d", data->resize.h);
     } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("r")))) {
         data->color.r += scrollDirection(scrollDelta);
         sprintf(data->color_str.r, "%d", data->color.r);
