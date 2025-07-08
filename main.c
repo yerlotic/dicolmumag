@@ -19,6 +19,7 @@
 // #define MULTI_SEPARATOR '\x1c'
 #define MULTI_SEPARATOR '|'
 #include "tinyfiledialogs.c"
+#define MODIFIERS 3 // only 3 modifiers at the same time: !, </> and ^
 
 typedef struct {
     char **items;
@@ -36,7 +37,7 @@ typedef struct {
 #define released(id) IsMouseButtonReleased(0) && Clay_PointerOver(Clay_GetElementId(CLAY_STRING(id)))
 #define CLAY_DIMENSIONS (Clay_Dimensions) { .width = GetScreenWidth(), \
                                             .height = GetScreenHeight() }
-// #define CLAY_DIMENSIONS (Clay_Dimensions) { .width = GetRenderWidth(), \
+// #define CLAY_DIMENSIONS (Clay_Dimensions) { .width = GetRenderWidth(),
 //                                             .height = GetRenderHeight() }
 void HandleClayErrors(Clay_ErrorData errorData) {
     printf("[CLAY] [ERROR] %s\n", errorData.errorText.chars);
@@ -86,12 +87,24 @@ int runMagick(ClayVideoDemo_Data *data) {
     char *resize_str;
     if (data->state & MAGICK_RESIZE) {
         // https://usage.imagemagick.org/resize
-        resize_str = malloc(strlen(data->resize_str.h) + strlen(data->resize_str.w) + 3); // 'x', '\0' and modifier maybe
+        resize_str = malloc(strlen(data->resize_str.h) + strlen(data->resize_str.w) + 2 + MODIFIERS); // 'x', '\0' and modifiers
         *resize_str = '\0';
         strcat(resize_str, data->resize_str.w);
         strcat(resize_str, "x");
         strcat(resize_str, data->resize_str.h);
-        // strcat(resize_str, "x"); // modifier
+
+        if (data->state & MAGICK_IGNORE_RATIO) // 1
+            strcat(resize_str, MAGICK_RESIZE_IGNORE_RATIO);
+        if (data->state & MAGICK_SHRINK_LARGER) // 2
+            strcat(resize_str, MAGICK_RESIZE_SHRINK_LARGER);
+        else if (data->state & MAGICK_ENLARGE_SMALLER)
+            strcat(resize_str, MAGICK_RESIZE_ENLARGE_SMALLER);
+        if (data->state & MAGICK_FILL_AREA) // 3
+            strcat(resize_str, MAGICK_RESIZE_FILL_AREA);
+        // if (data->state & MAGICK_PERCENTAGE)
+        //     strcat(resize_str, MAGICK_RESIZE_PERCENTAGE);
+        // if (data->state & MAGICK_PIXEL_LIMIT)
+        //     strcat(resize_str, MAGICK_RESIZE_PIXEL_LIMIT);
         nob_cmd_append(&cmd, "-resize", resize_str);
     }
     if (data->state & MAGICK_TRANSPARENT_BG) {
@@ -136,11 +149,11 @@ int runMagick(ClayVideoDemo_Data *data) {
     }
     // Freeing memory
     free(ashlar_path);
-    if (data->state & MAGICK_RESIZE) 
+    if (data->state & MAGICK_RESIZE)
         free(resize_str);
     for (size_t i = 0; i < to_free.count; i++) {
         // free(&to_free.items[i]);
-        fprintf(stderr, "Deleting: \"%s\"\n", to_free.items[i]);
+        fprintf(stderr, "Freeing: \"%s\"\n", to_free.items[i]);
         free((void *) to_free.items[i]);
     }
     nob_cmd_free(cmd);
@@ -328,7 +341,7 @@ int main(void) {
     // without HIGHDPI GetScreen... and GetRender... are identical
     // raylib with GLFW: bad crop every time
     // HIGHDPI scales everything nicely
-    // 
+    //
     Clay_Raylib_Initialize(1024, 768, title, FLAG_WINDOW_RESIZABLE | FLAG_MSAA_4X_HINT);
     // Clay_Raylib_Initialize(1024, 768, title, FLAG_WINDOW_RESIZABLE | FLAG_MSAA_4X_HINT | FLAG_WINDOW_HIGHDPI);
 

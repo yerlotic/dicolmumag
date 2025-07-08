@@ -22,6 +22,13 @@ const int title_font_size = 40;
 #define DEFAULT_TEXT SANE_TEXT_CONFIG(document_font_size)
 #define BUTTON_TEXT  SANE_TEXT_CONFIG(button_font_size)
 
+#define MAGICK_RESIZE_IGNORE_RATIO    "!"
+#define MAGICK_RESIZE_SHRINK_LARGER   ">"
+#define MAGICK_RESIZE_ENLARGE_SMALLER "<"
+#define MAGICK_RESIZE_FILL_AREA       "^"
+#define MAGICK_RESIZE_PERCENTAGE      "%"
+#define MAGICK_RESIZE_PIXEL_LIMIT     "@"
+
 void RenderHeaderButton(Clay_String text) {
     CLAY({
         .layout = {
@@ -111,6 +118,8 @@ void RenderColor(Clay_Color color) {
     }) {}
 }
 
+
+
 typedef struct {
     Clay_String title;
     Clay_String contents;
@@ -133,11 +142,17 @@ typedef struct {
     intptr_t memory;
 } ClayVideoDemo_Arena;
 
-enum {
-    MAGICK_BEST_FIT       = 1 << 0,
-    MAGICK_TRANSPARENT_BG = 1 << 1,
-    MAGICK_OPEN_ON_DONE   = 1 << 2,
-    MAGICK_RESIZE         = 1 << 3,
+typedef enum {
+    MAGICK_BEST_FIT        = 1 << 0,
+    MAGICK_TRANSPARENT_BG  = 1 << 1,
+    MAGICK_OPEN_ON_DONE    = 1 << 2,
+    MAGICK_RESIZE          = 1 << 3,
+    MAGICK_IGNORE_RATIO    = 1 << 4,
+    MAGICK_SHRINK_LARGER   = 1 << 5,
+    MAGICK_ENLARGE_SMALLER = 1 << 6,
+    MAGICK_FILL_AREA       = 1 << 7,
+    MAGICK_PERCENTAGE      = 1 << 8,
+    MAGICK_PIXEL_LIMIT     = 1 << 9,
 } MagickState;
 
 typedef struct rgba {
@@ -166,15 +181,19 @@ typedef struct {
     float yOffset;
     ClayVideoDemo_Arena frameArena;
     bool shouldClose;
-    int state;
+    uint32_t state;
     char* resultFile;
     resize_t resize;
-    resize_str_t resize_str; 
+    resize_str_t resize_str;
     char cur_char[6]; // max: 6 bytes for string repr
     rgba color;
     rgba_str color_str;
 } ClayVideoDemo_Data;
 
+typedef struct {
+    uint32_t flag;
+    uint32_t *state;
+} FlagClickData;
 
 typedef struct {
     uint32_t requestedDocumentIndex;
@@ -192,13 +211,13 @@ void HandleSidebarInteraction(
     if (pointerData.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME) {
         if (clickData->requestedDocumentIndex < documents.length) {
             if (clickData->requestedDocumentIndex == 0) {
-                *clickData->state = *clickData->state ^ MAGICK_BEST_FIT;
+                *clickData->state ^= MAGICK_BEST_FIT;
             } else if (clickData->requestedDocumentIndex == 1) {
-                *clickData->state = (*clickData->state ^ MAGICK_TRANSPARENT_BG);
+                *clickData->state ^= MAGICK_TRANSPARENT_BG;
             } else if (clickData->requestedDocumentIndex == 2) {
-                *clickData->state = (*clickData->state ^ MAGICK_OPEN_ON_DONE);
+                *clickData->state ^= MAGICK_OPEN_ON_DONE;
             } else if (clickData->requestedDocumentIndex == 3) {
-                *clickData->state = (*clickData->state ^ MAGICK_RESIZE);
+                *clickData->state ^= MAGICK_RESIZE;
             }
             // Select the corresponding document
             *clickData->selectedDocumentIndex = clickData->requestedDocumentIndex;
@@ -217,6 +236,72 @@ void RenderMagickColor(ClayVideoDemo_Data *data) {
     }
 }
 
+void RenderResize(ClayVideoDemo_Data *data) {
+    CLAY({
+        .backgroundColor = BUTTON_COLOR,
+        .id = CLAY_ID("Resize"),
+        .cornerRadius = BUTTON_RADIUS,
+    }) {
+        CLAY({ .id = CLAY_ID("ResizeW"), .layout = { .padding = { .left = 16, .top = 8, .bottom = 8 } } }) {
+            CLAY_TEXT(CLAY_DYNAMIC_STRING(data->resize_str.w), BUTTON_TEXT);
+        }
+        CLAY({ .id = CLAY_ID("ResizeEach"), .layout = { .padding = {.top = 8, .bottom = 8} }}) { CLAY_TEXT(CLAY_STRING("x"), BUTTON_TEXT); }
+        CLAY({ .id = CLAY_ID("ResizeH"), .layout = { .padding = { .right = 16, .top = 8, .bottom = 8 } } }) {
+            CLAY_TEXT(CLAY_DYNAMIC_STRING(data->resize_str.h), BUTTON_TEXT);
+        }
+    }
+}
+
+void HandleFlagInteraction(
+    Clay_ElementId elementId,
+    Clay_PointerData pointerData,
+    intptr_t userData
+) {
+    FlagClickData *clickData = (FlagClickData *)userData;
+    // If this button was clicked
+    if (pointerData.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME) {
+        printf("state: %016b\n", *clickData->state);
+        printf("flag:  %016b\n", clickData->flag);
+        printf("id:    %s\n", elementId.stringId.chars);
+        *clickData->state ^= clickData->flag;
+    }
+}
+
+void RenderFlag(Clay_String text,
+                uint32_t *state,
+                uint32_t triggerFlag,
+                uint32_t displayFlag,
+                ClayVideoDemo_Arena *arena) {
+    Clay_Color background = BUTTON_COLOR;
+    if (*state & displayFlag)
+        background = OPACITY(COLOR_GREEN, 35);
+    CLAY({
+        .layout = {
+            .padding = { 16, 16, 8, 8 },
+            .childAlignment = {
+                .x = CLAY_ALIGN_X_CENTER,
+                .y = CLAY_ALIGN_Y_CENTER,
+            },
+        },
+        .backgroundColor = background,
+        .id = CLAY_SID(text),
+        .cornerRadius = BUTTON_RADIUS,
+    }) {
+        FlagClickData *clickData = (FlagClickData *)(arena->memory + arena->offset);
+        *clickData = (FlagClickData) { .flag = triggerFlag, .state = state };
+        arena->offset += sizeof(FlagClickData);
+        Clay_OnHover(HandleFlagInteraction, (intptr_t)clickData);
+
+        CLAY_TEXT(text, CLAY_TEXT_CONFIG({
+            .fontId = FONT_ID_BODY_16,
+            .fontSize = button_font_size,
+            .textColor = COLOR_TEXT,
+            .textAlignment = CLAY_TEXT_ALIGN_CENTER,
+            .wrapMode = CLAY_TEXT_WRAP_NONE,
+        }));
+    }
+}
+
 ClayVideoDemo_Data ClayVideoDemo_Initialize() {
     // Update DocumentArray
     documents.documents[0] = (Document){ .title = CLAY_STRING("Best fit"), .contents = CLAY_STRING("This ashlar option aligns images on both sides of the resulting image") };
@@ -228,7 +313,7 @@ ClayVideoDemo_Data ClayVideoDemo_Initialize() {
     ClayVideoDemo_Data data = {
         .frameArena = { .memory = (intptr_t)malloc(1024) },
         .shouldClose = false,
-        .state = MAGICK_BEST_FIT | MAGICK_OPEN_ON_DONE | MAGICK_RESIZE,
+        .state = MAGICK_BEST_FIT | MAGICK_OPEN_ON_DONE | MAGICK_RESIZE | MAGICK_SHRINK_LARGER,
         .selectedDocumentIndex = ADVANCED_SETTINGS,
         .resultFile = "res.png",
         .resize = {.w = 1000, .h = 1000},
@@ -437,6 +522,7 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                                     .width = CLAY_SIZING_GROW(105),
                                 },
                                 .padding = CLAY_PADDING_ALL(10),
+                                .childGap = 8,
                             },
                         }) {
                             RenderColorChannel(CLAY_STRING("r"), COLOR_RED,   data->color_str.r);
@@ -447,22 +533,18 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                         if (data->state & MAGICK_TRANSPARENT_BG)
                             CLAY_TEXT(CLAY_STRING("Transparent background setting overrides this option"), DEFAULT_TEXT);
                     }
-                    CLAY({.id = CLAY_ID("ResizeSettings")}) {
-                        CLAY_TEXT(CLAY_STRING("Resize: "), DEFAULT_TEXT);
-                        CLAY({
-                            .layout = { .padding = { 0, 0, 8, 8 }}, // using zeroes here to make child numbers more easily scrollable
-                            .backgroundColor = BUTTON_COLOR,
-                            .id = CLAY_ID("Resize"),
-                            .cornerRadius = BUTTON_RADIUS,
-                        }) {
-                            CLAY({ .id = CLAY_ID("ResizeW"), .layout = { .padding = {.left = 16} } }) {
-                                CLAY_TEXT(CLAY_DYNAMIC_STRING(data->resize_str.w), BUTTON_TEXT);
-                            }
-                            CLAY({ .id = CLAY_ID("ResizeEach")}) { CLAY_TEXT(CLAY_STRING("x"), BUTTON_TEXT); }
-                            CLAY({ .id = CLAY_ID("ResizeH"), .layout = { .padding = {.right = 16} } }) {
-                                CLAY_TEXT(CLAY_DYNAMIC_STRING(data->resize_str.h), BUTTON_TEXT);
-                            }
+                    CLAY({.id = CLAY_ID("ResizeSettings"), .layout = {.layoutDirection = CLAY_TOP_TO_BOTTOM, .childGap = 8}}) {
+                        CLAY({.layout = {.layoutDirection = CLAY_LEFT_TO_RIGHT, .childGap = 8}}) {
+                            CLAY_TEXT(CLAY_STRING("Resize: "), DEFAULT_TEXT);
+                            RenderResize(data);
                         }
+                        RenderFlag(CLAY_STRING("Ignore aspect ratio"), &data->state, MAGICK_IGNORE_RATIO, MAGICK_IGNORE_RATIO, &data->frameArena);
+                        // Well... it would only work for two
+                        RenderFlag(CLAY_STRING("Only Shrink Larger"), &data->state,
+                                (data->state & MAGICK_ENLARGE_SMALLER) ? MAGICK_ENLARGE_SMALLER | MAGICK_SHRINK_LARGER : MAGICK_SHRINK_LARGER, MAGICK_SHRINK_LARGER, &data->frameArena);
+                        RenderFlag(CLAY_STRING("Only Enlarge Smaller"), &data->state,
+                                (data->state & MAGICK_SHRINK_LARGER) ? MAGICK_SHRINK_LARGER | MAGICK_ENLARGE_SMALLER : MAGICK_ENLARGE_SMALLER, MAGICK_ENLARGE_SMALLER, &data->frameArena);
+                        RenderFlag(CLAY_STRING("Fill area"), &data->state, MAGICK_FILL_AREA, MAGICK_FILL_AREA, &data->frameArena);
                     }
                 }
             }
