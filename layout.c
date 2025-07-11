@@ -5,6 +5,8 @@
 
 // #define LATTE
 #include "colors.h"
+#define NOB_IMPLEMENTATION
+#include "nob.h"
 
 const int FONT_ID_BODY_16 = 0;
 const int FONT_LOAD_SIZE = 40;
@@ -16,6 +18,7 @@ const int title_font_size = 40;
 #define ADVANCED_SETTINGS 4
 
 #define CLAY_DYNAMIC_STRING(string) (CLAY__INIT(Clay_String) { .isStaticallyAllocated = false, .length = strlen(string), .chars = (string) })
+#define CLAY_SB_STRING(sb) (CLAY__INIT(Clay_String) { .isStaticallyAllocated = false, .length = (sb).count, .chars = (sb).items })
 #define BUTTON_RADIUS CLAY_CORNER_RADIUS(10)
 #define LAYOUT_RADIUS CLAY_CORNER_RADIUS(10)
 #define SANE_TEXT_CONFIG(font_size) CLAY_TEXT_CONFIG({ .fontId = FONT_ID_BODY_16, .fontSize = (font_size), .textColor = COLOR_TEXT })
@@ -118,8 +121,6 @@ void RenderColor(Clay_Color color) {
     }) {}
 }
 
-
-
 typedef struct {
     Clay_String title;
     Clay_String contents;
@@ -182,7 +183,8 @@ typedef struct {
     ClayVideoDemo_Arena frameArena;
     bool shouldClose;
     uint32_t state;
-    char* resultFile;
+    Nob_String_Builder outputFile;
+    Nob_Cmd inputFiles;
     resize_t resize;
     resize_str_t resize_str;
     char cur_char[6]; // max: 6 bytes for string repr
@@ -260,9 +262,6 @@ void HandleFlagInteraction(
     FlagClickData *clickData = (FlagClickData *)userData;
     // If this button was clicked
     if (pointerData.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME) {
-        printf("state: %016b\n", *clickData->state);
-        printf("flag:  %016b\n", clickData->flag);
-        printf("id:    %s\n", elementId.stringId.chars);
         *clickData->state ^= clickData->flag;
     }
 }
@@ -315,13 +314,15 @@ ClayVideoDemo_Data ClayVideoDemo_Initialize() {
         .shouldClose = false,
         .state = MAGICK_BEST_FIT | MAGICK_OPEN_ON_DONE | MAGICK_RESIZE | MAGICK_SHRINK_LARGER,
         .selectedDocumentIndex = ADVANCED_SETTINGS,
-        .resultFile = "res.png",
+        .outputFile = {0},
+        .inputFiles = {0},
         .resize = {.w = 1000, .h = 1000},
         .resize_str = {.w = "1000", .h = "1000"},
         .color = { .r = 0, .b = 0, .g = 0, .a = 100 },
         // This should be set because these strings are only updated when color is updated
         .color_str = { .r = "0", .b = "0", .g = "0", .a = "100" },
     };
+    nob_sb_append_cstr(&data.outputFile, "res.png");
     return data;
 }
 
@@ -409,9 +410,10 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                     }
                 }
             }
-            RenderHeaderButton(CLAY_STRING("Select_Images"));
+            RenderHeaderButton(CLAY_STRING("Select Images"));
+            RenderHeaderButton(CLAY_STRING("Rerun"));
             CLAY({ .layout = { .sizing = { CLAY_SIZING_GROW(0) }}}) {}
-            CLAY_TEXT(CLAY_DYNAMIC_STRING(data->resultFile), DEFAULT_TEXT);
+            CLAY({.id = CLAY_ID("file")}) {CLAY_TEXT(CLAY_SB_STRING(data->outputFile), DEFAULT_TEXT);}
             CLAY({ .layout = { .sizing = { CLAY_SIZING_GROW(0) }}}) {}
             CLAY({
                 .layout = { .padding = { 16, 16, 8, 8 }},
