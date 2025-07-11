@@ -360,9 +360,9 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                 .childGap = 16,
                 .childAlignment = {
                     .y = CLAY_ALIGN_Y_CENTER,
-                    .x = CLAY_ALIGN_X_CENTER,
                 }
             },
+            .clip = { .horizontal = true, .childOffset = Clay_GetScrollOffset() },
             .cornerRadius = LAYOUT_RADIUS,
             .backgroundColor = contentBackgroundColor,
         }) {
@@ -405,13 +405,28 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                         }) {
                             // Render dropdown items here
                             RenderDropdownMenuItem(CLAY_STRING("Open result"));
-                            RenderDropdownMenuItem(CLAY_STRING("Quit"));
+                            Clay_String quit = CLAY_STRING("Quit");
+                            CLAY({
+                                .backgroundColor = COLOR_SURFACE0,
+                                .cornerRadius = BUTTON_RADIUS,
+                                .id = CLAY_SID(quit),
+                                .layout = {
+                                    .padding = CLAY_PADDING_ALL(16),
+                                .sizing = {
+                                    .width = CLAY_SIZING_GROW(0)
+                                },
+                            }}) {
+                                CLAY_TEXT(quit, BUTTON_TEXT);
+                                CLAY({ .layout = { .sizing = { CLAY_SIZING_GROW(0) }}}) {}
+                                CLAY_TEXT(CLAY_STRING("Ctrl-Q"),
+                                        CLAY_TEXT_CONFIG({ .fontId = FONT_ID_BODY_16, .fontSize = button_font_size, .textColor = COLOR_OVERLAY0 }));
+                            }
                         }
                     }
                 }
             }
             RenderHeaderButton(CLAY_STRING("Select Images"));
-            RenderHeaderButton(CLAY_STRING("Rerun"));
+            RenderHeaderButton(CLAY_STRING("Run"));
             CLAY({ .layout = { .sizing = { CLAY_SIZING_GROW(0) }}}) {}
             CLAY({.id = CLAY_ID("file")}) {CLAY_TEXT(CLAY_SB_STRING(data->outputFile), DEFAULT_TEXT);}
             CLAY({ .layout = { .sizing = { CLAY_SIZING_GROW(0) }}}) {}
@@ -435,6 +450,7 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
             CLAY({
                 .id = CLAY_ID("Sidebar"),
                 .backgroundColor = contentBackgroundColor,
+                .clip = { .vertical = true, .childOffset = Clay_GetScrollOffset() },
                 .layout = {
                     .layoutDirection = CLAY_TOP_TO_BOTTOM,
                     .padding = CLAY_PADDING_ALL(16),
@@ -489,12 +505,22 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
 
             CLAY({ .id = CLAY_ID("MainContent"),
                 .backgroundColor = contentBackgroundColor,
-                .clip = { .vertical = true, .childOffset = Clay_GetScrollOffset() },
+                .clip = { .vertical = true, /*.horizontal = true,*/ .childOffset = Clay_GetScrollOffset() },
                 .layout = {
                     .layoutDirection = CLAY_TOP_TO_BOTTOM,
                     .childGap = 16,
                     .padding = CLAY_PADDING_ALL(16),
-                    .sizing = layoutExpand
+                    .sizing = {
+                        .height = CLAY_SIZING_GROW(0),
+                        .width = CLAY_SIZING_GROW(0),
+                        // .width = CLAY_SIZING_GROW(100, 400)
+                        // .width = {.type = CLAY__SIZING_TYPE_FIT, .size = {
+                        //     .minMax = {
+                        //         .min = 100,
+                        //         // .max = 300
+                        //     }
+                        // }}
+                    }
                 },
                 .cornerRadius = LAYOUT_RADIUS,
             }) {

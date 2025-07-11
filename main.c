@@ -11,6 +11,7 @@
 #define SUPPORT_URL "https://youtu.be/dQw4w9WgXcQ"
 
 #define TESTING
+#define LAZY_RENDER
 
 // ascii file separator
 // thx ascii!
@@ -20,6 +21,7 @@
 
 #define MODIFIERS 3 // only 3 modifiers at the same time: !, </> and ^
 #define ASHLAR_PREFIX "ashlar:"
+#define SLEEP_THRESHOLD 5 //seconds of activity before not rendering that many frames
 
 typedef struct {
     char **items;
@@ -32,6 +34,13 @@ typedef struct {
     size_t count;
     size_t capacity;
 } str_t;
+
+typedef struct AppState {
+    Vector2 mousePosition;
+    Vector2 scrollDelta;
+    int renderWidth;
+    int renderHeight;
+} AppState;
 
 #define pressed(id) IsMouseButtonPressed(0) && Clay_PointerOver(Clay_GetElementId(CLAY_STRING(id)))
 #define released(id) IsMouseButtonReleased(0) && Clay_PointerOver(Clay_GetElementId(CLAY_STRING(id)))
@@ -275,12 +284,38 @@ int8_t scrollDirection(Vector2 scrollDelta) {
     return 0;
 }
 
-Clay_RenderCommandArray CreateLayout(Clay_Context* context, ClayVideoDemo_Data *data) {
+AppState GetAppState() {
+    AppState state = {
+        .mousePosition = GetMousePosition(),
+        .scrollDelta = GetMouseWheelMoveV(),
+        .renderHeight = GetRenderHeight(),
+        .renderWidth = GetRenderWidth(),
+        // .renderHeight = GetScreenHeight(),
+        // .renderWidth = GetScreenWidth(),
+    };
+    return state;
+}
+
+bool VectorsEqual(Vector2 *this, Vector2 *that) {
+    if (this->x != that->x) return false;
+    if (this->y != that->y) return false;
+    return true;
+}
+
+bool StatesEqual(AppState *this, AppState *that) {
+    if (!VectorsEqual(&this->mousePosition, &that->mousePosition)) return false;
+    if (!VectorsEqual(&this->scrollDelta, &that->scrollDelta)) return false;
+    if (this->renderWidth != that->renderWidth) return false;
+    if (this->renderHeight != that->renderHeight) return false;
+    return true;
+}
+
+Clay_RenderCommandArray CreateLayout(Clay_Context* context, ClayVideoDemo_Data *data, AppState appstate) {
     Clay_SetCurrentContext(context);
     // Run once per frame
     Clay_SetLayoutDimensions(CLAY_DIMENSIONS);
-    Vector2 mousePosition = GetMousePosition();
-    Vector2 scrollDelta = GetMouseWheelMoveV();
+    Vector2 mousePosition = appstate.mousePosition;
+    Vector2 scrollDelta = appstate.scrollDelta;
     Clay_SetPointerState(
             (Clay_Vector2) { mousePosition.x, mousePosition.y },
             IsMouseButtonDown(0)
@@ -301,7 +336,7 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, ClayVideoDemo_Data *
     } else if (released("Select Images")) {
         GetInputFiles(data);
         RunMagick(data);
-    } else if (released("Rerun")) {
+    } else if (released("Run")) {
         RunMagick(data);
     } else if (released("file")) {
         printf("befor: %s\n", data->outputFile.items);
@@ -363,6 +398,7 @@ bool testMagick() {
         nob_cmd_free(cmd);
         return false;
     }
+    nob_cmd_free(cmd);
     return true;
 }
 
@@ -402,19 +438,58 @@ int main(void) {
     Clay_Context *clayContext = Clay_Initialize(clayMemory, CLAY_DIMENSIONS, (Clay_ErrorHandler) { HandleClayErrors }); // This final argument is new since the video was published
     ClayVideoDemo_Data data = ClayVideoDemo_Initialize();
     Clay_SetMeasureTextFunction(Raylib_MeasureText, fonts);
-
     SetTargetFPS(GetMonitorRefreshRate(GetCurrentMonitor()));
     // Disable ESC to exit
     SetExitKey(KEY_NULL);
 #ifdef TESTING
-    // Clay_SetDebugModeEnabled(true);
+    Clay_SetDebugModeEnabled(true);
 #endif
-    while (!WindowShouldClose()) {
-        Clay_RenderCommandArray renderCommands = CreateLayout(clayContext, &data);
-        if (data.shouldClose) break;
-
+#ifdef LAZY_RENDER
+    AppState old_state = {0};
+    int prevtime = SLEEP_THRESHOLD;
+    bool are_equal = false;
+#endif // LAZY_RENDER
+    AppState state = {0};
+    while (!WindowShouldClose() &&
+           !data.shouldClose &&
+           !((IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) && IsKeyDown(KEY_Q))
+          ) {
+        // Update the app's state
+#ifdef LAZY_RENDER
+        old_state = state;
+#endif // LAZY_RENDER
+        state = GetAppState();
+        Clay_RenderCommandArray renderCommands = CreateLayout(clayContext, &data, state);
         BeginDrawing();
         ClearBackground(BLACK);
+#ifdef LAZY_RENDER
+        int time = (int)GetTime();
+
+        are_equal = StatesEqual(&state, &old_state);
+        if (!are_equal) {
+            prevtime = time + SLEEP_THRESHOLD;
+        }
+        // if we might not care to render anything anymore
+        if (time > prevtime) {
+            fprintf(stderr, "The time has come\n");
+            do {
+                // Refresh raylib state (usually happends on EndDrawing())
+                PollInputEvents();
+                state = GetAppState();
+                if (!(are_equal = StatesEqual(&state, &old_state))) break;
+                old_state = state;
+
+                // Don't sleep, just exit
+                if ((data.shouldClose = WindowShouldClose())) break;
+
+                fprintf(stderr, "Not rendering: %d\n", time);
+                WaitTime(1);
+            } while (true);
+            // Look! it moved!
+            prevtime = time + SLEEP_THRESHOLD;
+        }
+#endif // LAZY_RENDER
+
         Clay_Raylib_Render(renderCommands, fonts);
 #ifdef TESTING
         DrawFPS(0,0);
