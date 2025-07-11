@@ -2,8 +2,6 @@
 #include <unistd.h>
 #define CLAY_IMPLEMENTATION
 #include "clay.h"
-#define NOB_IMPLEMENTATION
-#include "nob.h"
 #include "raylib/raylib.h"
 #include "raylib/clay_renderer_raylib.c"
 #include "layout.c"
@@ -19,7 +17,9 @@
 // #define MULTI_SEPARATOR '\x1c'
 #define MULTI_SEPARATOR '|'
 #include "tinyfiledialogs.c"
+
 #define MODIFIERS 3 // only 3 modifiers at the same time: !, </> and ^
+#define ASHLAR_PREFIX "ashlar:"
 
 typedef struct {
     char **items;
@@ -43,28 +43,38 @@ void HandleClayErrors(Clay_ErrorData errorData) {
     printf("[CLAY] [ERROR] %s\n", errorData.errorText.chars);
 }
 
-int runMagick(ClayVideoDemo_Data *data) {
+// Don't forget to free the thing itself if u need to
+#define nob_free_all(to_free) do {                              \
+    for (size_t i = 0; i < to_free.count; i++) {                \
+        fprintf(stderr, "Freeing: \"%s\"\n", to_free.items[i]); \
+        free((void *) to_free.items[i]);                        \
+    }                                                           \
+} while(0)
+
+#ifdef _WIN32
+#define BLACKHOLE "nul"
+#else
+#define BLACKHOLE "/dev/null"
+#endif // _WIN32
+#define nob_cmd_run_async_silent(cmd) do { \
+    Nob_Fd blackhole = nob_fd_open_for_write(BLACKHOLE); \
+    nob_cmd_run_async_redirect(cmd, (Nob_Cmd_Redirect) {.fdout = &blackhole, .fderr = &blackhole}); \
+} while(0)
+
+int GetInputFiles(ClayVideoDemo_Data *data) {
     int allow_multiple_selects = true;
     char const *filter_params[] = {"*.png", "*.svg", "*.jpg", "*.jpeg"};
-    char *input_path = tinyfd_openFileDialog("Path to image", "./", 4, filter_params, "Image file", allow_multiple_selects);
-    char *output_path = "res.png";
-    char *ashlar_path = malloc(strlen(output_path) + strlen("ashlar:") + 1);
-    *ashlar_path = '\0';
-    strcat(ashlar_path, "ashlar:");
-    strcat(ashlar_path, output_path);
+    char *input_path = tinyfd_openFileDialog("Path to images", "./", 4, filter_params, "Image file", allow_multiple_selects);
 
     if (!input_path) {
         fprintf(stderr, "Too bad no files\n");
-        free(ashlar_path);
         return false;
     }
     char c;
-    Nob_Cmd cmd = {0};
     Nob_Cmd to_free = {0};
     Nob_String_Builder buf = {0};
-    Nob_String_Builder background = {0};
-    nob_cmd_append(&cmd, "magick");
-    nob_cmd_append(&cmd, "-verbose");
+    nob_free_all(data->inputFiles);
+    data->inputFiles.count = 0;
 
     // parse files
     for (int i = 0; ; i++) {
@@ -73,7 +83,7 @@ int runMagick(ClayVideoDemo_Data *data) {
             nob_sb_append_null(&buf);
             // moving buffer to another place on the heap
             char *pointer = strdup(buf.items);
-            nob_cmd_append(&cmd, pointer);
+            nob_cmd_append(&data->inputFiles, pointer);
             nob_cmd_append(&to_free, pointer);
             buf.count = 0;
         } else {
@@ -81,7 +91,27 @@ int runMagick(ClayVideoDemo_Data *data) {
         }
         if (c == '\0') break;
     }
+    nob_sb_free(buf);
+    return true;
+}
 
+int RunMagick(ClayVideoDemo_Data *data) {
+    if (data->inputFiles.count == 0) {
+        fprintf(stderr, "No files to process\n");
+        return false;
+    }
+
+    Nob_Cmd cmd = {0};
+    Nob_Cmd to_free = {0};
+    char *ashlar_path = malloc(strlen(ASHLAR_PREFIX) + data->outputFile.count);
+    *ashlar_path = '\0';
+    strcat(ashlar_path, ASHLAR_PREFIX);
+    strcat(ashlar_path, data->outputFile.items);
+
+    nob_cmd_append(&cmd, "magick");
+    nob_cmd_append(&cmd, "-verbose");
+
+    nob_cmd_extend(&cmd, &data->inputFiles);
     // resize images
     // NOTE: should be after all images
     char *resize_str;
@@ -110,6 +140,7 @@ int runMagick(ClayVideoDemo_Data *data) {
     if (data->state & MAGICK_TRANSPARENT_BG) {
         nob_cmd_append(&cmd, "-background", "transparent");
     } else {
+        Nob_String_Builder background = {0};
         nob_sb_append_cstr(&background, "rgba(");
         nob_sb_append_cstr(&background, data->color_str.r);
         nob_sb_append_cstr(&background, ",");
@@ -133,15 +164,12 @@ int runMagick(ClayVideoDemo_Data *data) {
         nob_cmd_append(&cmd, "-define", "ashlar:best-fit=true");
     nob_cmd_append(&cmd, "-gravity", "center");
     nob_cmd_append(&cmd, ashlar_path);
-    fprintf(stderr, "First : %s\n", cmd.items[0]);
-    fprintf(stderr, "Second: %s\n", cmd.items[1]);
 
     bool ret = true;
     if (nob_cmd_run_sync_and_reset(&cmd)) {
-        data->resultFile = output_path;
         if (data->state & MAGICK_OPEN_ON_DONE) {
-            nob_cmd_append(&cmd, "xdg-open", output_path);
-            nob_cmd_run_async(cmd);
+            nob_cmd_append(&cmd, "xdg-open", data->outputFile.items);
+            nob_cmd_run_async_silent(cmd);
         }
     } else {
         fprintf(stderr, "Too bad, no result\n");
@@ -151,14 +179,26 @@ int runMagick(ClayVideoDemo_Data *data) {
     free(ashlar_path);
     if (data->state & MAGICK_RESIZE)
         free(resize_str);
-    for (size_t i = 0; i < to_free.count; i++) {
-        // free(&to_free.items[i]);
-        fprintf(stderr, "Freeing: \"%s\"\n", to_free.items[i]);
-        free((void *) to_free.items[i]);
-    }
-    nob_cmd_free(cmd);
+    nob_free_all(to_free);
     nob_cmd_free(to_free);
+    nob_cmd_free(cmd);
     return ret;
+}
+
+void ChangeOutputPath(ClayVideoDemo_Data *data) {
+    int allow_multiple_selects = false;
+    char const *filter_params[] = {"*.png"};
+    char *output_path = tinyfd_saveFileDialog("Path to output image", "./", 1, filter_params, "Image file");
+    if (!output_path) {
+        fprintf(stderr, "Too bad, no output files\n");
+        return;
+    }
+    if (output_path[0] != '\0') {
+        // Yeah, this buffer contains nothing, u can use it!
+        data->outputFile.count = 0;
+        nob_sb_append_cstr(&data->outputFile, output_path);
+        nob_sb_append_null(&data->outputFile);
+    }
 }
 
 // https://gitlab.com/camconn/fontconfig-example
@@ -238,14 +278,6 @@ int8_t scrollDirection(Vector2 scrollDelta) {
 Clay_RenderCommandArray CreateLayout(Clay_Context* context, ClayVideoDemo_Data *data) {
     Clay_SetCurrentContext(context);
     // Run once per frame
-    // Clay_SetLayoutDimensions((Clay_Dimensions) {
-    //     .width = GetScreenWidth(),
-    //     .height = GetScreenHeight()
-    // });
-    // Clay_SetLayoutDimensions((Clay_Dimensions) {
-    //     .width = GetRenderWidth() * GetWindowScaleDPI().x,
-    //     .height = GetRenderHeight() * GetWindowScaleDPI().y
-    // });
     Clay_SetLayoutDimensions(CLAY_DIMENSIONS);
     Vector2 mousePosition = GetMousePosition();
     Vector2 scrollDelta = GetMouseWheelMoveV();
@@ -265,13 +297,20 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, ClayVideoDemo_Data *
         printf("close\n");
     } else if (released("Support")) {
         nob_cmd_append(&cmd, "xdg-open", SUPPORT_URL);
-        nob_cmd_run_async(cmd);
-    } else if (released("Select_Images")) {
-        runMagick(data);
+        nob_cmd_run_async_silent(cmd);
+    } else if (released("Select Images")) {
+        GetInputFiles(data);
+        RunMagick(data);
+    } else if (released("Rerun")) {
+        RunMagick(data);
+    } else if (released("file")) {
+        printf("befor: %s\n", data->outputFile.items);
+        ChangeOutputPath(data);
+        printf("aftir: %s\n", data->outputFile.items);
     } else if (released("Open result")) {
-        if (data->resultFile[0] != '\0') {
-            nob_cmd_append(&cmd, "xdg-open", data->resultFile);
-            nob_cmd_run_async(cmd);
+        if (data->outputFile.items[0] != '\0') {
+            nob_cmd_append(&cmd, "xdg-open", data->outputFile.items);
+            nob_cmd_run_async_silent(cmd);
             nob_cmd_free(cmd);
         } else {
             fprintf(stderr, "No file was made\n");
