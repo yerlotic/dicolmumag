@@ -11,7 +11,6 @@
 #define SUPPORT_URL "https://youtu.be/dQw4w9WgXcQ"
 
 #define TESTING
-#define LAZY_RENDER
 
 // ascii file separator
 // thx ascii!
@@ -123,7 +122,7 @@ int RunMagick(ClayVideoDemo_Data *data) {
     nob_cmd_extend(&cmd, &data->inputFiles);
     // resize images
     // NOTE: should be after all images
-    char *resize_str;
+    char *resize_str = NULL;
     if (data->state & MAGICK_RESIZE) {
         // https://usage.imagemagick.org/resize
         resize_str = malloc(strlen(data->resize_str.h) + strlen(data->resize_str.w) + 2 + MODIFIERS); // 'x', '\0' and modifiers
@@ -195,7 +194,6 @@ int RunMagick(ClayVideoDemo_Data *data) {
 }
 
 void ChangeOutputPath(ClayVideoDemo_Data *data) {
-    int allow_multiple_selects = false;
     char const *filter_params[] = {"*.png"};
     char *output_path = tinyfd_saveFileDialog("Path to output image", "./", 1, filter_params, "Image file");
     if (!output_path) {
@@ -435,14 +433,14 @@ int main(void) {
 
     uint64_t clayRequiredMemory = Clay_MinMemorySize();
     Clay_Arena clayMemory = Clay_CreateArenaWithCapacityAndMemory(clayRequiredMemory, malloc(clayRequiredMemory));
-    Clay_Context *clayContext = Clay_Initialize(clayMemory, CLAY_DIMENSIONS, (Clay_ErrorHandler) { HandleClayErrors }); // This final argument is new since the video was published
+    Clay_Context *clayContext = Clay_Initialize(clayMemory, CLAY_DIMENSIONS, (Clay_ErrorHandler) { HandleClayErrors, NULL }); // This final argument is new since the video was published
     ClayVideoDemo_Data data = ClayVideoDemo_Initialize();
     Clay_SetMeasureTextFunction(Raylib_MeasureText, fonts);
     SetTargetFPS(GetMonitorRefreshRate(GetCurrentMonitor()));
     // Disable ESC to exit
     SetExitKey(KEY_NULL);
 #ifdef TESTING
-    Clay_SetDebugModeEnabled(true);
+    // Clay_SetDebugModeEnabled(true);
 #endif
 #ifdef LAZY_RENDER
     AppState old_state = {0};
@@ -471,7 +469,9 @@ int main(void) {
         }
         // if we might not care to render anything anymore
         if (time > prevtime) {
+#ifdef DEBUG
             fprintf(stderr, "The time has come\n");
+#endif // DEBUG
             do {
                 // Refresh raylib state (usually happends on EndDrawing())
                 PollInputEvents();
@@ -481,8 +481,9 @@ int main(void) {
 
                 // Don't sleep, just exit
                 if ((data.shouldClose = WindowShouldClose())) break;
-
+#ifdef DEBUG
                 fprintf(stderr, "Not rendering: %d\n", time);
+#endif // DEBUG
                 WaitTime(1);
             } while (true);
             // Look! it moved!

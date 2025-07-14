@@ -71,7 +71,7 @@ void RenderDropdownMenuItem(Clay_String text) {
     }
 }
 
-void RenderNumberPicker(Clay_String name, char* value) {
+void RenderNumberPicker(char* value) {
     CLAY({
         .layout = { .padding = { 16, 16, 8, 8 }},
         .backgroundColor = BUTTON_COLOR,
@@ -97,7 +97,7 @@ void RenderColorChannel(Clay_String text, Clay_Color color, char *value) {
             }));
             CLAY_TEXT(CLAY_STRING(":"), DEFAULT_TEXT);
         }
-        RenderNumberPicker(CLAY_STRING("pick"), value);
+        RenderNumberPicker(value);
     }
 }
 
@@ -200,11 +200,11 @@ typedef struct {
 typedef struct {
     uint32_t requestedDocumentIndex;
     uint32_t* selectedDocumentIndex;
-    int* state;
+    uint32_t* state;
 } SidebarClickData;
 
 void HandleSidebarInteraction(
-    Clay_ElementId elementId,
+    __attribute__((unused)) Clay_ElementId elementId,
     Clay_PointerData pointerData,
     intptr_t userData
 ) {
@@ -253,9 +253,8 @@ void RenderResize(ClayVideoDemo_Data *data) {
         }
     }
 }
-
 void HandleFlagInteraction(
-    Clay_ElementId elementId,
+    __attribute__((unused)) Clay_ElementId elementId,
     Clay_PointerData pointerData,
     intptr_t userData
 ) {
