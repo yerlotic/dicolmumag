@@ -493,7 +493,7 @@ int main(void) {
 
         Clay_Raylib_Render(renderCommands, fonts);
 #ifdef TESTING
-        DrawFPS(0,0);
+        // DrawFPS(0,0);
 #endif // TESTING
         EndDrawing();
     }
