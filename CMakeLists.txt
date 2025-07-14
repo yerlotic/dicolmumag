@@ -27,7 +27,7 @@ target_include_directories(app PUBLIC .)
 target_link_libraries(app PUBLIC raylib fontconfig m)
 
 # set(CMAKE_C_FLAGS "-Werror -Wall -Wextra -Wpedantic -fwrapv -fanalyzer")
-set(CMAKE_C_FLAGS "-Wall -Wextra -Wpedantic -fwrapv")
+set(CMAKE_C_FLAGS "-Wall -Wextra -Wpedantic -fwrapv -Wno-missing-braces")
 # set(USE_EXTERNAL_GLFW ON)
 
 # set(CUSTOMIZE_BUILD ON)
@@ -36,7 +36,7 @@ set(CMAKE_C_FLAGS "-Wall -Wextra -Wpedantic -fwrapv")
 # set(PLATFORM PLATFORM_DESKTOP_SDL3)
 
 # set(BUILD_SHARED_LIBS ON)
-set(CMAKE_BUILD_TYPE DEBUG)
+# set(CMAKE_BUILD_TYPE DEBUG)
 
 option(LAZY_RENDER "Why render when u can do nothing?" OFF)
 # option(WITH_FEATURE_B "Option description" OFF)
