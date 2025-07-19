@@ -190,6 +190,7 @@ typedef struct {
     char cur_char[6]; // max: 6 bytes for string repr
     rgba color;
     rgba_str color_str;
+    Nob_Proc magickPid;
 } ClayVideoDemo_Data;
 
 typedef struct {
