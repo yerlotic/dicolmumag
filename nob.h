@@ -159,7 +159,7 @@
       from other languages (for whatever reason).
 
       If only few specific names create conflicts for you, you can just #undef those names after the
-      `#include <nob.h>` since they are macros anyway.
+      `#include <nob.h>` since they are macros anyway.
 */
 
 #ifndef NOB_H_

@@ -174,7 +174,8 @@ int RunMagick(ClayVideoDemo_Data *data) {
     nob_cmd_append(&cmd, ashlar_path);
 
     bool ret = true;
-    if (nob_cmd_run_sync_and_reset(&cmd)) {
+    data->magickPid = nob_cmd_run_async_and_reset(&cmd);
+    if (data->magickPid != NOB_INVALID_PROC) {
         if (data->state & MAGICK_OPEN_ON_DONE) {
             nob_cmd_append(&cmd, "xdg-open", data->outputFile.items);
             nob_cmd_run_async_silent(cmd);
@@ -459,7 +460,7 @@ int main(void) {
         state = GetAppState();
         Clay_RenderCommandArray renderCommands = CreateLayout(clayContext, &data, state);
         BeginDrawing();
-        ClearBackground(BLACK);
+        // ClearBackground(BLACK);
 #ifdef LAZY_RENDER
         int time = (int)GetTime();
 
@@ -475,12 +476,12 @@ int main(void) {
             do {
                 // Refresh raylib state (usually happends on EndDrawing())
                 PollInputEvents();
-                state = GetAppState();
-                if (!(are_equal = StatesEqual(&state, &old_state))) break;
-                old_state = state;
 
                 // Don't sleep, just exit
                 if ((data.shouldClose = WindowShouldClose())) break;
+                state = GetAppState();
+                if (!(are_equal = StatesEqual(&state, &old_state))) break;
+                old_state = state;
 #ifdef DEBUG
                 fprintf(stderr, "Not rendering: %d\n", time);
 #endif // DEBUG
