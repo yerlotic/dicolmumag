@@ -8,12 +8,12 @@
 #define NOB_IMPLEMENTATION
 #include "nob.h"
 
-const int FONT_ID_BODY_16 = 0;
-const int FONT_LOAD_SIZE = 40;
-const int button_font_size = 20;
-const int sidebar_font_size = 23;
-const int document_font_size = 30;
-const int title_font_size = 40;
+const uint8_t FONT_ID_BODY_16 = 0;
+const uint8_t FONT_LOAD_SIZE = 40;
+const uint8_t button_font_size = 20;
+const uint8_t sidebar_font_size = 23;
+const uint8_t document_font_size = 30;
+const uint8_t title_font_size = 40;
 
 #define ADVANCED_SETTINGS 4
 
@@ -128,7 +128,7 @@ typedef struct {
 
 typedef struct {
     Document *documents;
-    uint32_t length;
+    uint8_t length;
 } DocumentArray;
 
 Document documentsRaw[5];
@@ -178,11 +178,11 @@ typedef struct resize_str_t {
 // } ClayVideoDemo_Strings;
 
 typedef struct {
-    uint32_t selectedDocumentIndex;
+    uint8_t selectedDocumentIndex;
     float yOffset;
     ClayVideoDemo_Arena frameArena;
     bool shouldClose;
-    uint32_t state;
+    uint16_t state;
     Nob_String_Builder outputFile;
     Nob_Cmd inputFiles;
     resize_t resize;
@@ -194,21 +194,22 @@ typedef struct {
 } ClayVideoDemo_Data;
 
 typedef struct {
-    uint32_t flag;
-    uint32_t *state;
+    uint16_t flag;
+    uint16_t *state;
 } FlagClickData;
 
 typedef struct {
-    uint32_t requestedDocumentIndex;
-    uint32_t* selectedDocumentIndex;
-    uint32_t* state;
+    uint8_t requestedDocumentIndex;
+    uint8_t* selectedDocumentIndex;
+    uint16_t* state;
 } SidebarClickData;
 
 void HandleSidebarInteraction(
-    __attribute__((unused)) Clay_ElementId elementId,
+    Clay_ElementId elementId,
     Clay_PointerData pointerData,
     intptr_t userData
 ) {
+    (void) elementId;
     SidebarClickData *clickData = (SidebarClickData*)userData;
     // If this button was clicked
     if (pointerData.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME) {
@@ -255,10 +256,11 @@ void RenderResize(ClayVideoDemo_Data *data) {
     }
 }
 void HandleFlagInteraction(
-    __attribute__((unused)) Clay_ElementId elementId,
+    Clay_ElementId elementId,
     Clay_PointerData pointerData,
     intptr_t userData
 ) {
+    (void) elementId;
     FlagClickData *clickData = (FlagClickData *)userData;
     // If this button was clicked
     if (pointerData.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME) {
@@ -267,9 +269,9 @@ void HandleFlagInteraction(
 }
 
 void RenderFlag(Clay_String text,
-                uint32_t *state,
-                uint32_t triggerFlag,
-                uint32_t displayFlag,
+                uint16_t *state,
+                uint16_t triggerFlag,
+                uint16_t displayFlag,
                 ClayVideoDemo_Arena *arena) {
     Clay_Color background = BUTTON_COLOR;
     if (*state & displayFlag)
@@ -462,7 +464,7 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                 },
                 .cornerRadius = LAYOUT_RADIUS,
             }) {
-                for (uint32_t i = 0; i < documents.length; i++) {
+                for (uint8_t i = 0; i < documents.length; i++) {
                     Document document = documents.documents[i];
                     Clay_LayoutConfig sidebarButtonLayout = {
                         .sizing = { .width = CLAY_SIZING_GROW(0) },
