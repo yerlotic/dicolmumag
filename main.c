@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <unistd.h>
 #define CLAY_IMPLEMENTATION
 #include "clay.h"
 #include "raylib/raylib.h"
@@ -179,6 +178,7 @@ int RunMagick(ClayVideoDemo_Data *data) {
         if (data->state & MAGICK_OPEN_ON_DONE) {
             nob_cmd_append(&cmd, "xdg-open", data->outputFile.items);
             nob_cmd_run_async_silent(cmd);
+            data->magickPid = NOB_INVALID_PROC;
         }
     } else {
         fprintf(stderr, "Too bad, no result\n");
