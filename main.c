@@ -51,11 +51,10 @@ typedef struct AppState {
 #define released(id) IsMouseButtonReleased(0) && Clay_PointerOver(Clay_GetElementId(CLAY_STRING(id)))
 #define CLAY_DIMENSIONS (Clay_Dimensions) { .width = GetScreenWidth(), \
                                             .height = GetScreenHeight() }
-// #define RunMagickThreaded() \
-//         pthread_cancel(data->magickThread); \
-//         pthread_create(&data->magickThread, NULL, RunMagickThread, (void *)data)
-// #define CLAY_DIMENSIONS (Clay_Dimensions) { .width = GetRenderWidth(),
-//                                             .height = GetRenderHeight() }
+#define RunMagickThreaded() \
+        cthreads_thread_ensure_cancelled(data->magickThread, &data->threadRunning); \
+        cthreads_thread_create(&data->magickThread, NULL, RunMagickThread, (void *)data, NULL);
+
 void HandleClayErrors(Clay_ErrorData errorData) {
     printf("[CLAY] [ERROR] %s\n", errorData.errorText.chars);
 }
@@ -96,6 +95,13 @@ bool nob_proc_running(Nob_Proc proc) {
     }
 #endif // _WIN32
     return false;
+}
+
+void cthreads_thread_ensure_cancelled(struct cthreads_thread thread, bool *running) {
+    if (*running) {
+        cthreads_thread_cancel(thread);
+        *running = false;
+    }
 }
 
 #ifdef _WIN32
@@ -226,7 +232,10 @@ int RunMagick(ClayVideoDemo_Data *data) {
 }
 
 void* RunMagickThread(void *arg) {
-    RunMagick((ClayVideoDemo_Data *) arg);
+    ClayVideoDemo_Data *data = (ClayVideoDemo_Data *) arg;
+    data->threadRunning = true;
+    RunMagick(data);
+    data->threadRunning = false;
     return NULL;
 }
 
@@ -377,13 +386,12 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, ClayVideoDemo_Data *
     } else if (released("Select Images")) {
         GetInputFiles(data);
         nob_kill(&data->magickProc);
-        // struct cthreads_thread data->magickThread;
-        // cthreads_thread_create(data->magickThread);
-        RunMagick(data);
+        RunMagickThreaded();
     } else if (released("Run")) {
-        RunMagick(data);
+        RunMagickThreaded();
     } else if (released("Stop")) {
         nob_kill(&data->magickProc);
+        cthreads_thread_ensure_cancelled(data->magickThread, &data->threadRunning);
     } else if (released("file")) {
         printf("befor: %s\n", data->outputFile.items);
         ChangeOutputPath(data);

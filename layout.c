@@ -1,10 +1,9 @@
 #include "clay.h"
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
 
 // #define LATTE
-#include "colors.h"
+#include "colors.c"
 #include "thirdparty/cthreads.h"
 #define NOB_IMPLEMENTATION
 #include "nob.h"
@@ -327,6 +326,8 @@ ClayVideoDemo_Data ClayVideoDemo_Initialize() {
         // This should be set because these strings are only updated when color is updated
         .color_str = { .r = "0", .b = "0", .g = "0", .a = "100" },
         .magickProc = NOB_INVALID_PROC,
+        .threadRunning = false,
+        .magickThread = {0},
     };
     nob_sb_append_cstr(&data.outputFile, "res.png");
     return data;
