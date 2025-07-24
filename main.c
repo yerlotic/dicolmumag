@@ -1,4 +1,7 @@
+#include "nob.h"
+#include "thirdparty/cthreads.h"
 #include <stdio.h>
+#include <unistd.h>
 #define CLAY_IMPLEMENTATION
 #include "clay.h"
 #include "raylib/raylib.h"
@@ -8,6 +11,10 @@
 #include <assert.h>
 #include <fontconfig/fontconfig.h>
 #define SUPPORT_URL "https://youtu.be/dQw4w9WgXcQ"
+#include "thirdparty/cthreads.c"
+#ifdef _WIN32
+#include <processthreadsapi.h>
+#endif // _WIN32
 
 #define TESTING
 
@@ -44,6 +51,9 @@ typedef struct AppState {
 #define released(id) IsMouseButtonReleased(0) && Clay_PointerOver(Clay_GetElementId(CLAY_STRING(id)))
 #define CLAY_DIMENSIONS (Clay_Dimensions) { .width = GetScreenWidth(), \
                                             .height = GetScreenHeight() }
+// #define RunMagickThreaded() \
+//         pthread_cancel(data->magickThread); \
+//         pthread_create(&data->magickThread, NULL, RunMagickThread, (void *)data)
 // #define CLAY_DIMENSIONS (Clay_Dimensions) { .width = GetRenderWidth(),
 //                                             .height = GetRenderHeight() }
 void HandleClayErrors(Clay_ErrorData errorData) {
@@ -57,6 +67,36 @@ void HandleClayErrors(Clay_ErrorData errorData) {
         free((void *) to_free.items[i]);                        \
     }                                                           \
 } while(0)
+
+void nob_kill(Nob_Proc *proc) {
+    if (*proc == NOB_INVALID_PROC) return;
+#ifdef _WIN32
+    TerminateProcess(proc, 69);
+#else
+    kill(*proc, SIGKILL);
+#endif // _WIN32
+    *proc = NOB_INVALID_PROC;
+}
+
+bool nob_proc_running(Nob_Proc proc) {
+    if (proc == NOB_INVALID_PROC) return false;
+#ifdef _WIN32
+    return GetExitCodeProcess(proc, STILL_ACTIVE);
+#else
+    int status;
+    pid_t return_pid = waitpid(proc, &status, WNOHANG);
+    if (return_pid == -1) {
+        // error
+        return false;
+    } else if (return_pid == 0) {
+        /* child is still running */
+        return true;
+    } else if (return_pid == proc) {
+        return false;
+    }
+#endif // _WIN32
+    return false;
+}
 
 #ifdef _WIN32
 #define BLACKHOLE "nul"
@@ -173,17 +213,8 @@ int RunMagick(ClayVideoDemo_Data *data) {
     nob_cmd_append(&cmd, ashlar_path);
 
     bool ret = true;
-    data->magickPid = nob_cmd_run_async_and_reset(&cmd);
-    if (data->magickPid != NOB_INVALID_PROC) {
-        if (data->state & MAGICK_OPEN_ON_DONE) {
-            nob_cmd_append(&cmd, "xdg-open", data->outputFile.items);
-            nob_cmd_run_async_silent(cmd);
-            data->magickPid = NOB_INVALID_PROC;
-        }
-    } else {
-        fprintf(stderr, "Too bad, no result\n");
-        ret = false;
-    }
+    data->magickProc = nob_cmd_run_async(cmd);
+
     // Freeing memory
     free(ashlar_path);
     if (data->state & MAGICK_RESIZE)
@@ -192,6 +223,11 @@ int RunMagick(ClayVideoDemo_Data *data) {
     nob_cmd_free(to_free);
     nob_cmd_free(cmd);
     return ret;
+}
+
+void* RunMagickThread(void *arg) {
+    RunMagick((ClayVideoDemo_Data *) arg);
+    return NULL;
 }
 
 void ChangeOutputPath(ClayVideoDemo_Data *data) {
@@ -326,6 +362,12 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, ClayVideoDemo_Data *
     );
 
     Nob_Cmd cmd = {0};
+
+    if (data->state & MAGICK_OPEN_ON_DONE && data->magickProc != NOB_INVALID_PROC && !nob_proc_running(data->magickProc)) {
+        nob_cmd_append(&cmd, "xdg-open", data->outputFile.items);
+        nob_cmd_run_async_silent(cmd);
+        data->magickProc = NOB_INVALID_PROC;
+    }
     if (released("Quit")) {
         data->shouldClose = true;
         printf("close\n");
@@ -334,9 +376,14 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, ClayVideoDemo_Data *
         nob_cmd_run_async_silent(cmd);
     } else if (released("Select Images")) {
         GetInputFiles(data);
+        nob_kill(&data->magickProc);
+        // struct cthreads_thread data->magickThread;
+        // cthreads_thread_create(data->magickThread);
         RunMagick(data);
     } else if (released("Run")) {
         RunMagick(data);
+    } else if (released("Stop")) {
+        nob_kill(&data->magickProc);
     } else if (released("file")) {
         printf("befor: %s\n", data->outputFile.items);
         ChangeOutputPath(data);
@@ -498,6 +545,7 @@ int main(void) {
 #endif // TESTING
         EndDrawing();
     }
+    fprintf(stderr, "Cancelling threads\n");
 
     Clay_Raylib_Close();
 }

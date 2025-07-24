@@ -5,6 +5,7 @@
 
 // #define LATTE
 #include "colors.h"
+#include "thirdparty/cthreads.h"
 #define NOB_IMPLEMENTATION
 #include "nob.h"
 
@@ -190,7 +191,9 @@ typedef struct {
     char cur_char[6]; // max: 6 bytes for string repr
     rgba color;
     rgba_str color_str;
-    Nob_Proc magickPid;
+    Nob_Proc magickProc;
+    struct cthreads_thread magickThread;
+    bool threadRunning;
 } ClayVideoDemo_Data;
 
 typedef struct {
@@ -323,6 +326,7 @@ ClayVideoDemo_Data ClayVideoDemo_Initialize() {
         .color = { .r = 0, .b = 0, .g = 0, .a = 100 },
         // This should be set because these strings are only updated when color is updated
         .color_str = { .r = "0", .b = "0", .g = "0", .a = "100" },
+        .magickProc = NOB_INVALID_PROC,
     };
     nob_sb_append_cstr(&data.outputFile, "res.png");
     return data;
@@ -428,7 +432,10 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                 }
             }
             RenderHeaderButton(CLAY_STRING("Select Images"));
-            RenderHeaderButton(CLAY_STRING("Run"));
+            if (data->magickProc == NOB_INVALID_PROC)
+                RenderHeaderButton(CLAY_STRING("Run"));
+            else
+                RenderHeaderButton(CLAY_STRING("Stop"));
             CLAY({ .layout = { .sizing = { CLAY_SIZING_GROW(0) }}}) {}
             CLAY({.id = CLAY_ID("file")}) {CLAY_TEXT(CLAY_SB_STRING(data->outputFile), DEFAULT_TEXT);}
             CLAY({ .layout = { .sizing = { CLAY_SIZING_GROW(0) }}}) {}
