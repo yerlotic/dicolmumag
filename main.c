@@ -255,8 +255,8 @@ void* RunMagickThread(void *arg) {
 }
 
 void ChangeOutputPath(ClayVideoDemo_Data *data) {
-    char const *filter_params[] = {"*.png"};
-    char *output_path = tinyfd_saveFileDialog("Path to output image", "./", 1, filter_params, "Image file");
+    const char *filter_params[] = {"*.png", "*.avif", "*.jpg", "*"};
+    char *output_path = tinyfd_saveFileDialog("Path to output image", NULL, sizeof(filter_params) / sizeof(filter_params[0]), filter_params, "Image files");
     if (!output_path) {
         fprintf(stderr, "Too bad, no output files\n");
         return;
