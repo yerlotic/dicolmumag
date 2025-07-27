@@ -7,6 +7,7 @@
 #include "thirdparty/cthreads.h"
 #define NOB_IMPLEMENTATION
 #include "nob.h"
+#include "strings.h"
 
 const uint8_t FONT_ID_BODY_16 = 0;
 const uint8_t FONT_LOAD_SIZE = 40;
@@ -184,6 +185,7 @@ typedef struct {
     bool shouldClose;
     uint16_t state;
     Nob_String_Builder outputFile;
+    Nob_String_Builder tempDir;
     Nob_Cmd inputFiles;
     resize_t resize;
     resize_str_t resize_str;
@@ -319,6 +321,7 @@ ClayVideoDemo_Data ClayVideoDemo_Initialize() {
         .state = MAGICK_BEST_FIT | MAGICK_OPEN_ON_DONE | MAGICK_RESIZE | MAGICK_SHRINK_LARGER,
         .selectedDocumentIndex = ADVANCED_SETTINGS,
         .outputFile = {0},
+        .tempDir = {0},
         .inputFiles = {0},
         .resize = {.w = 1000, .h = 1000},
         .resize_str = {.w = "1000", .h = "1000"},
@@ -523,13 +526,6 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                     .sizing = {
                         .height = CLAY_SIZING_GROW(0),
                         .width = CLAY_SIZING_GROW(0),
-                        // .width = CLAY_SIZING_GROW(100, 400)
-                        // .width = {.type = CLAY__SIZING_TYPE_FIT, .size = {
-                        //     .minMax = {
-                        //         .min = 100,
-                        //         // .max = 300
-                        //     }
-                        // }}
                     }
                 },
                 .cornerRadius = LAYOUT_RADIUS,
@@ -583,6 +579,24 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                         RenderFlag(CLAY_STRING("Only Enlarge Smaller"), &data->state,
                                 (data->state & MAGICK_SHRINK_LARGER) ? MAGICK_SHRINK_LARGER | MAGICK_ENLARGE_SMALLER : MAGICK_ENLARGE_SMALLER, MAGICK_ENLARGE_SMALLER, &data->frameArena);
                         RenderFlag(CLAY_STRING("Fill area"), &data->state, MAGICK_FILL_AREA, MAGICK_FILL_AREA, &data->frameArena);
+                    }
+                    CLAY({
+                        .id = CLAY_ID("LocationSettings"),
+                        .layout = {
+                            .childGap = 8,
+                            .layoutDirection = CLAY_TOP_TO_BOTTOM,
+                        }
+                    }) {
+                        CLAY_TEXT(CLAY_STRING(TEMP_FILES), DEFAULT_TEXT);
+                        CLAY({.layout = {.padding = 8}}) {CLAY_TEXT(CLAY_STRING(TEMP_FILES_EXPLANATION), BUTTON_TEXT);}
+                        CLAY({.layout = {.layoutDirection = CLAY_LEFT_TO_RIGHT, .childGap = 8, .padding = 8}}) {
+                            CLAY_TEXT(CLAY_STRING("Current:"), BUTTON_TEXT);
+                            if (data->tempDir.count == 0)
+                                CLAY_TEXT(CLAY_STRING("default"), CLAY_TEXT_CONFIG({ .fontId = FONT_ID_BODY_16, .fontSize = button_font_size, .textColor = COLOR_OVERLAY0 }));
+                            else
+                                CLAY_TEXT(CLAY_SB_STRING(data->tempDir), BUTTON_TEXT);
+                        }
+                        RenderHeaderButton(CLAY_STRING(SELECT_TEMP));
                     }
                 }
             }

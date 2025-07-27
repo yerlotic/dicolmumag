@@ -9,6 +9,9 @@ set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE) # don't build the supplied examples
 set(BUILD_GAMES    OFF CACHE BOOL "" FORCE) # don't build the supplied example games
 # set(PLATFORM       SDL)
 
+set(CUSTOMIZE_BUILD ON)
+set(USE_EXTERNAL_GLFW ON)
+
 FetchContent_Declare(
     raylib
     GIT_REPOSITORY "https://github.com/raysan5/raylib.git"
@@ -30,12 +33,11 @@ target_link_libraries(app PUBLIC raylib fontconfig m)
 set(CMAKE_C_FLAGS "-Wall -Wextra -Wpedantic -fwrapv -Wno-missing-braces")
 # set(USE_EXTERNAL_GLFW ON)
 
-# set(CUSTOMIZE_BUILD ON)
 # set(PLATFORM PLATFORM_DESKTOP)
 # set(GRAPHICS GRAPHICS_API_SDL)
 # set(PLATFORM PLATFORM_DESKTOP_SDL3)
 
-# set(BUILD_SHARED_LIBS ON)
+set(BUILD_SHARED_LIBS ON)
 # set(CMAKE_BUILD_TYPE DEBUG)
 
 option(LAZY_RENDER "Why render when u can do nothing?" OFF)

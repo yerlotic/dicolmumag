@@ -156,6 +156,8 @@ int RunMagick(ClayVideoDemo_Data *data) {
 
     Nob_Cmd cmd = {0};
     Nob_Cmd to_free = {0};
+    Nob_String_Builder buf = {0};
+    bool free_buf = false;
     char *ashlar_path = malloc(strlen(ASHLAR_PREFIX) + data->outputFile.count);
     *ashlar_path = '\0';
     strcat(ashlar_path, ASHLAR_PREFIX);
@@ -193,28 +195,39 @@ int RunMagick(ClayVideoDemo_Data *data) {
     if (data->state & MAGICK_TRANSPARENT_BG) {
         nob_cmd_append(&cmd, "-background", "transparent");
     } else {
-        Nob_String_Builder background = {0};
-        nob_sb_append_cstr(&background, "rgba(");
-        nob_sb_append_cstr(&background, data->color_str.r);
-        nob_sb_append_cstr(&background, ",");
-        nob_sb_append_cstr(&background, data->color_str.g);
-        nob_sb_append_cstr(&background, ",");
-        nob_sb_append_cstr(&background, data->color_str.b);
-        nob_sb_append_cstr(&background, ",");
+        buf.count = 0;
+        nob_sb_append_cstr(&buf, "rgba(");
+        nob_sb_append_cstr(&buf, data->color_str.r);
+        nob_sb_append_cstr(&buf, ",");
+        nob_sb_append_cstr(&buf, data->color_str.g);
+        nob_sb_append_cstr(&buf, ",");
+        nob_sb_append_cstr(&buf, data->color_str.b);
+        nob_sb_append_cstr(&buf, ",");
         // 1.00 - 5 chars
         char alpha[5] = {0};
         sprintf(alpha, "%0.2f", (float)data->color.a/100);
-        nob_sb_append_cstr(&background, alpha);
-        nob_sb_append_cstr(&background, ")");
-        nob_sb_append_null(&background);
+        nob_sb_append_cstr(&buf, alpha);
+        nob_sb_append_cstr(&buf, ")");
+        nob_sb_append_null(&buf);
 
-        char* pointer = strdup(background.items);
+        char* pointer = strdup(buf.items);
         nob_cmd_append(&to_free, pointer);
         nob_cmd_append(&cmd, "-background", pointer);
-        nob_sb_free(background);
+        free_buf = true;
     }
     if (data->state & MAGICK_BEST_FIT)
         nob_cmd_append(&cmd, "-define", "ashlar:best-fit=true");
+    if (data->tempDir.count > 0) {
+        nob_cmd_append(&cmd,"-define");
+        buf.count = 0;
+        nob_sb_append_cstr(&buf, "registry:temporary-path=");
+        nob_sb_append_buf(&buf, data->tempDir.items, data->tempDir.count);
+        nob_sb_append_null(&buf);
+        char* temp_path = strdup(buf.items);
+        nob_cmd_append(&to_free, temp_path);
+        nob_cmd_append(&cmd, temp_path);
+        free_buf = true;
+    }
     nob_cmd_append(&cmd, "-gravity", "center");
     nob_cmd_append(&cmd, ashlar_path);
 
@@ -225,6 +238,8 @@ int RunMagick(ClayVideoDemo_Data *data) {
     free(ashlar_path);
     if (data->state & MAGICK_RESIZE)
         free(resize_str);
+    if (free_buf)
+        nob_sb_free(buf);
     nob_free_all(to_free);
     nob_cmd_free(to_free);
     nob_cmd_free(cmd);
@@ -251,6 +266,21 @@ void ChangeOutputPath(ClayVideoDemo_Data *data) {
         data->outputFile.count = 0;
         nob_sb_append_cstr(&data->outputFile, output_path);
         nob_sb_append_null(&data->outputFile);
+    }
+}
+
+void SetTempDir(Nob_String_Builder *sb) {
+    char *output_path = tinyfd_selectFolderDialog("Path to a location for temporary files", "./");
+    if (!output_path) {
+        fprintf(stderr, "Too bad, no output tempdir\n");
+        return;
+    }
+    if (output_path[0] != '\0') {
+        // Yeah, this buffer contains nothing, u can use it!
+        sb->count = 0;
+        nob_sb_append_cstr(sb, output_path);
+        nob_sb_append_null(sb);
+        fprintf(stderr, "Set tmp dir: %s\n", sb->items);
     }
 }
 
@@ -387,6 +417,8 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, ClayVideoDemo_Data *
         GetInputFiles(data);
         nob_kill(&data->magickProc);
         RunMagickThreaded();
+    } else if (released(SELECT_TEMP)) {
+        SetTempDir(&data->tempDir);
     } else if (released("Run")) {
         RunMagickThreaded();
     } else if (released("Stop")) {
