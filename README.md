@@ -25,6 +25,14 @@ App for creating collages with [imagemagick](https://imagemagick.org)
 ![Collage 1](resources/collage1.avif)
 </details>
 
+## Features
+
+- [ ] Specify gravity
+- [x] Best fit
+- [x] Transparent background
+- [x] Resize input images
+- [x] Change location for temporary files
+
 ## Requirements
 
  - C Compiler
