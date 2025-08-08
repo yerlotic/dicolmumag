@@ -467,6 +467,8 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, ClayVideoDemo_Data *
         sprintf(data->color_str.b, "%d", data->color.b);
     } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("a")))) {
         data->color.a += scrollDirection(scrollDelta);
+        // guess what
+        // we dont have a tool for that called %
         if (data->color.a == 255) data->color.a = 100;
         if (data->color.a > 100) data->color.a = 0;  // wrap
         sprintf(data->color_str.a, "%d", data->color.a);
