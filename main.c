@@ -228,7 +228,7 @@ int RunMagick(ClayVideoDemo_Data *data) {
         nob_cmd_append(&cmd, temp_path);
         free_buf = true;
     }
-    nob_cmd_append(&cmd, "-gravity", "center");
+    nob_cmd_append(&cmd, "-gravity", data->gravity.values[data->gravity.selected]);
     nob_cmd_append(&cmd, ashlar_path);
 
     bool ret = true;
@@ -394,11 +394,6 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, ClayVideoDemo_Data *
             (Clay_Vector2) { mousePosition.x, mousePosition.y },
             IsMouseButtonDown(0)
     );
-    Clay_UpdateScrollContainers(
-            true,
-            (Clay_Vector2) { scrollDelta.x, scrollDelta.y },
-            GetFrameTime()
-    );
 
     Nob_Cmd cmd = {0};
 
@@ -472,6 +467,18 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, ClayVideoDemo_Data *
         if (data->color.a == 255) data->color.a = 100;
         if (data->color.a > 100) data->color.a = 0;  // wrap
         sprintf(data->color_str.a, "%d", data->color.a);
+    } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("GravitySelection")))) {
+        data->gravity.selected -= scrollDirection(scrollDelta);
+        // guess what
+        // we dont have a tool for that called %
+        if (data->gravity.selected == 255) data->gravity.selected = gravity_len - 1;
+        if (data->gravity.selected > gravity_len - 1) data->gravity.selected = 0;  // wrap
+    } else {
+        Clay_UpdateScrollContainers(
+                true,
+                (Clay_Vector2) { scrollDelta.x, scrollDelta.y },
+                GetFrameTime()
+        );
     }
 
     return ClayVideoDemo_CreateLayout(data);
