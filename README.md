@@ -27,7 +27,10 @@ App for creating collages with [imagemagick](https://imagemagick.org)
 
 ## Features
 
-- [ ] Specify gravity
+- [ ] Specify output resolutions and margins
+- [ ] Indication of success or failure
+- [ ] Change color scheme
+- [x] Specify gravity
 - [x] Best fit
 - [x] Transparent background
 - [x] Resize input images
@@ -42,17 +45,16 @@ App for creating collages with [imagemagick](https://imagemagick.org)
 
 ## Installation
 
-First, compile this:
+1. Clone the repo
+2. Compile
+    ```shell
+    mkdir -p build
+    (cd build && cmake .. && make -j$(nproc))
+    ```
 
-```shell
-git clone https://gitea.vsopu.net/me/dicolmumag && cd dicolmumag
-mkdir -p build
-(cd build && cmake .. && make -j$(nproc))
-```
+3. Run:
 
-Then run:
-
-```shell
-./app
-```
+    ```shell
+    ./build/app
+    ```
 

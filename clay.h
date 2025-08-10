@@ -1,4 +1,4 @@
-/* VERSION: 0.14 */
+/* VERSION: 0.14
 
 /*
     NOTE: In order to use this library you must define

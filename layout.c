@@ -1,4 +1,5 @@
 #include "clay.h"
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -33,7 +34,7 @@ const uint8_t title_font_size = 40;
 #define MAGICK_RESIZE_PERCENTAGE      "%"
 #define MAGICK_RESIZE_PIXEL_LIMIT     "@"
 
-void RenderHeaderButton(Clay_String text) {
+static inline void RenderHeaderButton(Clay_String text) {
     CLAY({
         .layout = {
             .padding = { 16, 16, 8, 8 },
@@ -41,7 +42,6 @@ void RenderHeaderButton(Clay_String text) {
                 .x = CLAY_ALIGN_X_CENTER,
                 .y = CLAY_ALIGN_Y_CENTER,
             },
-            // .sizing = CLAY_SIZING_FIT(200, 200)
         },
         .backgroundColor = BUTTON_COLOR,
         .id = CLAY_SID(text),
@@ -57,7 +57,7 @@ void RenderHeaderButton(Clay_String text) {
     }
 }
 
-void RenderDropdownMenuItem(Clay_String text) {
+static inline void RenderDropdownMenuItem(Clay_String text) {
     CLAY({
         .backgroundColor = COLOR_SURFACE0,
         .cornerRadius = BUTTON_RADIUS,
@@ -72,7 +72,7 @@ void RenderDropdownMenuItem(Clay_String text) {
     }
 }
 
-void RenderNumberPicker(char* value) {
+static inline void RenderNumberPicker(char* value) {
     CLAY({
         .layout = { .padding = { 16, 16, 8, 8 }},
         .backgroundColor = BUTTON_COLOR,
@@ -83,7 +83,7 @@ void RenderNumberPicker(char* value) {
     }
 }
 
-void RenderColorChannel(Clay_String text, Clay_Color color, char *value) {
+static inline void RenderColorChannel(Clay_String text, Clay_Color color, char *value) {
     CLAY({
         .layout = {
             .layoutDirection = CLAY_LEFT_TO_RIGHT,
@@ -102,7 +102,7 @@ void RenderColorChannel(Clay_String text, Clay_Color color, char *value) {
     }
 }
 
-void RenderColor(Clay_Color color) {
+static inline void RenderColor(Clay_Color color) {
     uint8_t border_width = 5;
     uint8_t radius = 5;
     uint8_t size = 50;
@@ -174,9 +174,11 @@ typedef struct resize_str_t {
     char w[6], h[6];  // max: 6 bytes for string repr
 } resize_str_t;
 
-// typedef struct ClayVideoDemo_Strings {
-//
-// } ClayVideoDemo_Strings;
+#define gravity_len 10
+typedef struct gravity_t {
+    char *values[gravity_len];
+    uint8_t selected;
+} gravity_t;
 
 typedef struct {
     uint8_t selectedDocumentIndex;
@@ -195,6 +197,7 @@ typedef struct {
     Nob_Proc magickProc;
     struct cthreads_thread magickThread;
     bool threadRunning;
+    gravity_t gravity;
 } ClayVideoDemo_Data;
 
 typedef struct {
@@ -208,7 +211,7 @@ typedef struct {
     uint16_t* state;
 } SidebarClickData;
 
-void HandleSidebarInteraction(
+static inline void HandleSidebarInteraction(
     Clay_ElementId elementId,
     Clay_PointerData pointerData,
     intptr_t userData
@@ -233,7 +236,7 @@ void HandleSidebarInteraction(
     }
 }
 
-void RenderMagickColor(ClayVideoDemo_Data *data) {
+static inline void RenderMagickColor(ClayVideoDemo_Data *data) {
     if (data->state & MAGICK_TRANSPARENT_BG) {
         RenderColor((Clay_Color) { .r = 0, .g = 0, .b = 0, .a = 0 });
     } else {
@@ -244,7 +247,7 @@ void RenderMagickColor(ClayVideoDemo_Data *data) {
     }
 }
 
-void RenderResize(ClayVideoDemo_Data *data) {
+static inline void RenderResize(ClayVideoDemo_Data *data) {
     CLAY({
         .backgroundColor = BUTTON_COLOR,
         .id = CLAY_ID("Resize"),
@@ -259,7 +262,7 @@ void RenderResize(ClayVideoDemo_Data *data) {
         }
     }
 }
-void HandleFlagInteraction(
+static inline void HandleFlagInteraction(
     Clay_ElementId elementId,
     Clay_PointerData pointerData,
     intptr_t userData
@@ -272,7 +275,7 @@ void HandleFlagInteraction(
     }
 }
 
-void RenderFlag(Clay_String text,
+static inline void RenderFlag(Clay_String text,
                 uint16_t *state,
                 uint16_t triggerFlag,
                 uint16_t displayFlag,
@@ -323,14 +326,30 @@ ClayVideoDemo_Data ClayVideoDemo_Initialize() {
         .outputFile = {0},
         .tempDir = {0},
         .inputFiles = {0},
-        .resize = {.w = 1000, .h = 1000},
+        .resize =     {.w =  1000,  .h =  1000 },
         .resize_str = {.w = "1000", .h = "1000"},
-        .color = { .r = 0, .b = 0, .g = 0, .a = 100 },
+        .color =     { .r =  0,  .b =  0,  .g =  0,  .a =  100  },
         // This should be set because these strings are only updated when color is updated
         .color_str = { .r = "0", .b = "0", .g = "0", .a = "100" },
         .magickProc = NOB_INVALID_PROC,
-        .threadRunning = false,
         .magickThread = {0},
+        .threadRunning = false,
+        .gravity = {
+            .values = {  // TODO: parse this from `magick -list gravity`
+                "None",
+                "Center",
+                "East",
+                // "Forget", // here is also this
+                "NorthEast",
+                "North",
+                "NorthWest",
+                "SouthEast",
+                "South",
+                "SouthWest",
+                "West",
+            },
+            .selected = 1,
+        },
     };
     nob_sb_append_cstr(&data.outputFile, "res.png");
     return data;
@@ -566,6 +585,26 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                         }
                         if (data->state & MAGICK_TRANSPARENT_BG)
                             CLAY_TEXT(CLAY_STRING("Transparent background setting overrides this option"), DEFAULT_TEXT);
+                    }
+                    CLAY({
+                        .id = CLAY_ID("GravitySettings"),
+                        .layout = {
+                            .childGap = 8,
+                            .layoutDirection = CLAY_TOP_TO_BOTTOM,
+                        }
+                    }) {
+                        CLAY({.layout = {.layoutDirection = CLAY_LEFT_TO_RIGHT, .childGap = 8}}) {
+                            CLAY_TEXT(CLAY_STRING("Gravity: "), DEFAULT_TEXT);
+                            CLAY({
+                                    .backgroundColor = BUTTON_COLOR,
+                                    .id = CLAY_ID("Gravity"),
+                                    .cornerRadius = BUTTON_RADIUS,
+                                    }) {
+                                CLAY({ .id = CLAY_ID("GravitySelection"), .layout = { .padding = { 16, 16, 8, 8 } } }) {
+                                    CLAY_TEXT(CLAY_DYNAMIC_STRING(data->gravity.values[data->gravity.selected]), BUTTON_TEXT);
+                                }
+                            }
+                        }
                     }
                     CLAY({.id = CLAY_ID("ResizeSettings"), .layout = {.layoutDirection = CLAY_TOP_TO_BOTTOM, .childGap = 8}}) {
                         CLAY({.layout = {.layoutDirection = CLAY_LEFT_TO_RIGHT, .childGap = 8}}) {
