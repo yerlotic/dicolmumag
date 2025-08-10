@@ -16,8 +16,6 @@
 #include <processthreadsapi.h>
 #endif // _WIN32
 
-#define TESTING
-
 // ascii file separator
 // thx ascii!
 // #define MULTI_SEPARATOR '\x1c'
@@ -536,9 +534,9 @@ int main(void) {
     SetTargetFPS(GetMonitorRefreshRate(GetCurrentMonitor()));
     // Disable ESC to exit
     SetExitKey(KEY_NULL);
-#ifdef TESTING
-    // Clay_SetDebugModeEnabled(true);
-#endif
+#ifdef UI_TESTING
+    Clay_SetDebugModeEnabled(true);
+#endif // UI_TESTING
 #ifdef LAZY_RENDER
     AppState old_state = {0};
     int prevtime = SLEEP_THRESHOLD;
@@ -589,9 +587,9 @@ int main(void) {
 #endif // LAZY_RENDER
 
         Clay_Raylib_Render(renderCommands, fonts);
-#ifdef TESTING
-        // DrawFPS(0,0);
-#endif // TESTING
+#ifdef UI_TESTING
+        DrawFPS(0,0);
+#endif // UI_TESTING
         EndDrawing();
     }
     fprintf(stderr, "Cancelling threads\n");

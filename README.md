@@ -47,9 +47,20 @@ App for creating collages with [imagemagick](https://imagemagick.org)
 
 1. Clone the repo
 2. Compile
+    <details><summary>
+
+    Compile definitions
+    </summary>
+
+    - `LAZY_RENDER` — Why render when u can do nothing?
+    - `UI_TESTING` — Enable FPS counter and Clay debug mode
+    - `DEBUG` — Enable `printf`s
+    - `LATTE` — Use Catppuccin Latte color scheme
+    </details>
+
     ```shell
     mkdir -p build
-    (cd build && cmake .. && make -j$(nproc))
+    (cd build && cmake -DCMAKE_BUILD_TYPE=Debug -DLAZY_RENDER=ON .. && make -j$(nproc))
     ```
 
 3. Run:
