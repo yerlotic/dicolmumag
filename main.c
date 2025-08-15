@@ -65,6 +65,10 @@ void HandleClayErrors(Clay_ErrorData errorData) {
     }                                                           \
 } while(0)
 
+// Declarations
+bool testMagick(char* magickBin);
+
+
 void nob_kill(Nob_Proc *proc) {
     if (*proc == NOB_INVALID_PROC) return;
 #ifdef _WIN32
@@ -161,7 +165,7 @@ int RunMagick(ClayVideoDemo_Data *data) {
     strcat(ashlar_path, ASHLAR_PREFIX);
     strcat(ashlar_path, data->outputFile.items);
 
-    nob_cmd_append(&cmd, "magick");
+    nob_cmd_append(&cmd, data->magickBinary.items);
     nob_cmd_append(&cmd, "-verbose");
 
     nob_cmd_extend(&cmd, &data->inputFiles);
@@ -250,6 +254,33 @@ void* RunMagickThread(void *arg) {
     RunMagick(data);
     data->threadRunning = false;
     return NULL;
+}
+
+// TODO: indicate failure in error message (also when startup)
+void ChangeMagickBinary(Nob_String_Builder *magickBin) {
+#ifdef _WIN32
+    const char *filter_params[] = {"*.exe", "*.msi", "*"};
+#else
+    const char *filter_params[] = {"*"};
+#endif // _WIN32
+
+    fprintf(stderr, "runnin\n");
+    char *new_magick = tinyfd_openFileDialog("Path to magick executable", NULL, sizeof(filter_params) / sizeof(filter_params[0]), filter_params, "Executable files", false);
+
+    if (!new_magick[0]) {
+        fprintf(stderr, "Too bad, no another magick binary\n");
+        return;
+    }
+
+    if (!testMagick(new_magick)) {
+        fprintf(stderr, "Too bad, no another magick binary (\"%s\") cuz testing was too bad\n", new_magick);
+        return;
+    }
+
+    // Yeah, this buffer contains nothing, u can use it!
+    magickBin->count = 0;
+    nob_sb_append_cstr(magickBin, new_magick);
+    nob_sb_append_null(magickBin);
 }
 
 void ChangeOutputPath(ClayVideoDemo_Data *data) {
@@ -417,6 +448,10 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, ClayVideoDemo_Data *
     } else if (released("Stop")) {
         nob_kill(&data->magickProc);
         cthreads_thread_ensure_cancelled(data->magickThread, &data->threadRunning);
+    } else if (released("MagickBinary")) {
+        printf("bin befor: %s\n", data->magickBinary.items);
+        ChangeMagickBinary(&data->magickBinary);
+        printf("bin aftir: %s\n", data->magickBinary.items);
     } else if (released("file")) {
         printf("befor: %s\n", data->outputFile.items);
         ChangeOutputPath(data);
@@ -482,9 +517,9 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, ClayVideoDemo_Data *
     return ClayVideoDemo_CreateLayout(data);
 }
 
-bool testMagick() {
+bool testMagick(char* magickBin) {
     Nob_Cmd cmd = {0};
-    nob_cmd_append(&cmd, "magick", "-version");
+    nob_cmd_append(&cmd, magickBin, "-version");
 
     if (!nob_cmd_run_sync_and_reset(&cmd)) {
         fprintf(stderr, "Bro, where is yr magick??\n");
@@ -496,10 +531,10 @@ bool testMagick() {
 }
 
 int main(void) {
-    if (!testMagick()) {
+    if (!testMagick("magick")) {
         // yes, this is an mdash
         fprintf(stderr, "Sorry, no magick — no worky\n");
-        return -1;
+        // return -1;
     }
     char* title = "Magick deez nuts";
     // vsync makes resizes slower, we don't want this
