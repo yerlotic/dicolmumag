@@ -189,6 +189,7 @@ typedef struct {
     uint16_t state;
     Nob_String_Builder outputFile;
     Nob_String_Builder tempDir;
+    Nob_String_Builder magickBinary;
     Nob_Cmd inputFiles;
     resize_t resize;
     resize_str_t resize_str;
@@ -326,6 +327,7 @@ ClayVideoDemo_Data ClayVideoDemo_Initialize() {
         .selectedDocumentIndex = ADVANCED_SETTINGS,
         .outputFile = {0},
         .tempDir = {0},
+        .magickBinary = {0},
         .inputFiles = {0},
         .resize =     {.w =  1000,  .h =  1000 },
         .resize_str = {.w = "1000", .h = "1000"},
@@ -353,6 +355,8 @@ ClayVideoDemo_Data ClayVideoDemo_Initialize() {
         },
     };
     nob_sb_append_cstr(&data.outputFile, "res.png");
+    nob_sb_append_cstr(&data.magickBinary, "magick"); // this is only fine without null cuz zeroes are there by chance
+    nob_sb_append_null(&data.magickBinary);
     return data;
 }
 
@@ -620,6 +624,7 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                                 (data->state & MAGICK_SHRINK_LARGER) ? MAGICK_SHRINK_LARGER | MAGICK_ENLARGE_SMALLER : MAGICK_ENLARGE_SMALLER, MAGICK_ENLARGE_SMALLER, &data->frameArena);
                         RenderFlag(CLAY_STRING("Fill area"), &data->state, MAGICK_FILL_AREA, MAGICK_FILL_AREA, &data->frameArena);
                     }
+
                     CLAY({
                         .id = CLAY_ID("LocationSettings"),
                         .layout = {
@@ -637,6 +642,17 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                                 CLAY_TEXT(CLAY_SB_STRING(data->tempDir), BUTTON_TEXT);
                         }
                         RenderHeaderButton(CLAY_STRING(SELECT_TEMP));
+                    }
+
+
+                    CLAY({
+                        .id = CLAY_ID("MagickBinary"),
+                        .layout = {
+                            .childGap = 8,
+                        }
+                    }) {
+                        CLAY_TEXT(CLAY_STRING(MAGICK_EXEC), DEFAULT_TEXT);
+                        RenderHeaderButton(CLAY_SB_STRING(data->magickBinary));
                     }
                 }
             }
