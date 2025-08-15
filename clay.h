@@ -1,6 +1,5 @@
 /* VERSION: 0.14
 
-/*
     NOTE: In order to use this library you must define
     the following macro in exactly one file, _before_ including clay.h:
 

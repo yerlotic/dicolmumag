@@ -158,6 +158,7 @@ typedef enum {
 } MagickState;
 
 typedef struct rgba {
+    // alpha is in [0-100]
     uint8_t r, g, b, a;
 } rgba;
 
@@ -243,7 +244,7 @@ static inline void RenderMagickColor(ClayVideoDemo_Data *data) {
         RenderColor((Clay_Color) { .r = data->color.r,
                                    .g = data->color.g,
                                    .b = data->color.b,
-                                   .a = data->color.a });
+                                   .a = 255.0*data->color.a/100 });
     }
 }
 
