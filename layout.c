@@ -23,7 +23,7 @@ const uint8_t title_font_size = 40;
 #define CLAY_SB_STRING(sb) (CLAY__INIT(Clay_String) { .isStaticallyAllocated = false, .length = (sb).count, .chars = (sb).items })
 #define BUTTON_RADIUS CLAY_CORNER_RADIUS(10)
 #define LAYOUT_RADIUS CLAY_CORNER_RADIUS(10)
-#define SANE_TEXT_CONFIG(font_size) CLAY_TEXT_CONFIG({ .fontId = FONT_ID_BODY_16, .fontSize = (font_size), .textColor = COLOR_TEXT })
+#define SANE_TEXT_CONFIG(font_size) CLAY_TEXT_CONFIG({ .fontId = FONT_ID_BODY_16, .fontSize = (font_size), .textColor = colors[colorscheme][COLOR_TEXT] })
 #define DEFAULT_TEXT SANE_TEXT_CONFIG(document_font_size)
 #define BUTTON_TEXT  SANE_TEXT_CONFIG(button_font_size)
 
@@ -50,7 +50,7 @@ static inline void RenderHeaderButton(Clay_String text) {
         CLAY_TEXT(text, CLAY_TEXT_CONFIG({
             .fontId = FONT_ID_BODY_16,
             .fontSize = button_font_size,
-            .textColor = COLOR_TEXT,
+            .textColor = colors[colorscheme][COLOR_TEXT],
             .textAlignment = CLAY_TEXT_ALIGN_CENTER,
             .wrapMode = CLAY_TEXT_WRAP_NONE,
         }));
@@ -59,7 +59,7 @@ static inline void RenderHeaderButton(Clay_String text) {
 
 static inline void RenderDropdownMenuItem(Clay_String text) {
     CLAY({
-        .backgroundColor = COLOR_SURFACE0,
+        .backgroundColor = colors[colorscheme][COLOR_SURFACE0],
         .cornerRadius = BUTTON_RADIUS,
         .id = CLAY_SID(text),
         .layout = {
@@ -110,7 +110,7 @@ static inline void RenderColor(Clay_Color color) {
         .cornerRadius = CLAY_CORNER_RADIUS(radius),
         .backgroundColor = color,
         .border = {
-            .color = TERNARY_COLOR(Clay_Hovered(), COLOR_SURFACE1, COLOR_SURFACE0),
+            .color = TERNARY_COLOR(Clay_Hovered(), colors[colorscheme][COLOR_SURFACE1], colors[colorscheme][COLOR_SURFACE0]),
             .width = CLAY_BORDER_OUTSIDE(border_width)
         },
         .layout = {
@@ -284,7 +284,7 @@ static inline void RenderFlag(Clay_String text,
                 ClayVideoDemo_Arena *arena) {
     Clay_Color background = BUTTON_COLOR;
     if (*state & displayFlag)
-        background = OPACITY(COLOR_GREEN, 35);
+        background = OPACITY(colors[colorscheme][COLOR_GREEN], 35);
     CLAY({
         .layout = {
             .padding = { 16, 16, 8, 8 },
@@ -305,7 +305,7 @@ static inline void RenderFlag(Clay_String text,
         CLAY_TEXT(text, CLAY_TEXT_CONFIG({
             .fontId = FONT_ID_BODY_16,
             .fontSize = button_font_size,
-            .textColor = COLOR_TEXT,
+            .textColor = colors[colorscheme][COLOR_TEXT],
             .textAlignment = CLAY_TEXT_ALIGN_CENTER,
             .wrapMode = CLAY_TEXT_WRAP_NONE,
         }));
@@ -370,12 +370,12 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
         .height = CLAY_SIZING_GROW(0)
     };
 
-    Clay_Color contentBackgroundColor = COLOR_BASE;
+    Clay_Color contentBackgroundColor = colors[colorscheme][COLOR_BASE];
 
     // Build UI here
     CLAY({
         .id = CLAY_ID("OuterContainer"),
-        .backgroundColor = COLOR_MANTLE,
+        .backgroundColor = colors[colorscheme][COLOR_MANTLE],
         .layout = {
             .layoutDirection = CLAY_TOP_TO_BOTTOM,
             .sizing = layoutExpand,
@@ -434,14 +434,15 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                                     .width = CLAY_SIZING_FIXED(200)
                                 },
                             },
-                            .backgroundColor = COLOR_SURFACE0,
+                            .backgroundColor = colors[colorscheme][COLOR_SURFACE0],
                             .cornerRadius = BUTTON_RADIUS,
                         }) {
                             // Render dropdown items here
                             RenderDropdownMenuItem(CLAY_STRING("Open result"));
+                            RenderDropdownMenuItem(CLAY_STRING("Change colorscheme"));
                             Clay_String quit = CLAY_STRING("Quit");
                             CLAY({
-                                .backgroundColor = COLOR_SURFACE0,
+                                .backgroundColor = colors[colorscheme][COLOR_SURFACE0],
                                 .cornerRadius = BUTTON_RADIUS,
                                 .id = CLAY_SID(quit),
                                 .layout = {
@@ -453,7 +454,7 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                                 CLAY_TEXT(quit, BUTTON_TEXT);
                                 CLAY({ .layout = { .sizing = { CLAY_SIZING_GROW(0) }}}) {}
                                 CLAY_TEXT(CLAY_STRING("Ctrl-Q"),
-                                        CLAY_TEXT_CONFIG({ .fontId = FONT_ID_BODY_16, .fontSize = button_font_size, .textColor = COLOR_OVERLAY0 }));
+                                        CLAY_TEXT_CONFIG({ .fontId = FONT_ID_BODY_16, .fontSize = button_font_size, .textColor = colors[colorscheme][COLOR_OVERLAY0] }));
                             }
                         }
                     }
@@ -517,14 +518,14 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                        ) {
                         CLAY({
                             .layout = sidebarButtonLayout,
-                            .backgroundColor = OPACITY(COLOR_GREEN, 35),
+                            .backgroundColor = OPACITY(colors[colorscheme][COLOR_GREEN], 35),
                             .cornerRadius = CLAY_CORNER_RADIUS(8)
                         }) {
                             Clay_OnHover(HandleSidebarInteraction, (intptr_t)clickData);
                             CLAY_TEXT(document.title, CLAY_TEXT_CONFIG({
                                 .fontId = FONT_ID_BODY_16,
                                 .fontSize = sidebar_font_size,
-                                .textColor = COLOR_TEXT,
+                                .textColor = colors[colorscheme][COLOR_TEXT],
                             }));
                         }
                     } else {
@@ -533,7 +534,7 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                             CLAY_TEXT(document.title, CLAY_TEXT_CONFIG({
                                         .fontId = FONT_ID_BODY_16,
                                         .fontSize = sidebar_font_size,
-                                        .textColor = COLOR_TEXT,
+                                        .textColor = colors[colorscheme][COLOR_TEXT],
                                         }));
                         }
                     }
@@ -558,7 +559,7 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                 CLAY_TEXT(selectedDocument.title, CLAY_TEXT_CONFIG({
                     .fontId = FONT_ID_BODY_16,
                     .fontSize = title_font_size,
-                    .textColor = COLOR_TEXT
+                    .textColor = colors[colorscheme][COLOR_TEXT]
                 }));
                 CLAY_TEXT(selectedDocument.contents, DEFAULT_TEXT);
                 if (data->selectedDocumentIndex == ADVANCED_SETTINGS) {
@@ -583,10 +584,10 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                                 .childGap = 8,
                             },
                         }) {
-                            RenderColorChannel(CLAY_STRING("r"), COLOR_RED,   data->color_str.r);
-                            RenderColorChannel(CLAY_STRING("g"), COLOR_GREEN, data->color_str.g);
-                            RenderColorChannel(CLAY_STRING("b"), COLOR_BLUE,  data->color_str.b);
-                            RenderColorChannel(CLAY_STRING("a"), COLOR_TEXT,  data->color_str.a);
+                            RenderColorChannel(CLAY_STRING("r"), colors[colorscheme][COLOR_RED],   data->color_str.r);
+                            RenderColorChannel(CLAY_STRING("g"), colors[colorscheme][COLOR_GREEN], data->color_str.g);
+                            RenderColorChannel(CLAY_STRING("b"), colors[colorscheme][COLOR_BLUE],  data->color_str.b);
+                            RenderColorChannel(CLAY_STRING("a"), colors[colorscheme][COLOR_TEXT],  data->color_str.a);
                         }
                         if (data->state & MAGICK_TRANSPARENT_BG)
                             CLAY_TEXT(CLAY_STRING("Transparent background setting overrides this option"), DEFAULT_TEXT);
@@ -637,7 +638,7 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                         CLAY({.layout = {.layoutDirection = CLAY_LEFT_TO_RIGHT, .childGap = 8, .padding = 8}}) {
                             CLAY_TEXT(CLAY_STRING("Current:"), BUTTON_TEXT);
                             if (data->tempDir.count == 0)
-                                CLAY_TEXT(CLAY_STRING("default"), CLAY_TEXT_CONFIG({ .fontId = FONT_ID_BODY_16, .fontSize = button_font_size, .textColor = COLOR_OVERLAY0 }));
+                                CLAY_TEXT(CLAY_STRING("default"), CLAY_TEXT_CONFIG({ .fontId = FONT_ID_BODY_16, .fontSize = button_font_size, .textColor = colors[colorscheme][COLOR_OVERLAY0] }));
                             else
                                 CLAY_TEXT(CLAY_SB_STRING(data->tempDir), BUTTON_TEXT);
                         }
