@@ -456,6 +456,8 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, ClayVideoDemo_Data *
         printf("befor: %s\n", data->outputFile.items);
         ChangeOutputPath(data);
         printf("aftir: %s\n", data->outputFile.items);
+    } else if (released("Change colorscheme")) {
+        colorscheme = (colorscheme + 1) % 2;
     } else if (released("Open result")) {
         if (data->outputFile.items[0] != '\0') {
             nob_cmd_append(&cmd, "xdg-open", data->outputFile.items);
