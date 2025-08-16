@@ -29,7 +29,7 @@ App for creating collages with [imagemagick](https://imagemagick.org)
 
 - [ ] Specify output resolutions and margins
 - [ ] Indication of success or failure (e. g. when magick not available)
-- [ ] Change color scheme
+- [x] Change color scheme
 - [x] Specify gravity
 - [x] Best fit
 - [x] Transparent background
