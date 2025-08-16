@@ -31,10 +31,10 @@ enum {
     COLOR_CRUST,
 };
 
-#define COLORSCHEMES 2
+#define COLORSCHEMES 4
 #define COLORSCHEME_CAPACITY 26
 Clay_Color colors[COLORSCHEMES][COLORSCHEME_CAPACITY] = {
-{
+{   // Latte
     {220, 138, 120, 255},  // #dc8a78 - COLOR_ROSEWATER
     {221, 120, 120, 255},  // #dd7878 - COLOR_FLAMINGO
     {234, 118, 203, 255},  // #ea76cb - COLOR_PINK
@@ -62,7 +62,7 @@ Clay_Color colors[COLORSCHEMES][COLORSCHEME_CAPACITY] = {
     {230, 233, 239, 255},  // #e6e9ef - COLOR_MANTLE
     {220, 224, 232, 255},  // #dce0e8 - COLOR_CRUST
 },
-{
+{   // Frappe
     {242, 213, 207, 255},  // #f2d5cf - COLOR_ROSEWATER
     {238, 190, 190, 255},  // #eebebe - COLOR_FLAMINGO
     {244, 184, 228, 255},  // #f4b8e4 - COLOR_PINK
@@ -89,7 +89,63 @@ Clay_Color colors[COLORSCHEMES][COLORSCHEME_CAPACITY] = {
     {48,  52,  70,  255},  // #303446 - COLOR_BASE
     {41,  44,  60,  255},  // #292c3c - COLOR_MANTLE
     {35,  38,  52,  255},  // #232634 - COLOR_CRUST
-}
+},
+{   // Macchiato
+    {244, 219, 214, 255},  // #f4dbd6 - COLOR_ROSEWATER
+    {240, 198, 198, 255},  // #f0c6c6 - COLOR_FLAMINGO
+    {245, 189, 230, 255},  // #f5bde6 - COLOR_PINK
+    {198, 160, 246, 255},  // #c6a0f6 - COLOR_MAUVE
+    {237, 135, 150, 255},  // #ed8796 - COLOR_RED
+    {238, 153, 160, 255},  // #ee99a0 - COLOR_MAROON
+    {245, 169, 127, 255},  // #f5a97f - COLOR_PEACH
+    {238, 212, 159, 255},  // #eed49f - COLOR_YELLOW
+    {166, 218, 149, 255},  // #a6da95 - COLOR_GREEN
+    {139, 213, 202, 255},  // #8bd5ca - COLOR_TEAL
+    {145, 215, 227, 255},  // #91d7e3 - COLOR_SKY
+    {125, 196, 228, 255},  // #7dc4e4 - COLOR_SAPPHIRE
+    {138, 173, 244, 255},  // #8aadf4 - COLOR_BLUE
+    {183, 189, 248, 255},  // #b7bdf8 - COLOR_LAVENDER
+    {202, 211, 245, 255},  // #cad3f5 - COLOR_TEXT
+    {184, 192, 224, 255},  // #b8c0e0 - COLOR_SUBTEXT1
+    {165, 173, 203, 255},  // #a5adcb - COLOR_SUBTEXT0
+    {147, 154, 183, 255},  // #939ab7 - COLOR_OVERLAY2
+    {128, 135, 162, 255},  // #8087a2 - COLOR_OVERLAY1
+    {110, 115, 141, 255},  // #6e738d - COLOR_OVERLAY0
+    {91,  96,  120, 255},  // #5b6078 - COLOR_SURFACE2
+    {73,  77,  100, 255},  // #494d64 - COLOR_SURFACE1
+    {54,  58,  79,  255},  // #363a4f - COLOR_SURFACE0
+    {36,  39,  58,  255},  // #24273a - COLOR_BASE
+    {30,  32,  48,  255},  // #1e2030 - COLOR_MANTLE
+    {24,  25,  38,  255},  // #181926 - COLOR_CRUST
+},
+{   // Mocha
+    {245, 224, 220, 255},  // #f5e0dc - COLOR_ROSEWATER
+    {242, 205, 205, 255},  // #f2cdcd - COLOR_FLAMINGO
+    {245, 194, 231, 255},  // #f5c2e7 - COLOR_PINK
+    {203, 166, 247, 255},  // #cba6f7 - COLOR_MAUVE
+    {243, 139, 168, 255},  // #f38ba8 - COLOR_RED
+    {235, 160, 172, 255},  // #eba0ac - COLOR_MAROON
+    {250, 179, 135, 255},  // #fab387 - COLOR_PEACH
+    {249, 226, 175, 255},  // #f9e2af - COLOR_YELLOW
+    {166, 227, 161, 255},  // #a6e3a1 - COLOR_GREEN
+    {148, 226, 213, 255},  // #94e2d5 - COLOR_TEAL
+    {137, 220, 235, 255},  // #89dceb - COLOR_SKY
+    {116, 199, 236, 255},  // #74c7ec - COLOR_SAPPHIRE
+    {137, 180, 250, 255},  // #89b4fa - COLOR_BLUE
+    {180, 190, 254, 255},  // #b4befe - COLOR_LAVENDER
+    {205, 214, 244, 255},  // #cdd6f4 - COLOR_TEXT
+    {186, 194, 222, 255},  // #bac2de - COLOR_SUBTEXT1
+    {166, 173, 200, 255},  // #a6adc8 - COLOR_SUBTEXT0
+    {147, 153, 178, 255},  // #9399b2 - COLOR_OVERLAY2
+    {127, 132, 156, 255},  // #7f849c - COLOR_OVERLAY1
+    {108, 112, 134, 255},  // #6c7086 - COLOR_OVERLAY0
+    {88,  91,  112, 255},  // #585b70 - COLOR_SURFACE2
+    {69,  71,  90,  255},  // #45475a - COLOR_SURFACE1
+    {49,  50,  68,  255},  // #313244 - COLOR_SURFACE0
+    {30,  30,  46,  255},  // #1e1e2e - COLOR_BASE
+    {24,  24,  37,  255},  // #181825 - COLOR_MANTLE
+    {17,  17,  27,  255},  // #11111b - COLOR_CRUST
+},
 };
 
 #define TERNARY_COLOR(condition, first, second) {\
