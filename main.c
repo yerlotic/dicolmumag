@@ -50,20 +50,20 @@ typedef struct AppState {
 #define CLAY_DIMENSIONS (Clay_Dimensions) { .width = GetScreenWidth(), \
                                             .height = GetScreenHeight() }
 #define RunMagickThreaded() \
-        cthreads_thread_ensure_cancelled(data->magickThread, &data->threadRunning); \
-        cthreads_thread_create(&data->magickThread, NULL, RunMagickThread, (void *)data, NULL);
+        cthreads_thread_ensure_cancelled(data->magickThread, &data->params.threadRunning); \
+        cthreads_thread_create(&data->magickThread, NULL, RunMagickThread, (void *)&data->params, NULL);
 
 void HandleClayErrors(Clay_ErrorData errorData) {
     printf("[CLAY] [ERROR] %s\n", errorData.errorText.chars);
 }
 
 // Don't forget to free the thing itself if u need to
-#define nob_free_all(to_free) do {                              \
-    for (size_t i = 0; i < to_free.count; i++) {                \
-        fprintf(stderr, "Freeing: \"%s\"\n", to_free.items[i]); \
-        free((void *) to_free.items[i]);                        \
-    }                                                           \
-} while(0)
+#define nob_free_all(to_free) do {                                  \
+    for (size_t i = 0; i < (to_free)->count; i++) {                \
+        fprintf(stderr, "Freeing: \"%s\"\n", (to_free)->items[i]); \
+        free((void *) (to_free)->items[i]);                        \
+    }                                                            \
+} while (0)
 
 // Declarations
 bool testMagick(char* magickBin);
@@ -116,20 +116,21 @@ void cthreads_thread_ensure_cancelled(struct cthreads_thread thread, bool *runni
     nob_cmd_run_async_redirect(cmd, (Nob_Cmd_Redirect) {.fdout = &blackhole, .fderr = &blackhole}); \
 } while(0)
 
-int GetInputFiles(ClayVideoDemo_Data *data) {
+int GetInputFiles(Nob_Cmd *inputFiles) {
     int allow_multiple_selects = true;
     char const *filter_params[] = {"*.png", "*.svg", "*.jpg", "*.jpeg"};
-    char *input_path = tinyfd_openFileDialog("Path to images", "./", 4, filter_params, "Image file", allow_multiple_selects);
+    char *input_path = tinyfd_openFileDialog("Path to images", "./", sizeof(filter_params) / sizeof(filter_params[0]), filter_params, "Image file", allow_multiple_selects);
 
     if (!input_path) {
-        fprintf(stderr, "Too bad no files\n");
+        fprintf(stderr, "Too bad no input files\n");
         return false;
     }
+
     char c;
     Nob_Cmd to_free = {0};
     Nob_String_Builder buf = {0};
-    nob_free_all(data->inputFiles);
-    data->inputFiles.count = 0;
+    nob_free_all(inputFiles);
+    inputFiles->count = 0;
 
     // parse files
     for (int i = 0; ; i++) {
@@ -138,7 +139,7 @@ int GetInputFiles(ClayVideoDemo_Data *data) {
             nob_sb_append_null(&buf);
             // moving buffer to another place on the heap
             char *pointer = strdup(buf.items);
-            nob_cmd_append(&data->inputFiles, pointer);
+            nob_cmd_append(inputFiles, pointer);
             nob_cmd_append(&to_free, pointer);
             buf.count = 0;
         } else {
@@ -150,64 +151,65 @@ int GetInputFiles(ClayVideoDemo_Data *data) {
     return true;
 }
 
-int RunMagick(ClayVideoDemo_Data *data) {
-    if (data->inputFiles.count == 0) {
+int RunMagick(magick_params_t *params) {
+    if (params->inputFiles.count == 0) {
         fprintf(stderr, "No files to process\n");
         return false;
     }
 
+    // outputFile, inputFiles, magickBinary, state, resize_str, color_str, color, tempDir, gravity, magickProc
     Nob_Cmd cmd = {0};
     Nob_Cmd to_free = {0};
     Nob_String_Builder buf = {0};
     bool free_buf = false;
-    char *ashlar_path = malloc(strlen(ASHLAR_PREFIX) + data->outputFile.count);
+    char *ashlar_path = malloc(strlen(ASHLAR_PREFIX) + params->outputFile.count);
     *ashlar_path = '\0';
     strcat(ashlar_path, ASHLAR_PREFIX);
-    strcat(ashlar_path, data->outputFile.items);
+    strcat(ashlar_path, params->outputFile.items);
 
-    nob_cmd_append(&cmd, data->magickBinary.items);
+    nob_cmd_append(&cmd, params->magickBinary.items);
     nob_cmd_append(&cmd, "-verbose");
 
-    nob_cmd_extend(&cmd, &data->inputFiles);
+    nob_cmd_extend(&cmd, &params->inputFiles);
     // resize images
     // NOTE: should be after all images
     char *resize_str = NULL;
-    if (data->state & MAGICK_RESIZE) {
+    if (params->state & MAGICK_RESIZE) {
         // https://usage.imagemagick.org/resize
-        resize_str = malloc(strlen(data->resize_str.h) + strlen(data->resize_str.w) + 2 + MODIFIERS); // 'x', '\0' and modifiers
+        resize_str = malloc(strlen(params->resize_str.h) + strlen(params->resize_str.w) + 2 + MODIFIERS); // 'x', '\0' and modifiers
         *resize_str = '\0';
-        strcat(resize_str, data->resize_str.w);
+        strcat(resize_str, params->resize_str.w);
         strcat(resize_str, "x");
-        strcat(resize_str, data->resize_str.h);
+        strcat(resize_str, params->resize_str.h);
 
-        if (data->state & MAGICK_IGNORE_RATIO) // 1
+        if (params->state & MAGICK_IGNORE_RATIO) // 1
             strcat(resize_str, MAGICK_RESIZE_IGNORE_RATIO);
-        if (data->state & MAGICK_SHRINK_LARGER) // 2
+        if (params->state & MAGICK_SHRINK_LARGER) // 2
             strcat(resize_str, MAGICK_RESIZE_SHRINK_LARGER);
-        else if (data->state & MAGICK_ENLARGE_SMALLER)
+        else if (params->state & MAGICK_ENLARGE_SMALLER)
             strcat(resize_str, MAGICK_RESIZE_ENLARGE_SMALLER);
-        if (data->state & MAGICK_FILL_AREA) // 3
+        if (params->state & MAGICK_FILL_AREA) // 3
             strcat(resize_str, MAGICK_RESIZE_FILL_AREA);
-        // if (data->state & MAGICK_PERCENTAGE)
+        // if (params->state & MAGICK_PERCENTAGE)
         //     strcat(resize_str, MAGICK_RESIZE_PERCENTAGE);
-        // if (data->state & MAGICK_PIXEL_LIMIT)
+        // if (params->state & MAGICK_PIXEL_LIMIT)
         //     strcat(resize_str, MAGICK_RESIZE_PIXEL_LIMIT);
         nob_cmd_append(&cmd, "-resize", resize_str);
     }
-    if (data->state & MAGICK_TRANSPARENT_BG) {
+    if (params->state & MAGICK_TRANSPARENT_BG) {
         nob_cmd_append(&cmd, "-background", "transparent");
     } else {
         buf.count = 0;
         nob_sb_append_cstr(&buf, "rgba(");
-        nob_sb_append_cstr(&buf, data->color_str.r);
+        nob_sb_append_cstr(&buf, params->color_str.r);
         nob_sb_append_cstr(&buf, ",");
-        nob_sb_append_cstr(&buf, data->color_str.g);
+        nob_sb_append_cstr(&buf, params->color_str.g);
         nob_sb_append_cstr(&buf, ",");
-        nob_sb_append_cstr(&buf, data->color_str.b);
+        nob_sb_append_cstr(&buf, params->color_str.b);
         nob_sb_append_cstr(&buf, ",");
         // 1.00 - 5 chars
         char alpha[5] = {0};
-        sprintf(alpha, "%0.2f", (float)data->color.a/100);
+        sprintf(alpha, "%0.2f", (float)params->color.a/100);
         nob_sb_append_cstr(&buf, alpha);
         nob_sb_append_cstr(&buf, ")");
         nob_sb_append_null(&buf);
@@ -217,42 +219,42 @@ int RunMagick(ClayVideoDemo_Data *data) {
         nob_cmd_append(&cmd, "-background", pointer);
         free_buf = true;
     }
-    if (data->state & MAGICK_BEST_FIT)
+    if (params->state & MAGICK_BEST_FIT)
         nob_cmd_append(&cmd, "-define", "ashlar:best-fit=true");
-    if (data->tempDir.count > 0) {
+    if (params->tempDir.count > 0) {
         nob_cmd_append(&cmd,"-define");
         buf.count = 0;
         nob_sb_append_cstr(&buf, "registry:temporary-path=");
-        nob_sb_append_buf(&buf, data->tempDir.items, data->tempDir.count);
+        nob_sb_append_buf(&buf, params->tempDir.items, params->tempDir.count);
         nob_sb_append_null(&buf);
         char* temp_path = strdup(buf.items);
         nob_cmd_append(&to_free, temp_path);
         nob_cmd_append(&cmd, temp_path);
         free_buf = true;
     }
-    nob_cmd_append(&cmd, "-gravity", data->gravity.values[data->gravity.selected]);
+    nob_cmd_append(&cmd, "-gravity", params->gravity.values[params->gravity.selected]);
     nob_cmd_append(&cmd, ashlar_path);
 
     bool ret = true;
-    data->magickProc = nob_cmd_run_async(cmd);
+    params->magickProc = nob_cmd_run_async(cmd);
 
     // Freeing memory
     free(ashlar_path);
-    if (data->state & MAGICK_RESIZE)
+    if (params->state & MAGICK_RESIZE)
         free(resize_str);
     if (free_buf)
         nob_sb_free(buf);
-    nob_free_all(to_free);
+    nob_free_all(&to_free);
     nob_cmd_free(to_free);
     nob_cmd_free(cmd);
     return ret;
 }
 
-void* RunMagickThread(void *arg) {
-    ClayVideoDemo_Data *data = (ClayVideoDemo_Data *) arg;
-    data->threadRunning = true;
-    RunMagick(data);
-    data->threadRunning = false;
+void *RunMagickThread(void *arg) {
+    magick_params_t *params = (magick_params_t *) arg;
+    params->threadRunning = true;
+    RunMagick(params);
+    params->threadRunning = false;
     return NULL;
 }
 
@@ -283,7 +285,7 @@ void ChangeMagickBinary(Nob_String_Builder *magickBin) {
     nob_sb_append_null(magickBin);
 }
 
-void ChangeOutputPath(ClayVideoDemo_Data *data) {
+void ChangeOutputPath(Nob_String_Builder *outputFile) {
     const char *filter_params[] = {"*.png", "*.avif", "*.jpg", "*"};
     char *output_path = tinyfd_saveFileDialog("Path to output image", NULL, sizeof(filter_params) / sizeof(filter_params[0]), filter_params, "Image files");
     if (!output_path) {
@@ -292,9 +294,9 @@ void ChangeOutputPath(ClayVideoDemo_Data *data) {
     }
     if (output_path[0] != '\0') {
         // Yeah, this buffer contains nothing, u can use it!
-        data->outputFile.count = 0;
-        nob_sb_append_cstr(&data->outputFile, output_path);
-        nob_sb_append_null(&data->outputFile);
+        outputFile->count = 0;
+        nob_sb_append_cstr(outputFile, output_path);
+        nob_sb_append_null(outputFile);
     }
 }
 
@@ -426,10 +428,10 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, ClayVideoDemo_Data *
 
     Nob_Cmd cmd = {0};
 
-    if (data->state & MAGICK_OPEN_ON_DONE && data->magickProc != NOB_INVALID_PROC && !nob_proc_running(data->magickProc)) {
-        nob_cmd_append(&cmd, "xdg-open", data->outputFile.items);
+    if (data->params.state & MAGICK_OPEN_ON_DONE && data->params.magickProc != NOB_INVALID_PROC && !nob_proc_running(data->params.magickProc)) {
+        nob_cmd_append(&cmd, "xdg-open", data->params.outputFile.items);
         nob_cmd_run_async_silent(cmd);
-        data->magickProc = NOB_INVALID_PROC;
+        data->params.magickProc = NOB_INVALID_PROC;
     }
     if (released("Quit")) {
         data->shouldClose = true;
@@ -438,29 +440,29 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, ClayVideoDemo_Data *
         nob_cmd_append(&cmd, "xdg-open", SUPPORT_URL);
         nob_cmd_run_async_silent(cmd);
     } else if (released("Select Images")) {
-        GetInputFiles(data);
-        nob_kill(&data->magickProc);
+        GetInputFiles(&data->params.inputFiles);
+        nob_kill(&data->params.magickProc);
         RunMagickThreaded();
     } else if (released(SELECT_TEMP)) {
-        SetTempDir(&data->tempDir);
+        SetTempDir(&data->params.tempDir);
     } else if (released("Run")) {
         RunMagickThreaded();
     } else if (released("Stop")) {
-        nob_kill(&data->magickProc);
-        cthreads_thread_ensure_cancelled(data->magickThread, &data->threadRunning);
+        nob_kill(&data->params.magickProc);
+        cthreads_thread_ensure_cancelled(data->magickThread, &data->params.threadRunning);
     } else if (released("MagickBinary")) {
-        printf("bin befor: %s\n", data->magickBinary.items);
-        ChangeMagickBinary(&data->magickBinary);
-        printf("bin aftir: %s\n", data->magickBinary.items);
+        printf("bin befor: %s\n", data->params.magickBinary.items);
+        ChangeMagickBinary(&data->params.magickBinary);
+        printf("bin aftir: %s\n", data->params.magickBinary.items);
     } else if (released("file")) {
-        printf("befor: %s\n", data->outputFile.items);
-        ChangeOutputPath(data);
-        printf("aftir: %s\n", data->outputFile.items);
+        printf("befor: %s\n", data->params.outputFile.items);
+        ChangeOutputPath(&data->params.outputFile);
+        printf("aftir: %s\n", data->params.outputFile.items);
     } else if (released("Change colorscheme")) {
         colorscheme = (colorscheme + 1) % COLORSCHEMES;
     } else if (released("Open result")) {
-        if (data->outputFile.items[0] != '\0') {
-            nob_cmd_append(&cmd, "xdg-open", data->outputFile.items);
+        if (data->params.outputFile.items[0] != '\0') {
+            nob_cmd_append(&cmd, "xdg-open", data->params.outputFile.items);
             nob_cmd_run_async_silent(cmd);
             nob_cmd_free(cmd);
         } else {
@@ -471,43 +473,43 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, ClayVideoDemo_Data *
         int8_t scroll = scrollDirection(scrollDelta);
         // Don't update in no interaction happened
         if (scroll != 0) {
-            data->resize.h = data->resize.w = data->resize.w + 50 * scroll;
-            sprintf(data->resize_str.w, "%d", data->resize.w);
-            sprintf(data->resize_str.h, "%d", data->resize.h);
+            data->params.resize.h = data->params.resize.w = data->params.resize.w + 50 * scroll;
+            sprintf(data->params.resize_str.w, "%d", data->params.resize.w);
+            sprintf(data->params.resize_str.h, "%d", data->params.resize.h);
         }
     } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("ResizeW")))) {
-        data->resize.w += 50 * scrollDirection(scrollDelta);
-        sprintf(data->resize_str.w, "%d", data->resize.w);
+        data->params.resize.w += 50 * scrollDirection(scrollDelta);
+        sprintf(data->params.resize_str.w, "%d", data->params.resize.w);
     } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("ResizeH")))) {
-        data->resize.h += 50 * scrollDirection(scrollDelta);
-        sprintf(data->resize_str.h, "%d", data->resize.h);
+        data->params.resize.h += 50 * scrollDirection(scrollDelta);
+        sprintf(data->params.resize_str.h, "%d", data->params.resize.h);
     } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("ResizeEach")))) {
-        data->resize.w += 50 * scrollDirection(scrollDelta);
-        data->resize.h += 50 * scrollDirection(scrollDelta);
-        sprintf(data->resize_str.w, "%d", data->resize.w);
-        sprintf(data->resize_str.h, "%d", data->resize.h);
+        data->params.resize.w += 50 * scrollDirection(scrollDelta);
+        data->params.resize.h += 50 * scrollDirection(scrollDelta);
+        sprintf(data->params.resize_str.w, "%d", data->params.resize.w);
+        sprintf(data->params.resize_str.h, "%d", data->params.resize.h);
     } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("r")))) {
-        data->color.r += scrollDirection(scrollDelta);
-        sprintf(data->color_str.r, "%d", data->color.r);
+        data->params.color.r += scrollDirection(scrollDelta);
+        sprintf(data->params.color_str.r, "%d", data->params.color.r);
     } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("g")))) {
-        data->color.g += scrollDirection(scrollDelta);
-        sprintf(data->color_str.g, "%d", data->color.g);
+        data->params.color.g += scrollDirection(scrollDelta);
+        sprintf(data->params.color_str.g, "%d", data->params.color.g);
     } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("b")))) {
-        data->color.b += scrollDirection(scrollDelta);
-        sprintf(data->color_str.b, "%d", data->color.b);
+        data->params.color.b += scrollDirection(scrollDelta);
+        sprintf(data->params.color_str.b, "%d", data->params.color.b);
     } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("a")))) {
-        data->color.a += scrollDirection(scrollDelta);
+        data->params.color.a += scrollDirection(scrollDelta);
         // guess what
         // we dont have a tool for that called %
-        if (data->color.a == 255) data->color.a = 100;
-        if (data->color.a > 100) data->color.a = 0;  // wrap
-        sprintf(data->color_str.a, "%d", data->color.a);
+        if (data->params.color.a == 255) data->params.color.a = 100;
+        if (data->params.color.a > 100) data->params.color.a = 0;  // wrap
+        sprintf(data->params.color_str.a, "%d", data->params.color.a);
     } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("GravitySelection")))) {
-        data->gravity.selected -= scrollDirection(scrollDelta);
+        data->params.gravity.selected -= scrollDirection(scrollDelta);
         // guess what
         // we dont have a tool for that called %
-        if (data->gravity.selected == 255) data->gravity.selected = gravity_len - 1;
-        if (data->gravity.selected > gravity_len - 1) data->gravity.selected = 0;  // wrap
+        if (data->params.gravity.selected == 255) data->params.gravity.selected = gravity_len - 1;
+        if (data->params.gravity.selected > gravity_len - 1) data->params.gravity.selected = 0;  // wrap
     } else {
         Clay_UpdateScrollContainers(
                 true,

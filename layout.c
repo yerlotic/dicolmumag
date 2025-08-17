@@ -181,25 +181,32 @@ typedef struct gravity_t {
     uint8_t selected;
 } gravity_t;
 
+typedef struct magick_params_t {
+    uint16_t state;
+    Nob_Cmd inputFiles;
+    Nob_String_Builder outputFile;
+    Nob_String_Builder tempDir;
+
+    gravity_t gravity;
+
+    resize_t resize;
+    resize_str_t resize_str;
+
+    rgba color;
+    rgba_str color_str;
+
+    Nob_String_Builder magickBinary;
+    Nob_Proc magickProc;
+    bool threadRunning;
+} magick_params_t;
+
 typedef struct {
     uint8_t selectedDocumentIndex;
     float yOffset;
     ClayVideoDemo_Arena frameArena;
-    bool shouldClose;
-    uint16_t state;
-    Nob_String_Builder outputFile;
-    Nob_String_Builder tempDir;
-    Nob_String_Builder magickBinary;
-    Nob_Cmd inputFiles;
-    resize_t resize;
-    resize_str_t resize_str;
-    char cur_char[6]; // max: 6 bytes for string repr
-    rgba color;
-    rgba_str color_str;
-    Nob_Proc magickProc;
+    magick_params_t params;
     struct cthreads_thread magickThread;
-    bool threadRunning;
-    gravity_t gravity;
+    bool shouldClose;
 } ClayVideoDemo_Data;
 
 typedef struct {
@@ -238,29 +245,29 @@ static inline void HandleSidebarInteraction(
     }
 }
 
-static inline void RenderMagickColor(ClayVideoDemo_Data *data) {
-    if (data->state & MAGICK_TRANSPARENT_BG) {
+static inline void RenderMagickColor(rgba *color, uint16_t state) {
+    if (state & MAGICK_TRANSPARENT_BG) {
         RenderColor((Clay_Color) { .r = 0, .g = 0, .b = 0, .a = 0 });
     } else {
-        RenderColor((Clay_Color) { .r = data->color.r,
-                                   .g = data->color.g,
-                                   .b = data->color.b,
-                                   .a = 255.0*data->color.a/100 });
+        RenderColor((Clay_Color) { .r = color->r,
+                                   .g = color->g,
+                                   .b = color->b,
+                                   .a = 255.0*color->a/100 });
     }
 }
 
-static inline void RenderResize(ClayVideoDemo_Data *data) {
+static inline void RenderResize(resize_str_t *resize_str) {
     CLAY({
         .backgroundColor = BUTTON_COLOR,
         .id = CLAY_ID("Resize"),
         .cornerRadius = BUTTON_RADIUS,
     }) {
         CLAY({ .id = CLAY_ID("ResizeW"), .layout = { .padding = { .left = 16, .top = 8, .bottom = 8 } } }) {
-            CLAY_TEXT(CLAY_DYNAMIC_STRING(data->resize_str.w), BUTTON_TEXT);
+            CLAY_TEXT(CLAY_DYNAMIC_STRING(resize_str->w), BUTTON_TEXT);
         }
         CLAY({ .id = CLAY_ID("ResizeEach"), .layout = { .padding = {.top = 8, .bottom = 8} }}) { CLAY_TEXT(CLAY_STRING("x"), BUTTON_TEXT); }
         CLAY({ .id = CLAY_ID("ResizeH"), .layout = { .padding = { .right = 16, .top = 8, .bottom = 8 } } }) {
-            CLAY_TEXT(CLAY_DYNAMIC_STRING(data->resize_str.h), BUTTON_TEXT);
+            CLAY_TEXT(CLAY_DYNAMIC_STRING(resize_str->h), BUTTON_TEXT);
         }
     }
 }
@@ -323,40 +330,42 @@ ClayVideoDemo_Data ClayVideoDemo_Initialize() {
     ClayVideoDemo_Data data = {
         .frameArena = { .memory = (intptr_t)malloc(1024) },
         .shouldClose = false,
-        .state = MAGICK_BEST_FIT | MAGICK_OPEN_ON_DONE | MAGICK_RESIZE | MAGICK_SHRINK_LARGER,
         .selectedDocumentIndex = ADVANCED_SETTINGS,
-        .outputFile = {0},
-        .tempDir = {0},
-        .magickBinary = {0},
-        .inputFiles = {0},
-        .resize =     {.w =  1000,  .h =  1000 },
-        .resize_str = {.w = "1000", .h = "1000"},
-        .color =     { .r =  0,  .b =  0,  .g =  0,  .a =  100  },
-        // This should be set because these strings are only updated when color is updated
-        .color_str = { .r = "0", .b = "0", .g = "0", .a = "100" },
-        .magickProc = NOB_INVALID_PROC,
-        .magickThread = {0},
-        .threadRunning = false,
-        .gravity = {
-            .values = {  // TODO: parse this from `magick -list gravity`
-                "None",
-                "Center",
-                "East",
-                // "Forget", // here is also this
-                "NorthEast",
-                "North",
-                "NorthWest",
-                "SouthEast",
-                "South",
-                "SouthWest",
-                "West",
+        .params = {
+            .state = MAGICK_BEST_FIT | MAGICK_OPEN_ON_DONE | MAGICK_RESIZE | MAGICK_SHRINK_LARGER,
+            .outputFile = {0},
+            .tempDir = {0},
+            .magickBinary = {0},
+            .inputFiles = {0},
+            .resize =     {.w =  1000,  .h =  1000 },
+            .resize_str = {.w = "1000", .h = "1000"},
+            .color =     { .r =  0,  .b =  0,  .g =  0,  .a =  100  },
+            // This should be set because these strings are only updated when color is updated
+            .color_str = { .r = "0", .b = "0", .g = "0", .a = "100" },
+            .magickProc = NOB_INVALID_PROC,
+            .threadRunning = false,
+            .gravity = {
+                .values = {  // TODO: parse this from `magick -list gravity`
+                    "None",
+                    "Center",
+                    "East",
+                    // "Forget", // here is also this
+                    "NorthEast",
+                    "North",
+                    "NorthWest",
+                    "SouthEast",
+                    "South",
+                    "SouthWest",
+                    "West",
+                },
+                .selected = 1,
             },
-            .selected = 1,
         },
+        .magickThread = {0},
     };
-    nob_sb_append_cstr(&data.outputFile, "res.png");
-    nob_sb_append_cstr(&data.magickBinary, "magick"); // this is only fine without null cuz zeroes are there by chance
-    nob_sb_append_null(&data.magickBinary);
+    nob_sb_append_cstr(&data.params.outputFile, "res.png");
+    nob_sb_append_cstr(&data.params.magickBinary, "magick"); // this is only fine without null cuz zeroes are there by chance
+    nob_sb_append_null(&data.params.magickBinary);
     return data;
 }
 
@@ -461,12 +470,12 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                 }
             }
             RenderHeaderButton(CLAY_STRING("Select Images"));
-            if (data->magickProc == NOB_INVALID_PROC)
+            if (data->params.magickProc == NOB_INVALID_PROC)
                 RenderHeaderButton(CLAY_STRING("Run"));
             else
                 RenderHeaderButton(CLAY_STRING("Stop"));
             CLAY({ .layout = { .sizing = { CLAY_SIZING_GROW(0) }}}) {}
-            CLAY({.id = CLAY_ID("file")}) {CLAY_TEXT(CLAY_SB_STRING(data->outputFile), DEFAULT_TEXT);}
+            CLAY({.id = CLAY_ID("file")}) {CLAY_TEXT(CLAY_SB_STRING(data->params.outputFile), DEFAULT_TEXT);}
             CLAY({ .layout = { .sizing = { CLAY_SIZING_GROW(0) }}}) {}
             CLAY({
                 .layout = { .padding = { 16, 16, 8, 8 }},
@@ -475,7 +484,7 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                 .cornerRadius = BUTTON_RADIUS,
             }) {
                 CLAY_TEXT(CLAY_STRING("Resize: "), BUTTON_TEXT);
-                CLAY_TEXT(CLAY_DYNAMIC_STRING(data->resize_str.w), BUTTON_TEXT);
+                CLAY_TEXT(CLAY_DYNAMIC_STRING(data->params.resize_str.w), BUTTON_TEXT);
             }
             RenderHeaderButton(CLAY_STRING("Support"));
         }
@@ -508,13 +517,13 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                     };
 
                     SidebarClickData *clickData = (SidebarClickData *)(data->frameArena.memory + data->frameArena.offset);
-                    *clickData = (SidebarClickData) { .requestedDocumentIndex = i, .selectedDocumentIndex = &data->selectedDocumentIndex, .state = &data->state };
+                    *clickData = (SidebarClickData) { .requestedDocumentIndex = i, .selectedDocumentIndex = &data->selectedDocumentIndex, .state = &data->params.state };
                     data->frameArena.offset += sizeof(SidebarClickData);
                     if (
-                        (i == 0 && data->state & MAGICK_BEST_FIT) ||
-                        (i == 1 && data->state & MAGICK_TRANSPARENT_BG) ||
-                        (i == 2 && data->state & MAGICK_OPEN_ON_DONE) ||
-                        (i == 3 && data->state & MAGICK_RESIZE)
+                        (i == 0 && data->params.state & MAGICK_BEST_FIT) ||
+                        (i == 1 && data->params.state & MAGICK_TRANSPARENT_BG) ||
+                        (i == 2 && data->params.state & MAGICK_OPEN_ON_DONE) ||
+                        (i == 3 && data->params.state & MAGICK_RESIZE)
                        ) {
                         CLAY({
                             .layout = sidebarButtonLayout,
@@ -571,7 +580,7 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                     }) {
                         CLAY({.layout = { .layoutDirection = CLAY_TOP_TO_BOTTOM }}) {
                             CLAY_TEXT(CLAY_STRING("Background Color: "), DEFAULT_TEXT);
-                            RenderMagickColor(data);
+                            RenderMagickColor(&data->params.color, data->params.state);
                         }
                         CLAY({
                             .id = CLAY_ID("ColorSettingsRGB"),
@@ -584,12 +593,12 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                                 .childGap = 8,
                             },
                         }) {
-                            RenderColorChannel(CLAY_STRING("r"), colors[colorscheme][COLOR_RED],   data->color_str.r);
-                            RenderColorChannel(CLAY_STRING("g"), colors[colorscheme][COLOR_GREEN], data->color_str.g);
-                            RenderColorChannel(CLAY_STRING("b"), colors[colorscheme][COLOR_BLUE],  data->color_str.b);
-                            RenderColorChannel(CLAY_STRING("a"), colors[colorscheme][COLOR_TEXT],  data->color_str.a);
+                            RenderColorChannel(CLAY_STRING("r"), colors[colorscheme][COLOR_RED],   data->params.color_str.r);
+                            RenderColorChannel(CLAY_STRING("g"), colors[colorscheme][COLOR_GREEN], data->params.color_str.g);
+                            RenderColorChannel(CLAY_STRING("b"), colors[colorscheme][COLOR_BLUE],  data->params.color_str.b);
+                            RenderColorChannel(CLAY_STRING("a"), colors[colorscheme][COLOR_TEXT],  data->params.color_str.a);
                         }
-                        if (data->state & MAGICK_TRANSPARENT_BG)
+                        if (data->params.state & MAGICK_TRANSPARENT_BG)
                             CLAY_TEXT(CLAY_STRING("Transparent background setting overrides this option"), DEFAULT_TEXT);
                     }
                     CLAY({
@@ -607,7 +616,7 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                                     .cornerRadius = BUTTON_RADIUS,
                                     }) {
                                 CLAY({ .id = CLAY_ID("GravitySelection"), .layout = { .padding = { 16, 16, 8, 8 } } }) {
-                                    CLAY_TEXT(CLAY_DYNAMIC_STRING(data->gravity.values[data->gravity.selected]), BUTTON_TEXT);
+                                    CLAY_TEXT(CLAY_DYNAMIC_STRING(data->params.gravity.values[data->params.gravity.selected]), BUTTON_TEXT);
                                 }
                             }
                         }
@@ -615,15 +624,15 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                     CLAY({.id = CLAY_ID("ResizeSettings"), .layout = {.layoutDirection = CLAY_TOP_TO_BOTTOM, .childGap = 8}}) {
                         CLAY({.layout = {.layoutDirection = CLAY_LEFT_TO_RIGHT, .childGap = 8}}) {
                             CLAY_TEXT(CLAY_STRING("Resize: "), DEFAULT_TEXT);
-                            RenderResize(data);
+                            RenderResize(&data->params.resize_str);
                         }
-                        RenderFlag(CLAY_STRING("Ignore aspect ratio"), &data->state, MAGICK_IGNORE_RATIO, MAGICK_IGNORE_RATIO, &data->frameArena);
+                        RenderFlag(CLAY_STRING("Ignore aspect ratio"), &data->params.state, MAGICK_IGNORE_RATIO, MAGICK_IGNORE_RATIO, &data->frameArena);
                         // Well... it would only work for two
-                        RenderFlag(CLAY_STRING("Only Shrink Larger"), &data->state,
-                                (data->state & MAGICK_ENLARGE_SMALLER) ? MAGICK_ENLARGE_SMALLER | MAGICK_SHRINK_LARGER : MAGICK_SHRINK_LARGER, MAGICK_SHRINK_LARGER, &data->frameArena);
-                        RenderFlag(CLAY_STRING("Only Enlarge Smaller"), &data->state,
-                                (data->state & MAGICK_SHRINK_LARGER) ? MAGICK_SHRINK_LARGER | MAGICK_ENLARGE_SMALLER : MAGICK_ENLARGE_SMALLER, MAGICK_ENLARGE_SMALLER, &data->frameArena);
-                        RenderFlag(CLAY_STRING("Fill area"), &data->state, MAGICK_FILL_AREA, MAGICK_FILL_AREA, &data->frameArena);
+                        RenderFlag(CLAY_STRING("Only Shrink Larger"), &data->params.state,
+                                (data->params.state & MAGICK_ENLARGE_SMALLER) ? MAGICK_ENLARGE_SMALLER | MAGICK_SHRINK_LARGER : MAGICK_SHRINK_LARGER, MAGICK_SHRINK_LARGER, &data->frameArena);
+                        RenderFlag(CLAY_STRING("Only Enlarge Smaller"), &data->params.state,
+                                (data->params.state & MAGICK_SHRINK_LARGER) ? MAGICK_SHRINK_LARGER | MAGICK_ENLARGE_SMALLER : MAGICK_ENLARGE_SMALLER, MAGICK_ENLARGE_SMALLER, &data->frameArena);
+                        RenderFlag(CLAY_STRING("Fill area"), &data->params.state, MAGICK_FILL_AREA, MAGICK_FILL_AREA, &data->frameArena);
                     }
 
                     CLAY({
@@ -637,10 +646,10 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                         CLAY({.layout = {.padding = 8}}) {CLAY_TEXT(CLAY_STRING(TEMP_FILES_EXPLANATION), BUTTON_TEXT);}
                         CLAY({.layout = {.layoutDirection = CLAY_LEFT_TO_RIGHT, .childGap = 8, .padding = 8}}) {
                             CLAY_TEXT(CLAY_STRING("Current:"), BUTTON_TEXT);
-                            if (data->tempDir.count == 0)
+                            if (data->params.tempDir.count == 0)
                                 CLAY_TEXT(CLAY_STRING("default"), CLAY_TEXT_CONFIG({ .fontId = FONT_ID_BODY_16, .fontSize = button_font_size, .textColor = colors[colorscheme][COLOR_OVERLAY0] }));
                             else
-                                CLAY_TEXT(CLAY_SB_STRING(data->tempDir), BUTTON_TEXT);
+                                CLAY_TEXT(CLAY_SB_STRING(data->params.tempDir), BUTTON_TEXT);
                         }
                         RenderHeaderButton(CLAY_STRING(SELECT_TEMP));
                     }
@@ -653,7 +662,7 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                         }
                     }) {
                         CLAY_TEXT(CLAY_STRING(MAGICK_EXEC), DEFAULT_TEXT);
-                        RenderHeaderButton(CLAY_SB_STRING(data->magickBinary));
+                        RenderHeaderButton(CLAY_SB_STRING(data->params.magickBinary));
                     }
                 }
             }
