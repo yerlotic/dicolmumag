@@ -181,6 +181,13 @@ typedef struct gravity_t {
     uint8_t selected;
 } gravity_t;
 
+typedef enum ProcStatus : uint8_t {
+    PROCESS_RUNNING,
+    PROCESS_EXITED_OK,
+    PROCESS_CRASHED,
+    PROCESS_WAS_TERMINATED,
+} ProcStatus;
+
 typedef struct magick_params_t {
     uint16_t state;
     Nob_Cmd inputFiles;
@@ -197,11 +204,12 @@ typedef struct magick_params_t {
 
     Nob_String_Builder magickBinary;
     Nob_Proc magickProc;
-    bool threadRunning;
+    ProcStatus threadRunning;
 } magick_params_t;
 
 typedef struct {
     uint8_t selectedDocumentIndex;
+    MagickStatus errorIndex;
     float yOffset;
     ClayVideoDemo_Arena frameArena;
     magick_params_t params;
@@ -271,6 +279,7 @@ static inline void RenderResize(resize_str_t *resize_str) {
         }
     }
 }
+
 static inline void HandleFlagInteraction(
     Clay_ElementId elementId,
     Clay_PointerData pointerData,
@@ -331,6 +340,7 @@ ClayVideoDemo_Data ClayVideoDemo_Initialize() {
         .frameArena = { .memory = (intptr_t)malloc(1024) },
         .shouldClose = false,
         .selectedDocumentIndex = ADVANCED_SETTINGS,
+        .errorIndex = 0,
         .params = {
             .state = MAGICK_BEST_FIT | MAGICK_OPEN_ON_DONE | MAGICK_RESIZE | MAGICK_SHRINK_LARGER,
             .outputFile = {0},
@@ -345,7 +355,7 @@ ClayVideoDemo_Data ClayVideoDemo_Initialize() {
             .magickProc = NOB_INVALID_PROC,
             .threadRunning = false,
             .gravity = {
-                .values = {  // TODO: parse this from `magick -list gravity`
+                .values = {
                     "None",
                     "Center",
                     "East",
@@ -475,7 +485,13 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
             else
                 RenderHeaderButton(CLAY_STRING("Stop"));
             CLAY({ .layout = { .sizing = { CLAY_SIZING_GROW(0) }}}) {}
-            CLAY({.id = CLAY_ID("file")}) {CLAY_TEXT(CLAY_SB_STRING(data->params.outputFile), DEFAULT_TEXT);}
+            if (errors[data->errorIndex][0] == '\0') {
+                CLAY({.id = CLAY_ID("file")}) {CLAY_TEXT(CLAY_SB_STRING(data->params.outputFile), DEFAULT_TEXT);}
+            } else {
+                CLAY({.id = CLAY_ID("error")}) {
+                    CLAY_TEXT(CLAY_DYNAMIC_STRING(errors[data->errorIndex]), CLAY_TEXT_CONFIG({ .fontId = FONT_ID_BODY_16, .fontSize = document_font_size, .textColor = colors[colorscheme][COLOR_RED] }));
+                }
+            }
             CLAY({ .layout = { .sizing = { CLAY_SIZING_GROW(0) }}}) {}
             CLAY({
                 .layout = { .padding = { 16, 16, 8, 8 }},

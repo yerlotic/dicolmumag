@@ -50,8 +50,8 @@ typedef struct AppState {
 #define CLAY_DIMENSIONS (Clay_Dimensions) { .width = GetScreenWidth(), \
                                             .height = GetScreenHeight() }
 #define RunMagickThreaded() \
-        cthreads_thread_ensure_cancelled(data->magickThread, &data->params.threadRunning); \
-        cthreads_thread_create(&data->magickThread, NULL, RunMagickThread, (void *)&data->params, NULL);
+    cthreads_thread_ensure_cancelled(data->magickThread, &data->params.threadRunning); \
+    cthreads_thread_create(&data->magickThread, NULL, RunMagickThread, (void *)data, NULL);
 
 void HandleClayErrors(Clay_ErrorData errorData) {
     printf("[CLAY] [ERROR] %s\n", errorData.errorText.chars);
@@ -79,30 +79,50 @@ void nob_kill(Nob_Proc *proc) {
     *proc = NOB_INVALID_PROC;
 }
 
-bool nob_proc_running(Nob_Proc proc) {
-    if (proc == NOB_INVALID_PROC) return false;
+ProcStatus nob_proc_running(Nob_Proc proc) {
+    if (proc == NOB_INVALID_PROC) {
+        fprintf(stderr, "Got invalid proc\n");
+        return PROCESS_EXITED_OK;
+    }
 #ifdef _WIN32
-    return GetExitCodeProcess(proc, STILL_ACTIVE);
+    int exit_code = GetExitCodeProcess(proc, STILL_ACTIVE);
+    CloseHandle(proc);
+    return exit_code ? PROCESS_CRASHED : PROCESS_EXITED_OK;
 #else
     int status;
     pid_t return_pid = waitpid(proc, &status, WNOHANG);
     if (return_pid == -1) {
-        // error
-        return false;
+        fprintf(stderr, "whoa! a crash in waitpid or sth\n");
+        return PROCESS_CRASHED;
     } else if (return_pid == 0) {
         /* child is still running */
-        return true;
+        return PROCESS_RUNNING;
     } else if (return_pid == proc) {
-        return false;
+        // child stopped running
+        if (WIFEXITED(status)) {
+            int exit_status = WEXITSTATUS(status);
+            if (exit_status == 0) {
+                return PROCESS_EXITED_OK;
+            } else {
+                fprintf(stderr, "command exited with exit code %d:", exit_status);
+                return PROCESS_CRASHED;
+            }
+        }
+
+        if (WIFSIGNALED(status)) {
+            fprintf(stderr, "command process was terminated by signal %d", WTERMSIG(status));
+            return PROCESS_WAS_TERMINATED;
+        }
     }
 #endif // _WIN32
-    return false;
+    fprintf(stderr, "Reached the end of nob_proc_running\n");
+    return PROCESS_CRASHED;
 }
 
-void cthreads_thread_ensure_cancelled(struct cthreads_thread thread, bool *running) {
-    if (*running) {
+void cthreads_thread_ensure_cancelled(struct cthreads_thread thread, ProcStatus *running) {
+    if (running == PROCESS_RUNNING) {
         cthreads_thread_cancel(thread);
-        *running = false;
+        *running = PROCESS_WAS_TERMINATED;
     }
 }
 
@@ -116,14 +136,14 @@ void cthreads_thread_ensure_cancelled(struct cthreads_thread thread, bool *runni
     nob_cmd_run_async_redirect(cmd, (Nob_Cmd_Redirect) {.fdout = &blackhole, .fderr = &blackhole}); \
 } while(0)
 
-int GetInputFiles(Nob_Cmd *inputFiles) {
+MagickStatus GetInputFiles(Nob_Cmd *inputFiles) {
     int allow_multiple_selects = true;
     char const *filter_params[] = {"*.png", "*.svg", "*.jpg", "*.jpeg"};
     char *input_path = tinyfd_openFileDialog("Path to images", "./", sizeof(filter_params) / sizeof(filter_params[0]), filter_params, "Image file", allow_multiple_selects);
 
     if (!input_path) {
         fprintf(stderr, "Too bad no input files\n");
-        return false;
+        return MAGICK_ERROR_CANCELLED;
     }
 
     char c;
@@ -148,13 +168,13 @@ int GetInputFiles(Nob_Cmd *inputFiles) {
         if (c == '\0') break;
     }
     nob_sb_free(buf);
-    return true;
+    return MAGICK_ERROR_OK;
 }
 
-int RunMagick(magick_params_t *params) {
+MagickStatus RunMagick(magick_params_t *params) {
     if (params->inputFiles.count == 0) {
         fprintf(stderr, "No files to process\n");
-        return false;
+        return MAGICK_ERROR_NO_FILES;
     }
 
     // outputFile, inputFiles, magickBinary, state, resize_str, color_str, color, tempDir, gravity, magickProc
@@ -235,7 +255,6 @@ int RunMagick(magick_params_t *params) {
     nob_cmd_append(&cmd, "-gravity", params->gravity.values[params->gravity.selected]);
     nob_cmd_append(&cmd, ashlar_path);
 
-    bool ret = true;
     params->magickProc = nob_cmd_run_async(cmd);
 
     // Freeing memory
@@ -247,19 +266,28 @@ int RunMagick(magick_params_t *params) {
     nob_free_all(&to_free);
     nob_cmd_free(to_free);
     nob_cmd_free(cmd);
-    return ret;
+    return MAGICK_ERROR_OK;
 }
 
 void *RunMagickThread(void *arg) {
-    magick_params_t *params = (magick_params_t *) arg;
-    params->threadRunning = true;
-    RunMagick(params);
-    params->threadRunning = false;
+    ClayVideoDemo_Data *data = (ClayVideoDemo_Data *) arg;
+    // if (data->errorIndex != MAGICK_ERROR_NOT_WORK ||
+    //     data->errorIndex != MAGICK_ERROR_INVALID_BINARY_SELECTED) {
+    // }
+    if (!testMagick(data->params.magickBinary.items)) {
+        data->errorIndex = MAGICK_ERROR_NOT_WORK;
+        return NULL;
+    }
+    data->params.threadRunning = true;
+    fprintf(stderr, "%d\n", data->errorIndex);
+    data->errorIndex = RunMagick(&data->params);
+    fprintf(stderr, "%d\n", data->errorIndex);
+    data->params.threadRunning = false;
     return NULL;
 }
 
 // TODO: indicate failure in error message (also when startup)
-void ChangeMagickBinary(Nob_String_Builder *magickBin) {
+MagickStatus ChangeMagickBinary(Nob_String_Builder *magickBin) {
 #ifdef _WIN32
     const char *filter_params[] = {"*.exe", "*.msi", "*"};
 #else
@@ -269,20 +297,22 @@ void ChangeMagickBinary(Nob_String_Builder *magickBin) {
     fprintf(stderr, "runnin\n");
     char *new_magick = tinyfd_openFileDialog("Path to magick executable", NULL, sizeof(filter_params) / sizeof(filter_params[0]), filter_params, "Executable files", false);
 
-    if (!new_magick[0]) {
+    if (!new_magick) {
         fprintf(stderr, "Too bad, no another magick binary\n");
-        return;
+        return MAGICK_ERROR_CANCELLED;
     }
 
     if (!testMagick(new_magick)) {
         fprintf(stderr, "Too bad, no another magick binary (\"%s\") cuz testing was too bad\n", new_magick);
-        return;
+        return MAGICK_ERROR_INVALID_BINARY_SELECTED;
     }
 
     // Yeah, this buffer contains nothing, u can use it!
     magickBin->count = 0;
     nob_sb_append_cstr(magickBin, new_magick);
     nob_sb_append_null(magickBin);
+
+    return MAGICK_ERROR_OK;
 }
 
 void ChangeOutputPath(Nob_String_Builder *outputFile) {
@@ -428,10 +458,21 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, ClayVideoDemo_Data *
 
     Nob_Cmd cmd = {0};
 
-    if (data->params.state & MAGICK_OPEN_ON_DONE && data->params.magickProc != NOB_INVALID_PROC && !nob_proc_running(data->params.magickProc)) {
-        nob_cmd_append(&cmd, "xdg-open", data->params.outputFile.items);
-        nob_cmd_run_async_silent(cmd);
-        data->params.magickProc = NOB_INVALID_PROC;
+    if (data->params.state & MAGICK_OPEN_ON_DONE && data->params.magickProc != NOB_INVALID_PROC) {
+        ProcStatus status = nob_proc_running(data->params.magickProc);
+        if (status == PROCESS_EXITED_OK) {
+            data->errorIndex = MAGICK_ERROR_OK;
+            nob_cmd_append(&cmd, "xdg-open", data->params.outputFile.items);
+            nob_cmd_run_async_silent(cmd);
+            cmd.count = 0;
+        } else if (status == PROCESS_CRASHED) {
+            data->errorIndex = MAGICK_ERROR_PROCESS_CRASHED;
+        } else if (status == PROCESS_WAS_TERMINATED) {
+            data->errorIndex = MAGICK_ERROR_PROCESS_TERMINATED;
+        }
+
+        if (status != PROCESS_RUNNING)
+            data->params.magickProc = NOB_INVALID_PROC;
     }
 
     int8_t scroll = scrollDirection(scrollDelta);
@@ -454,8 +495,10 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, ClayVideoDemo_Data *
         cthreads_thread_ensure_cancelled(data->magickThread, &data->params.threadRunning);
     } else if (released("MagickBinary")) {
         printf("bin befor: %s\n", data->params.magickBinary.items);
-        ChangeMagickBinary(&data->params.magickBinary);
-        printf("bin aftir: %s\n", data->params.magickBinary.items);
+        data->errorIndex = ChangeMagickBinary(&data->params.magickBinary);
+        printf("bin aftir: %d\n", data->errorIndex);
+    } else if (released("error")) {
+        data->errorIndex = MAGICK_ERROR_OK;
     } else if (released("file")) {
         printf("befor: %s\n", data->params.outputFile.items);
         ChangeOutputPath(&data->params.outputFile);
@@ -536,11 +579,6 @@ bool testMagick(char* magickBin) {
 }
 
 int main(void) {
-    if (!testMagick("magick")) {
-        // yes, this is an mdash
-        fprintf(stderr, "Sorry, no magick — no worky\n");
-        // return -1;
-    }
     char* title = "Magick deez nuts";
     // vsync makes resizes slower, we don't want this
     // but antialiasing is nice
@@ -570,6 +608,13 @@ int main(void) {
     Clay_Arena clayMemory = Clay_CreateArenaWithCapacityAndMemory(clayRequiredMemory, malloc(clayRequiredMemory));
     Clay_Context *clayContext = Clay_Initialize(clayMemory, CLAY_DIMENSIONS, (Clay_ErrorHandler) { HandleClayErrors, NULL }); // This final argument is new since the video was published
     ClayVideoDemo_Data data = ClayVideoDemo_Initialize();
+
+    if (!testMagick(data.params.magickBinary.items)) {
+        // yes, this is an mdash
+        fprintf(stderr, "Sorry, no magick — no worky\n");
+        data.errorIndex = MAGICK_ERROR_NOT_WORK;
+    }
+
     Clay_SetMeasureTextFunction(Raylib_MeasureText, fonts);
     SetTargetFPS(GetMonitorRefreshRate(GetCurrentMonitor()));
     // Disable ESC to exit

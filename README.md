@@ -28,7 +28,7 @@ App for creating collages with [imagemagick](https://imagemagick.org)
 ## Features
 
 - [ ] Specify output resolutions and margins
-- [ ] Indication of success or failure (e. g. when magick not available)
+- [x] Indication of success or failure (e. g. when magick not available)
 - [x] Change color scheme
 - [x] Specify gravity
 - [x] Best fit
@@ -55,7 +55,6 @@ App for creating collages with [imagemagick](https://imagemagick.org)
     - `LAZY_RENDER` — Why render when u can do nothing?
     - `UI_TESTING` — Enable FPS counter and Clay debug mode
     - `DEBUG` — Enable `printf`s
-    - `LATTE` — Use Catppuccin Latte color scheme
     </details>
 
     ```shell
