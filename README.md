@@ -27,14 +27,15 @@ App for creating collages with [imagemagick](https://imagemagick.org)
 
 ## Features
 
-- [ ] Specify output resolutions and margins
-- [x] Indication of success or failure (e. g. when magick not available)
+- [x] Indication of success or failure (e. g. when magick is not available)
 - [x] Change color scheme
 - [x] Specify gravity
 - [x] Best fit
 - [x] Transparent background
 - [x] Resize input images
 - [x] Change location for temporary files
+- [ ] Specify output resolutions and margins
+- [ ] Specify maximum images per output
 
 ## Requirements
 
