@@ -433,6 +433,8 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, ClayVideoDemo_Data *
         nob_cmd_run_async_silent(cmd);
         data->params.magickProc = NOB_INVALID_PROC;
     }
+
+    int8_t scroll = scrollDirection(scrollDelta);
     if (released("Quit")) {
         data->shouldClose = true;
         printf("close\n");
@@ -470,7 +472,6 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, ClayVideoDemo_Data *
         }
     // Number pickers handling
     } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("ResizeAll")))) {
-        int8_t scroll = scrollDirection(scrollDelta);
         // Don't update in no interaction happened
         if (scroll != 0) {
             data->params.resize.h = data->params.resize.w = data->params.resize.w + 50 * scroll;
@@ -478,34 +479,34 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, ClayVideoDemo_Data *
             sprintf(data->params.resize_str.h, "%d", data->params.resize.h);
         }
     } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("ResizeW")))) {
-        data->params.resize.w += 50 * scrollDirection(scrollDelta);
+        data->params.resize.w += 50 * scroll;
         sprintf(data->params.resize_str.w, "%d", data->params.resize.w);
     } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("ResizeH")))) {
-        data->params.resize.h += 50 * scrollDirection(scrollDelta);
+        data->params.resize.h += 50 * scroll;
         sprintf(data->params.resize_str.h, "%d", data->params.resize.h);
     } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("ResizeEach")))) {
-        data->params.resize.w += 50 * scrollDirection(scrollDelta);
-        data->params.resize.h += 50 * scrollDirection(scrollDelta);
+        data->params.resize.w += 50 * scroll;
+        data->params.resize.h += 50 * scroll;
         sprintf(data->params.resize_str.w, "%d", data->params.resize.w);
         sprintf(data->params.resize_str.h, "%d", data->params.resize.h);
     } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("r")))) {
-        data->params.color.r += scrollDirection(scrollDelta);
+        data->params.color.r += scroll;
         sprintf(data->params.color_str.r, "%d", data->params.color.r);
     } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("g")))) {
-        data->params.color.g += scrollDirection(scrollDelta);
+        data->params.color.g += scroll;
         sprintf(data->params.color_str.g, "%d", data->params.color.g);
     } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("b")))) {
-        data->params.color.b += scrollDirection(scrollDelta);
+        data->params.color.b += scroll;
         sprintf(data->params.color_str.b, "%d", data->params.color.b);
     } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("a")))) {
-        data->params.color.a += scrollDirection(scrollDelta);
+        data->params.color.a += scroll;
         // guess what
         // we dont have a tool for that called %
         if (data->params.color.a == 255) data->params.color.a = 100;
         if (data->params.color.a > 100) data->params.color.a = 0;  // wrap
         sprintf(data->params.color_str.a, "%d", data->params.color.a);
     } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("GravitySelection")))) {
-        data->params.gravity.selected -= scrollDirection(scrollDelta);
+        data->params.gravity.selected -= scroll;
         // guess what
         // we dont have a tool for that called %
         if (data->params.gravity.selected == 255) data->params.gravity.selected = gravity_len - 1;
