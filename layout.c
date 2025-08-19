@@ -349,9 +349,9 @@ ClayVideoDemo_Data ClayVideoDemo_Initialize() {
             .inputFiles = {0},
             .resize =     {.w =  1000,  .h =  1000 },
             .resize_str = {.w = "1000", .h = "1000"},
-            .color =     { .r =  0,  .b =  0,  .g =  0,  .a =  100  },
-            // This should be set because these strings are only updated when color is updated
-            .color_str = { .r = "0", .b = "0", .g = "0", .a = "100" },
+            .color =     { .r =  0,  .b =  0,  .g =  0,  .a =  0  },
+            // This should be set because these strings are only updated when `color` is updated
+            .color_str = { .r = "0", .b = "0", .g = "0", .a = "0" },
             .magickProc = NOB_INVALID_PROC,
             .threadRunning = false,
             .gravity = {
@@ -374,7 +374,15 @@ ClayVideoDemo_Data ClayVideoDemo_Initialize() {
         .magickThread = {0},
     };
     nob_sb_append_cstr(&data.params.outputFile, "res.png");
-    nob_sb_append_cstr(&data.params.magickBinary, "magick"); // this is only fine without null cuz zeroes are there by chance
+
+#ifdef APPIMAGE
+    fprintf(stderr, "Appdir: %s\n", getenv("APPDIR"));
+    nob_sb_append_cstr(&data.params.magickBinary, getenv("APPDIR"));
+    nob_sb_append_cstr(&data.params.magickBinary, "/usr/bin/magick");
+#else
+    nob_sb_append_cstr(&data.params.magickBinary, "magick");
+#endif // APPIMAGE
+
     nob_sb_append_null(&data.params.magickBinary);
     return data;
 }

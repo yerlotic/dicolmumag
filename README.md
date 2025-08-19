@@ -56,6 +56,7 @@ App for creating collages with [imagemagick](https://imagemagick.org)
     - `LAZY_RENDER` — Why render when u can do nothing?
     - `UI_TESTING` — Enable FPS counter and Clay debug mode
     - `DEBUG` — Enable `printf`s
+    - `APPIMAGE` — Use magick from `$APPDIR`
     </details>
 
     ```shell
