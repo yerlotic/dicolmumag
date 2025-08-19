@@ -5,6 +5,7 @@ export LC_ALL=C    # speed
 
 APP_ROOT=AppDir.AppDir
 NAME=dicolmumag
+EXE_NAME=app
 # relative to build directory
 ICON="../resources/$NAME.png"
 DESKTOP="../resources/$NAME.desktop"
@@ -26,14 +27,21 @@ else
 fi
 
 
-
 [ "$(basename "$PWD")" != build ] && cd build
 
 rm -rf "$APP_ROOT"
-cmake .. -DUSE_EXTERNAL_GLFW=ON -DBUILD_EXAMPLES=OFF -DCUSTOMIZE_BUILD=ON -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Release && make
+cmake_flags=(
+    -DUSE_EXTERNAL_GLFW=ON
+    -DBUILD_EXAMPLES=OFF
+    -DCUSTOMIZE_BUILD=ON
+    -DBUILD_SHARED_LIBS=ON
+    -DLAZY_RENDER=ON
+    -DCMAKE_BUILD_TYPE=Release
+)
+cmake .. "${cmake_flags[@]}" -DAPPIMAGE=OFF && make "-j$(nproc)"
 
-sudo rm /bin/app
-sudo cp app /bin/
+sudo rm /bin/"$EXE_NAME"
+sudo cp "$EXE_NAME" /bin/
 
 echo "$PWD"
 mkdir -vp "$APP_ROOT"/usr/{lib,bin}
@@ -44,9 +52,9 @@ mkdir -vp "$APP_ROOT"/usr/{lib,bin}
     cd usr
     ln -fs lib lib64
 )
-cp app "$APP_ROOT"/usr/bin/
+cp "$EXE_NAME" "$APP_ROOT"/usr/bin/
 
-# ldd app | grep '=>' | sed 's_.* => /\(.*\) (.*)_cp "/\1" "AppDir/.AppDir/\1"; patchelf --replace-needed "/\1" "\1" app\n_g' | tee /dev/stderr | bash
+# ldd "$EXE_NAME" | grep '=>' | sed 's_.* => /\(.*\) (.*)_cp "/\1" "AppDir/.AppDir/\1"; patchelf --replace-needed "/\1" "\1" "$EXE_NAME"\n_g' | tee /dev/stderr | bash
 
 mkdir -p "$APP_ROOT"/usr/share/{icons,applications}
 
@@ -59,14 +67,28 @@ args+=(
     --appdir=AppDir
     --desktop="$DESKTOP"
     --icon="$ICON"
-    /usr/bin/app
+    /usr/bin/"$EXE_NAME"
 )
 
 # https://github.com/natanael-b/make-portable
 make-portable "${args[@]}" || true
 
+# cleanup and fixes for libs
+while read -r file; do
+    mv -v "$file" "${file/.wrapped/}"
+done < <(find "$APP_ROOT"/usr/lib -type f -iname '*.wrapped')
+cp -rv /etc/ImageMagick-?/ "$APP_ROOT"/etc/
+cp -rv /usr/lib/ImageMagick-*.*.*/ "$APP_ROOT"/usr/lib/
+
+
+# rebuild to use APPIMAGE
+cmake .. "${cmake_flags[@]}" -DAPPIMAGE=ON && make "-j$(nproc)"
+
+# replace the executable
+mv ./"$EXE_NAME" "$APP_ROOT"/usr/bin/"$EXE_NAME".wrapped
+
 if [ "$tool_available" == true ]; then
-    rm -rf "$APP_ROOT"/usr/share/icons/*
+    rm -rf "$APP_ROOT"/usr/share/icons/* "${APP_ROOT:?}"/home
     cp "$ICON" "$APP_ROOT"/usr/share/icons/
     appimagetool -n "$APP_ROOT"
 fi
