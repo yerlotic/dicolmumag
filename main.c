@@ -182,10 +182,29 @@ MagickStatus RunMagick(magick_params_t *params) {
     Nob_Cmd to_free = {0};
     Nob_String_Builder buf = {0};
     bool free_buf = false;
-    char *ashlar_path = malloc(strlen(ASHLAR_PREFIX) + params->outputFile.count);
-    *ashlar_path = '\0';
-    strcat(ashlar_path, ASHLAR_PREFIX);
-    strcat(ashlar_path, params->outputFile.items);
+    Nob_String_Builder ashlar_path = {0};
+    nob_sb_append_cstr(&ashlar_path, ASHLAR_PREFIX);
+    // There should always me '\0' at the end of outputFile
+    nob_sb_append_cstr(&ashlar_path, params->outputFile.items);
+    if (params->state & MAGICK_SET_RESOLUTION) {
+        nob_sb_append_buf(&ashlar_path, "[", 1);
+        nob_sb_append_cstr(&ashlar_path, params->resizes[RESIZES_OUTPUT_RES].str.w);
+        nob_sb_append_buf(&ashlar_path, "x", 1);
+        nob_sb_append_cstr(&ashlar_path, params->resizes[RESIZES_OUTPUT_RES].str.h);
+
+        // Casting cuz it can be negative
+        if ((int8_t) params->resizes[RESIZES_OUTPUT_MARGIN].values.w >= 0)
+            nob_sb_append_buf(&ashlar_path, "+", 1);
+        nob_sb_append_cstr(&ashlar_path, params->resizes[RESIZES_OUTPUT_MARGIN].str.w);
+
+        if ((int8_t) params->resizes[RESIZES_OUTPUT_MARGIN].values.h >= 0)
+            nob_sb_append_buf(&ashlar_path, "+", 1);
+        nob_sb_append_cstr(&ashlar_path, params->resizes[RESIZES_OUTPUT_MARGIN].str.h);
+
+        nob_sb_append_buf(&ashlar_path, "]", 1);
+    }
+    nob_sb_append_null(&ashlar_path);
+    fprintf(stderr, "Ashlar: %s\n", ashlar_path.items);
 
     nob_cmd_append(&cmd, params->magickBinary.items);
     nob_cmd_append(&cmd, "-verbose");
@@ -196,11 +215,11 @@ MagickStatus RunMagick(magick_params_t *params) {
     char *resize_str = NULL;
     if (params->state & MAGICK_RESIZE) {
         // https://usage.imagemagick.org/resize
-        resize_str = malloc(strlen(params->resize_str.h) + strlen(params->resize_str.w) + 2 + MODIFIERS); // 'x', '\0' and modifiers
+        resize_str = malloc(strlen(params->resizes[RESIZES_INPUT].str.h) + strlen(params->resizes[RESIZES_INPUT].str.w) + 2 + MODIFIERS); // 'x', '\0' and modifiers
         *resize_str = '\0';
-        strcat(resize_str, params->resize_str.w);
+        strcat(resize_str, params->resizes[RESIZES_INPUT].str.w);
         strcat(resize_str, "x");
-        strcat(resize_str, params->resize_str.h);
+        strcat(resize_str, params->resizes[RESIZES_INPUT].str.h);
 
         if (params->state & MAGICK_IGNORE_RATIO) // 1
             strcat(resize_str, MAGICK_RESIZE_IGNORE_RATIO);
@@ -253,12 +272,12 @@ MagickStatus RunMagick(magick_params_t *params) {
         free_buf = true;
     }
     nob_cmd_append(&cmd, "-gravity", params->gravity.values[params->gravity.selected]);
-    nob_cmd_append(&cmd, ashlar_path);
+    nob_cmd_append(&cmd, ashlar_path.items);
 
     params->magickProc = nob_cmd_run_async(cmd);
 
     // Freeing memory
-    free(ashlar_path);
+    nob_sb_free(ashlar_path);
     if (params->state & MAGICK_RESIZE)
         free(resize_str);
     if (free_buf)
@@ -445,6 +464,73 @@ bool StatesEqual(AppState *this, AppState *that) {
     return true;
 }
 
+bool UpdateResizes(resize_element_t *resizes, int8_t scroll) {
+    bool scrolled = false;
+
+    // Handle one in header bar
+    if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("ResizeAll")))) {
+        resizes[RESIZES_INPUT].values.h = resizes[RESIZES_INPUT].values.w = resizes[RESIZES_INPUT].values.w + 50 * scroll;
+        sprintf(resizes[RESIZES_INPUT].str.w, "%d", resizes[RESIZES_INPUT].values.w);
+        sprintf(resizes[RESIZES_INPUT].str.h, "%d", resizes[RESIZES_INPUT].values.h);
+        return true;
+    }
+
+    resize_element_t *resize;
+    uint8_t step;
+    Nob_String_Builder sb = {0};
+    // Number pickers handling (questionable)
+    for (size_t i = 0; i < resizes_len; i++) {
+        resize = &resizes[i];
+        step = resize->step;
+
+        if (!Clay_PointerOver(Clay_GetElementId(resize->id))) continue;
+        scrolled = true;
+
+        // All this could have been done with a macro
+        // probably
+        sb.count = 0;
+        nob_sb_append_buf(&sb, resize->id.chars, resize->id.length);
+
+        nob_sb_append_buf(&sb, "W", 1);
+        if (Clay_PointerOver(Clay_GetElementId(CLAY_SB_STRING(sb)))) {
+            resize->values.w += step * scroll;
+            if (strncmp(resize->id.chars, RESIZE_OUTPUT_MARGIN_S, resize->id.length) == 0)
+                sprintf(resize->str.w, "%d", (int8_t) resize->values.w);
+            else
+                sprintf(resize->str.w, "%d", resize->values.w);
+            break;
+        }
+
+        sb.count -= 1;
+        nob_sb_append_buf(&sb, "H", 1);
+        if (Clay_PointerOver(Clay_GetElementId(CLAY_SB_STRING(sb)))) {
+            resize->values.h += step * scroll;
+            if (strncmp(resize->id.chars, RESIZE_OUTPUT_MARGIN_S, resize->id.length) == 0)
+                sprintf(resize->str.h, "%d", (int8_t) resize->values.h);
+            else
+                sprintf(resize->str.h, "%d", resize->values.h);
+            break;
+        }
+
+        sb.count -= 1;
+        nob_sb_append_buf(&sb, "Each", 4);
+        if (Clay_PointerOver(Clay_GetElementId(CLAY_SB_STRING(sb)))) {
+            resize->values.w += step * scroll;
+            resize->values.h += step * scroll;
+            if (strncmp(resize->id.chars, RESIZE_OUTPUT_MARGIN_S, resize->id.length) == 0) {
+                sprintf(resize->str.w, "%d", (int8_t) resize->values.w);
+                sprintf(resize->str.h, "%d", (int8_t) resize->values.h);
+            } else {
+                sprintf(resize->str.w, "%d", resize->values.w);
+                sprintf(resize->str.h, "%d", resize->values.h);
+            }
+            break;
+        }
+    }
+    nob_sb_free(sb);
+    return scrolled;
+}
+
 Clay_RenderCommandArray CreateLayout(Clay_Context* context, ClayVideoDemo_Data *data, AppState appstate) {
     Clay_SetCurrentContext(context);
     // Run once per frame
@@ -513,52 +599,49 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, ClayVideoDemo_Data *
         } else {
             fprintf(stderr, "No file was made\n");
         }
-    // Number pickers handling
-    } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("ResizeAll")))) {
-        // Don't update in no interaction happened
-        if (scroll != 0) {
-            data->params.resize.h = data->params.resize.w = data->params.resize.w + 50 * scroll;
-            sprintf(data->params.resize_str.w, "%d", data->params.resize.w);
-            sprintf(data->params.resize_str.h, "%d", data->params.resize.h);
+    }
+
+    // Update only on interaction
+    bool scrolled = false;
+    if (scroll) {
+        scrolled = UpdateResizes((resize_element_t *) &data->params.resizes, scroll);
+
+        // colors
+        if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("r")))) {
+            data->params.color.r += scroll;
+            sprintf(data->params.color_str.r, "%d", data->params.color.r);
+        } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("g")))) {
+            data->params.color.g += scroll;
+            sprintf(data->params.color_str.g, "%d", data->params.color.g);
+            scrolled = true;
+        } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("b")))) {
+            data->params.color.b += scroll;
+            sprintf(data->params.color_str.b, "%d", data->params.color.b);
+            scrolled = true;
+        } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("a")))) {
+            data->params.color.a += scroll;
+            // guess what
+            // we dont have a tool for that called %
+            if (data->params.color.a == 255) data->params.color.a = 100;
+            if (data->params.color.a > 100) data->params.color.a = 0;  // wrap
+            sprintf(data->params.color_str.a, "%d", data->params.color.a);
+            scrolled = true;
+        } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("GravitySelection")))) {
+            data->params.gravity.selected -= scroll;
+            // guess what
+            // we dont have a tool for that called %
+            if (data->params.gravity.selected == 255) data->params.gravity.selected = gravity_len - 1;
+            if (data->params.gravity.selected > gravity_len - 1) data->params.gravity.selected = 0;  // wrap
+            scrolled = true;
         }
-    } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("ResizeW")))) {
-        data->params.resize.w += 50 * scroll;
-        sprintf(data->params.resize_str.w, "%d", data->params.resize.w);
-    } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("ResizeH")))) {
-        data->params.resize.h += 50 * scroll;
-        sprintf(data->params.resize_str.h, "%d", data->params.resize.h);
-    } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("ResizeEach")))) {
-        data->params.resize.w += 50 * scroll;
-        data->params.resize.h += 50 * scroll;
-        sprintf(data->params.resize_str.w, "%d", data->params.resize.w);
-        sprintf(data->params.resize_str.h, "%d", data->params.resize.h);
-    } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("r")))) {
-        data->params.color.r += scroll;
-        sprintf(data->params.color_str.r, "%d", data->params.color.r);
-    } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("g")))) {
-        data->params.color.g += scroll;
-        sprintf(data->params.color_str.g, "%d", data->params.color.g);
-    } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("b")))) {
-        data->params.color.b += scroll;
-        sprintf(data->params.color_str.b, "%d", data->params.color.b);
-    } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("a")))) {
-        data->params.color.a += scroll;
-        // guess what
-        // we dont have a tool for that called %
-        if (data->params.color.a == 255) data->params.color.a = 100;
-        if (data->params.color.a > 100) data->params.color.a = 0;  // wrap
-        sprintf(data->params.color_str.a, "%d", data->params.color.a);
-    } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("GravitySelection")))) {
-        data->params.gravity.selected -= scroll;
-        // guess what
-        // we dont have a tool for that called %
-        if (data->params.gravity.selected == 255) data->params.gravity.selected = gravity_len - 1;
-        if (data->params.gravity.selected > gravity_len - 1) data->params.gravity.selected = 0;  // wrap
-    } else {
+
+    }
+    if (!scrolled) {
+        // this should only be updated if no scroll was triggered
         Clay_UpdateScrollContainers(
-                true,
-                (Clay_Vector2) { scrollDelta.x, scrollDelta.y },
-                GetFrameTime()
+            true,
+            (Clay_Vector2) { scrollDelta.x, scrollDelta.y },
+            GetFrameTime()
         );
     }
 

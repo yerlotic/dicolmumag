@@ -3,7 +3,12 @@
 
 #include <stdint.h>
 
+#define ADVANCED_SETTINGS_S "Advanced Settings"
+#define ADVANCED_SETTINGS_Q "\"Advanced Settings\""
+
 #define SELECT_GRAVITY "Change gravity"
+
+#define OUTPUT_RES "Output resolution"
 
 #define SELECT_TEMP "Change location"
 #define TEMP_FILES "Temporary files"

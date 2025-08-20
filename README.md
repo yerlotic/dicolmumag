@@ -34,7 +34,7 @@ App for creating collages with [imagemagick](https://imagemagick.org)
 - [x] Transparent background
 - [x] Resize input images
 - [x] Change location for temporary files
-- [ ] Specify output resolutions and margins
+- [x] Specify output resolution and margins
 - [ ] Specify maximum images per output
 
 ## Requirements

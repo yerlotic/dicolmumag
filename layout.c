@@ -17,7 +17,7 @@ const uint8_t sidebar_font_size = 23;
 const uint8_t document_font_size = 30;
 const uint8_t title_font_size = 40;
 
-#define ADVANCED_SETTINGS 4
+#define ADVANCED_SETTINGS 5
 
 #define CLAY_DYNAMIC_STRING(string) (CLAY__INIT(Clay_String) { .isStaticallyAllocated = false, .length = strlen(string), .chars = (string) })
 #define CLAY_SB_STRING(sb) (CLAY__INIT(Clay_String) { .isStaticallyAllocated = false, .length = (sb).count, .chars = (sb).items })
@@ -132,10 +132,10 @@ typedef struct {
     uint8_t length;
 } DocumentArray;
 
-Document documentsRaw[5];
+Document documentsRaw[6];
 
 DocumentArray documents = {
-    .length = 5,
+    .length = 6,
     .documents = documentsRaw
 };
 
@@ -155,6 +155,7 @@ typedef enum {
     MAGICK_FILL_AREA       = 1 << 7,
     MAGICK_PERCENTAGE      = 1 << 8,
     MAGICK_PIXEL_LIMIT     = 1 << 9,
+    MAGICK_SET_RESOLUTION  = 1 << 10,
 } MagickState;
 
 typedef struct rgba {
@@ -172,8 +173,21 @@ typedef struct resize_t {
 } resize_t;
 
 typedef struct resize_str_t {
-    char w[6], h[6];  // max: 6 bytes for string repr
+    char w[6], h[6];  // max: 6 bytes for string repr of uint16
 } resize_str_t;
+
+typedef struct resize_element_t {
+    Clay_String id;
+    resize_t values;
+    resize_str_t str;
+    uint8_t step;
+} resize_element_t;
+
+enum {
+    RESIZES_INPUT,
+    RESIZES_OUTPUT_RES,
+    RESIZES_OUTPUT_MARGIN,
+};
 
 #define gravity_len 10
 typedef struct gravity_t {
@@ -188,6 +202,7 @@ typedef enum ProcStatus : uint8_t {
     PROCESS_WAS_TERMINATED,
 } ProcStatus;
 
+#define resizes_len 3
 typedef struct magick_params_t {
     uint16_t state;
     Nob_Cmd inputFiles;
@@ -196,8 +211,7 @@ typedef struct magick_params_t {
 
     gravity_t gravity;
 
-    resize_t resize;
-    resize_str_t resize_str;
+    resize_element_t resizes[resizes_len];
 
     rgba color;
     rgba_str color_str;
@@ -246,6 +260,8 @@ static inline void HandleSidebarInteraction(
                 *clickData->state ^= MAGICK_OPEN_ON_DONE;
             } else if (clickData->requestedDocumentIndex == 3) {
                 *clickData->state ^= MAGICK_RESIZE;
+            } else if (clickData->requestedDocumentIndex == 4) {
+                *clickData->state ^= MAGICK_SET_RESOLUTION;
             }
             // Select the corresponding document
             *clickData->selectedDocumentIndex = clickData->requestedDocumentIndex;
@@ -264,21 +280,21 @@ static inline void RenderMagickColor(rgba *color, uint16_t state) {
     }
 }
 
-static inline void RenderResize(resize_str_t *resize_str) {
-    CLAY({
-        .backgroundColor = BUTTON_COLOR,
-        .id = CLAY_ID("Resize"),
-        .cornerRadius = BUTTON_RADIUS,
-    }) {
-        CLAY({ .id = CLAY_ID("ResizeW"), .layout = { .padding = { .left = 16, .top = 8, .bottom = 8 } } }) {
-            CLAY_TEXT(CLAY_DYNAMIC_STRING(resize_str->w), BUTTON_TEXT);
-        }
-        CLAY({ .id = CLAY_ID("ResizeEach"), .layout = { .padding = {.top = 8, .bottom = 8} }}) { CLAY_TEXT(CLAY_STRING("x"), BUTTON_TEXT); }
-        CLAY({ .id = CLAY_ID("ResizeH"), .layout = { .padding = { .right = 16, .top = 8, .bottom = 8 } } }) {
-            CLAY_TEXT(CLAY_DYNAMIC_STRING(resize_str->h), BUTTON_TEXT);
-        }
-    }
-}
+#define RenderResize(element, id_str) do { \
+    CLAY({ \
+        .backgroundColor = BUTTON_COLOR, \
+        .id = CLAY_ID(id_str), \
+        .cornerRadius = BUTTON_RADIUS, \
+    }) { \
+        CLAY({ .id = CLAY_ID(id_str "W"), .layout = { .padding = { .left = 16, .top = 8, .bottom = 8 } } }) { \
+            CLAY_TEXT(CLAY_DYNAMIC_STRING((element)->str.w), BUTTON_TEXT); \
+        } \
+        CLAY({ .id = CLAY_ID(id_str "Each"), .layout = { .padding = {.top = 8, .bottom = 8} }}) { CLAY_TEXT(CLAY_STRING("x"), BUTTON_TEXT); } \
+        CLAY({ .id = CLAY_ID(id_str "H"), .layout = { .padding = { .right = 16, .top = 8, .bottom = 8 } } }) { \
+            CLAY_TEXT(CLAY_DYNAMIC_STRING((element)->str.h), BUTTON_TEXT); \
+        } \
+    } \
+} while (0)
 
 static inline void HandleFlagInteraction(
     Clay_ElementId elementId,
@@ -328,13 +344,18 @@ static inline void RenderFlag(Clay_String text,
     }
 }
 
+#define RESIZE_INPUT_S "Resize"
+#define RESIZE_OUTPUT_S "OutputDimentions"
+#define RESIZE_OUTPUT_MARGIN_S "OutputMargin"
+
 ClayVideoDemo_Data ClayVideoDemo_Initialize() {
     // Update DocumentArray
     documents.documents[0] = (Document){ .title = CLAY_STRING("Best fit"), .contents = CLAY_STRING("This ashlar option aligns images on both sides of the resulting image") };
-    documents.documents[1] = (Document){ .title = CLAY_STRING("Transparent background"), .contents = CLAY_STRING("Makes the background transparent") };
+    documents.documents[1] = (Document){ .title = CLAY_STRING("Transparent background"), .contents = CLAY_STRING("Makes the background transparent\nThis overrides background configuration in "ADVANCED_SETTINGS_Q" tab") };
     documents.documents[2] = (Document){ .title = CLAY_STRING("Open when done"), .contents = CLAY_STRING("Enable this to see the result right after it's done!\n\nNothing more\nsurely") };
-    documents.documents[3] = (Document){ .title = CLAY_STRING("Enable Resize"), .contents = CLAY_STRING("This option enables resizes") };
-    documents.documents[ADVANCED_SETTINGS] = (Document){ .title = CLAY_STRING("Advanced settings"), .contents = CLAY_STRING("This section contains advanced settings") };
+    documents.documents[3] = (Document){ .title = CLAY_STRING("Enable Resize"), .contents = CLAY_STRING("This option enables resizes. You can configure how input images are resized in "ADVANCED_SETTINGS_Q) };
+    documents.documents[4] = (Document){ .title = CLAY_STRING("Set output resolution"), .contents = CLAY_STRING("With this option you can directly set the desired output resolution for the collage in "ADVANCED_SETTINGS_Q" tab\nIf this option is disabled, the resolution for the output image (filename at the top) will be chosen automatically") };
+    documents.documents[ADVANCED_SETTINGS] = (Document){ .title = CLAY_STRING(ADVANCED_SETTINGS_S), .contents = CLAY_STRING("This tab contains advanced settings (surprise!)") };
 
     ClayVideoDemo_Data data = {
         .frameArena = { .memory = (intptr_t)malloc(1024) },
@@ -347,8 +368,26 @@ ClayVideoDemo_Data ClayVideoDemo_Initialize() {
             .tempDir = {0},
             .magickBinary = {0},
             .inputFiles = {0},
-            .resize =     {.w =  1000,  .h =  1000 },
-            .resize_str = {.w = "1000", .h = "1000"},
+            .resizes = {
+                {
+                    .id = CLAY_STRING(RESIZE_INPUT_S),
+                    .values = {.w =  1000,  .h =  1000 },
+                    .str    = {.w = "1000", .h = "1000"},
+                    .step = 50,
+                },
+                {
+                    .id = CLAY_STRING(RESIZE_OUTPUT_S),
+                    .values = {.w =  4000,  .h =  4000 },
+                    .str    = {.w = "4000", .h = "4000"},
+                    .step = 50,
+                },
+                {
+                    .id = CLAY_STRING(RESIZE_OUTPUT_MARGIN_S),
+                    .values = {.w =  4,  .h =  4 },
+                    .str    = {.w = "4", .h = "4"},
+                    .step = 1,
+                },
+            },
             .color =     { .r =  0,  .b =  0,  .g =  0,  .a =  0  },
             // This should be set because these strings are only updated when `color` is updated
             .color_str = { .r = "0", .b = "0", .g = "0", .a = "0" },
@@ -508,7 +547,7 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                 .cornerRadius = BUTTON_RADIUS,
             }) {
                 CLAY_TEXT(CLAY_STRING("Resize: "), BUTTON_TEXT);
-                CLAY_TEXT(CLAY_DYNAMIC_STRING(data->params.resize_str.w), BUTTON_TEXT);
+                CLAY_TEXT(CLAY_DYNAMIC_STRING(data->params.resizes[RESIZES_INPUT].str.w), BUTTON_TEXT);
             }
             RenderHeaderButton(CLAY_STRING("Support"));
         }
@@ -547,7 +586,9 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                         (i == 0 && data->params.state & MAGICK_BEST_FIT) ||
                         (i == 1 && data->params.state & MAGICK_TRANSPARENT_BG) ||
                         (i == 2 && data->params.state & MAGICK_OPEN_ON_DONE) ||
-                        (i == 3 && data->params.state & MAGICK_RESIZE)
+                        (i == 3 && data->params.state & MAGICK_RESIZE) ||
+                        (i == 4 && data->params.state & MAGICK_SET_RESOLUTION) ||
+                        false  // for easier feature addition
                        ) {
                         CLAY({
                             .layout = sidebarButtonLayout,
@@ -647,16 +688,38 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                     }
                     CLAY({.id = CLAY_ID("ResizeSettings"), .layout = {.layoutDirection = CLAY_TOP_TO_BOTTOM, .childGap = 8}}) {
                         CLAY({.layout = {.layoutDirection = CLAY_LEFT_TO_RIGHT, .childGap = 8}}) {
-                            CLAY_TEXT(CLAY_STRING("Resize: "), DEFAULT_TEXT);
-                            RenderResize(&data->params.resize_str);
+                            CLAY_TEXT(CLAY_STRING("Resize each image: "), DEFAULT_TEXT);
+                            RenderResize(&data->params.resizes[RESIZES_INPUT], RESIZE_INPUT_S);
                         }
                         RenderFlag(CLAY_STRING("Ignore aspect ratio"), &data->params.state, MAGICK_IGNORE_RATIO, MAGICK_IGNORE_RATIO, &data->frameArena);
-                        // Well... it would only work for two
+                        // Well... this would only work for two
                         RenderFlag(CLAY_STRING("Only Shrink Larger"), &data->params.state,
                                 (data->params.state & MAGICK_ENLARGE_SMALLER) ? MAGICK_ENLARGE_SMALLER | MAGICK_SHRINK_LARGER : MAGICK_SHRINK_LARGER, MAGICK_SHRINK_LARGER, &data->frameArena);
                         RenderFlag(CLAY_STRING("Only Enlarge Smaller"), &data->params.state,
                                 (data->params.state & MAGICK_SHRINK_LARGER) ? MAGICK_SHRINK_LARGER | MAGICK_ENLARGE_SMALLER : MAGICK_ENLARGE_SMALLER, MAGICK_ENLARGE_SMALLER, &data->frameArena);
                         RenderFlag(CLAY_STRING("Fill area"), &data->params.state, MAGICK_FILL_AREA, MAGICK_FILL_AREA, &data->frameArena);
+                    }
+
+                    CLAY({
+                        .id = CLAY_ID("OutputSettings"),
+                        .layout = {
+                            .childGap = 8,
+                            .layoutDirection = CLAY_TOP_TO_BOTTOM,
+                            .childAlignment = {
+                                .x = CLAY_ALIGN_X_LEFT,
+                                .y = CLAY_ALIGN_Y_CENTER,
+                            },
+                        }
+                    }) {
+                        CLAY_TEXT(CLAY_STRING(OUTPUT_RES), DEFAULT_TEXT);
+                        CLAY({.layout = {.layoutDirection = CLAY_LEFT_TO_RIGHT, .childGap = 8, .padding = 8, .childAlignment = {.y = CLAY_ALIGN_Y_CENTER}}}) {
+                            CLAY_TEXT(CLAY_STRING("Dimentions:"), BUTTON_TEXT);
+                            RenderResize(&data->params.resizes[RESIZES_OUTPUT_RES], RESIZE_OUTPUT_S);
+                        }
+                        CLAY({.layout = {.layoutDirection = CLAY_LEFT_TO_RIGHT, .childGap = 8, .padding = 8, .childAlignment = {.y = CLAY_ALIGN_Y_CENTER}}}) {
+                            CLAY_TEXT(CLAY_STRING("Margin:"), BUTTON_TEXT);
+                            RenderResize(&data->params.resizes[RESIZES_OUTPUT_MARGIN], RESIZE_OUTPUT_MARGIN_S);
+                        }
                     }
 
                     CLAY({
@@ -677,7 +740,6 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                         }
                         RenderHeaderButton(CLAY_STRING(SELECT_TEMP));
                     }
-
 
                     CLAY({
                         .id = CLAY_ID("MagickBinary"),
