@@ -17,8 +17,6 @@ const uint8_t sidebar_font_size = 23;
 const uint8_t document_font_size = 30;
 const uint8_t title_font_size = 40;
 
-#define ADVANCED_SETTINGS 5
-
 #define CLAY_DYNAMIC_STRING(string) (CLAY__INIT(Clay_String) { .isStaticallyAllocated = false, .length = strlen(string), .chars = (string) })
 #define CLAY_SB_STRING(sb) (CLAY__INIT(Clay_String) { .isStaticallyAllocated = false, .length = (sb).count, .chars = (sb).items })
 #define BUTTON_RADIUS CLAY_CORNER_RADIUS(10)
@@ -132,10 +130,12 @@ typedef struct {
     uint8_t length;
 } DocumentArray;
 
-Document documentsRaw[6];
+#define DOCUMENTS_LEN 6
+
+Document documentsRaw[DOCUMENTS_LEN];
 
 DocumentArray documents = {
-    .length = 6,
+    .length = DOCUMENTS_LEN,
     .documents = documentsRaw
 };
 
@@ -157,6 +157,16 @@ typedef enum {
     MAGICK_PIXEL_LIMIT     = 1 << 9,
     MAGICK_SET_RESOLUTION  = 1 << 10,
 } MagickState;
+
+// Indexes for `documents` array
+enum {
+    MAGICK_BEST_FIT_I,
+    MAGICK_TRANSPARENT_BG_I,
+    MAGICK_OPEN_ON_DONE_I,
+    MAGICK_RESIZE_I,
+    MAGICK_SET_RESOLUTION_I,
+    MAGICK_ADVANCED_SETTINGS,
+};
 
 typedef struct rgba {
     // alpha is in [0-100]
@@ -252,15 +262,15 @@ static inline void HandleSidebarInteraction(
     // If this button was clicked
     if (pointerData.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME) {
         if (clickData->requestedDocumentIndex < documents.length) {
-            if (clickData->requestedDocumentIndex == 0) {
+            if (clickData->requestedDocumentIndex == MAGICK_BEST_FIT_I) {
                 *clickData->state ^= MAGICK_BEST_FIT;
-            } else if (clickData->requestedDocumentIndex == 1) {
+            } else if (clickData->requestedDocumentIndex == MAGICK_TRANSPARENT_BG_I) {
                 *clickData->state ^= MAGICK_TRANSPARENT_BG;
-            } else if (clickData->requestedDocumentIndex == 2) {
+            } else if (clickData->requestedDocumentIndex == MAGICK_OPEN_ON_DONE_I) {
                 *clickData->state ^= MAGICK_OPEN_ON_DONE;
-            } else if (clickData->requestedDocumentIndex == 3) {
+            } else if (clickData->requestedDocumentIndex == MAGICK_RESIZE_I) {
                 *clickData->state ^= MAGICK_RESIZE;
-            } else if (clickData->requestedDocumentIndex == 4) {
+            } else if (clickData->requestedDocumentIndex == MAGICK_SET_RESOLUTION_I) {
                 *clickData->state ^= MAGICK_SET_RESOLUTION;
             }
             // Select the corresponding document
@@ -350,17 +360,17 @@ static inline void RenderFlag(Clay_String text,
 
 ClayVideoDemo_Data ClayVideoDemo_Initialize() {
     // Update DocumentArray
-    documents.documents[0] = (Document){ .title = CLAY_STRING("Best fit"), .contents = CLAY_STRING("This ashlar option aligns images on both sides of the resulting image") };
-    documents.documents[1] = (Document){ .title = CLAY_STRING("Transparent background"), .contents = CLAY_STRING("Makes the background transparent\nThis overrides background configuration in "ADVANCED_SETTINGS_Q" tab") };
-    documents.documents[2] = (Document){ .title = CLAY_STRING("Open when done"), .contents = CLAY_STRING("Enable this to see the result right after it's done!\n\nNothing more\nsurely") };
-    documents.documents[3] = (Document){ .title = CLAY_STRING("Enable Resize"), .contents = CLAY_STRING("This option enables resizes. You can configure how input images are resized in "ADVANCED_SETTINGS_Q) };
-    documents.documents[4] = (Document){ .title = CLAY_STRING("Set output resolution"), .contents = CLAY_STRING("With this option you can directly set the desired output resolution for the collage in "ADVANCED_SETTINGS_Q" tab\nIf this option is disabled, the resolution for the output image (filename at the top) will be chosen automatically") };
-    documents.documents[ADVANCED_SETTINGS] = (Document){ .title = CLAY_STRING(ADVANCED_SETTINGS_S), .contents = CLAY_STRING("This tab contains advanced settings (surprise!)") };
+    documents.documents[MAGICK_BEST_FIT_I] = (Document){ .title = CLAY_STRING("Best fit"), .contents = CLAY_STRING("This ashlar option aligns images on both sides of the resulting image") };
+    documents.documents[MAGICK_TRANSPARENT_BG_I] = (Document){ .title = CLAY_STRING("Transparent background"), .contents = CLAY_STRING("Makes the background transparent\nThis overrides background configuration in "ADVANCED_SETTINGS_Q" tab") };
+    documents.documents[MAGICK_OPEN_ON_DONE_I] = (Document){ .title = CLAY_STRING("Open when done"), .contents = CLAY_STRING("Enable this to see the result right after it's done!\n\nNothing more\nsurely") };
+    documents.documents[MAGICK_RESIZE_I] = (Document){ .title = CLAY_STRING("Enable Resize"), .contents = CLAY_STRING("This option enables resizes. You can configure how input images are resized in "ADVANCED_SETTINGS_Q) };
+    documents.documents[MAGICK_SET_RESOLUTION_I] = (Document){ .title = CLAY_STRING("Set output resolution"), .contents = CLAY_STRING("With this option you can directly set the desired output resolution for the collage in "ADVANCED_SETTINGS_Q" tab\nIf this option is disabled, the resolution for the output image (filename at the top) will be chosen automatically") };
+    documents.documents[MAGICK_ADVANCED_SETTINGS] = (Document){ .title = CLAY_STRING(ADVANCED_SETTINGS_S), .contents = CLAY_STRING("This tab contains advanced settings (surprise!)") };
 
     ClayVideoDemo_Data data = {
         .frameArena = { .memory = (intptr_t)malloc(1024) },
         .shouldClose = false,
-        .selectedDocumentIndex = ADVANCED_SETTINGS,
+        .selectedDocumentIndex = MAGICK_ADVANCED_SETTINGS,
         .errorIndex = 0,
         .params = {
             .state = MAGICK_BEST_FIT | MAGICK_OPEN_ON_DONE | MAGICK_RESIZE | MAGICK_SHRINK_LARGER,
@@ -456,7 +466,7 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                     .height = CLAY_SIZING_FIXED(60),
                     .width = CLAY_SIZING_GROW(0)
                 },
-                .padding = { 16, 16, 16, 16 },
+                .padding = CLAY_PADDING_ALL(16),
                 .childGap = 16,
                 .childAlignment = {
                     .y = CLAY_ALIGN_Y_CENTER,
@@ -583,11 +593,11 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                     *clickData = (SidebarClickData) { .requestedDocumentIndex = i, .selectedDocumentIndex = &data->selectedDocumentIndex, .state = &data->params.state };
                     data->frameArena.offset += sizeof(SidebarClickData);
                     if (
-                        (i == 0 && data->params.state & MAGICK_BEST_FIT) ||
-                        (i == 1 && data->params.state & MAGICK_TRANSPARENT_BG) ||
-                        (i == 2 && data->params.state & MAGICK_OPEN_ON_DONE) ||
-                        (i == 3 && data->params.state & MAGICK_RESIZE) ||
-                        (i == 4 && data->params.state & MAGICK_SET_RESOLUTION) ||
+                        (i == MAGICK_BEST_FIT_I && data->params.state & MAGICK_BEST_FIT) ||
+                        (i == MAGICK_TRANSPARENT_BG_I && data->params.state & MAGICK_TRANSPARENT_BG) ||
+                        (i == MAGICK_OPEN_ON_DONE_I && data->params.state & MAGICK_OPEN_ON_DONE) ||
+                        (i == MAGICK_RESIZE_I && data->params.state & MAGICK_RESIZE) ||
+                        (i == MAGICK_SET_RESOLUTION_I && data->params.state & MAGICK_SET_RESOLUTION) ||
                         false  // for easier feature addition
                        ) {
                         CLAY({
@@ -636,7 +646,7 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                     .textColor = colors[colorscheme][COLOR_TEXT]
                 }));
                 CLAY_TEXT(selectedDocument.contents, DEFAULT_TEXT);
-                if (data->selectedDocumentIndex == ADVANCED_SETTINGS) {
+                if (data->selectedDocumentIndex == MAGICK_ADVANCED_SETTINGS) {
                     CLAY({
                         .id = CLAY_ID("ColorSettings"),
                         .layout = {

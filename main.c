@@ -305,7 +305,6 @@ void *RunMagickThread(void *arg) {
     return NULL;
 }
 
-// TODO: indicate failure in error message (also when startup)
 MagickStatus ChangeMagickBinary(Nob_String_Builder *magickBin) {
 #ifdef _WIN32
     const char *filter_params[] = {"*.exe", "*.msi", "*"};
