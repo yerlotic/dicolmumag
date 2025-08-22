@@ -1,4 +1,6 @@
 <div align="center">
+<img src="resources/banner.png" width=60% height=60% alt="Banner">
+<br>
 <h1>Dicolmumag</div>
 <div align="center">
 <br>
@@ -20,9 +22,11 @@ App for creating collages with [imagemagick](https://imagemagick.org)
 
 ## Gallery
 </summary>
-
-![Screenshot](resources/screenshot.png)
-![Collage 1](resources/collage1.avif)
+<br>
+<div align="center">
+<img src="resources/screenshot.png" width=80% height=80% alt="Screenshot">
+<img src="resources/collage1.avif" width=80% height=80% alt="Collage 1">
+</div>
 </details>
 
 ## Features
