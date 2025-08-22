@@ -1,4 +1,4 @@
-#include "clay.h"
+#include "thirdparty/clay.h"
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,7 +7,7 @@
 #include "colors.c"
 #include "thirdparty/cthreads.h"
 #define NOB_IMPLEMENTATION
-#include "nob.h"
+#include "thirdparty/nob.h"
 #include "strings.h"
 
 const uint8_t FONT_ID_BODY_16 = 0;

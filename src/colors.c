@@ -1,4 +1,4 @@
-#include "clay.h"
+#include "thirdparty/clay.h"
 
 int8_t colorscheme = 1;
 

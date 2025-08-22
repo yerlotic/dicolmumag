@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.27)
-project(app C)
+project(dicolmumag C)
 set(CMAKE_C_STANDARD 99)
 
 # Adding Raylib
@@ -22,12 +22,12 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(raylib)
 
-add_executable(app main.c)
+add_executable(dicolmumag src/main.c)
 
-target_compile_options(app PUBLIC)
-target_include_directories(app PUBLIC .)
+target_compile_options(dicolmumag PUBLIC)
+target_include_directories(dicolmumag PUBLIC .)
 
-target_link_libraries(app PUBLIC raylib fontconfig m)
+target_link_libraries(dicolmumag PUBLIC raylib fontconfig m)
 
 # set(CMAKE_C_FLAGS "-Werror -Wall -Wextra -Wpedantic -fwrapv -fanalyzer")
 set(CMAKE_C_FLAGS "-Wall -Wextra -Wpedantic -fwrapv -Wno-missing-braces")

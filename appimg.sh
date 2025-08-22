@@ -5,9 +5,12 @@ export LC_ALL=C    # speed
 
 APP_ROOT=AppDir.AppDir
 NAME=dicolmumag
-EXE_NAME=app
+EXE_NAME=dicolmumag
+ICON_BASE="$NAME.png"
+ICON_RADIUS=50
+ICON_RES=256x256
 # relative to build directory
-ICON="../resources/$NAME.png"
+ICON="../resources/$ICON_BASE"
 DESKTOP="../resources/$NAME.desktop"
 
 if ! command -v make-portable 2>/dev/null; then
@@ -26,6 +29,25 @@ else
     tool_available=false
 fi
 
+# round corners in place
+# Usage round-corners radius input.png output.jpg
+round-corners() {
+    args=(
+        "$2" -resize "$ICON_RES"
+        \(
+            +clone -alpha extract
+            -draw "fill black polygon 0,0 0,$1 $1,0 fill white circle $1,$1 $1,0"
+            \( +clone -flip \)
+            -compose Multiply
+            -composite \( +clone -flop \)
+            -compose Multiply -composite
+        \)
+        -alpha off
+        -compose CopyOpacity
+        -composite "$3"
+        )
+    magick "${args[@]}"
+}
 
 [ "$(basename "$PWD")" != build ] && cd build
 
@@ -40,7 +62,7 @@ cmake_flags=(
 )
 cmake .. "${cmake_flags[@]}" -DAPPIMAGE=OFF && make "-j$(nproc)"
 
-sudo rm /bin/"$EXE_NAME"
+sudo rm /bin/"$EXE_NAME" || true
 sudo cp "$EXE_NAME" /bin/
 
 echo "$PWD"
@@ -58,8 +80,9 @@ cp "$EXE_NAME" "$APP_ROOT"/usr/bin/
 
 mkdir -p "$APP_ROOT"/usr/share/{icons,applications}
 
-# cp "$ICON" "$APP_ROOT"/usr/share/icons/
+# cp "$ICON" "$APP_ROOT"/usr/share/icons/"$ICON_BASE"
 # cp "$DESKTOP" "$APP_ROOT"/usr/share/applications/
+
 
 args=()
 [ "$tool_available" == false ] && args+=(--generate-appimage)
@@ -67,6 +90,7 @@ args+=(
     --appdir=AppDir
     --desktop="$DESKTOP"
     --icon="$ICON"
+    --autoclose=5
     /usr/bin/"$EXE_NAME"
 )
 
@@ -89,7 +113,7 @@ mv ./"$EXE_NAME" "$APP_ROOT"/usr/bin/"$EXE_NAME".wrapped
 
 if [ "$tool_available" == true ]; then
     rm -rf "$APP_ROOT"/usr/share/icons/* "${APP_ROOT:?}"/home
-    cp "$ICON" "$APP_ROOT"/usr/share/icons/
+    round-corners "$ICON_RADIUS" "$ICON" "$APP_ROOT"/"$ICON_BASE"
     appimagetool -n "$APP_ROOT"
 fi
 

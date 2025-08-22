@@ -1,8 +1,7 @@
 <div align="center">
 <img src="resources/banner.png" width=60% height=60% alt="Banner">
 <br>
-<h1>Dicolmumag</div>
-<div align="center">
+<h1>Dicolmumag</h1>
 <br>
 <a href="#features">Features</a>
 ·
@@ -71,6 +70,6 @@ App for creating collages with [imagemagick](https://imagemagick.org)
 3. Run:
 
     ```shell
-    ./build/app
+    ./build/dicolmumag
     ```
 
