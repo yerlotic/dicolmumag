@@ -1,11 +1,11 @@
-#include "nob.h"
+#include "thirdparty/nob.h"
 #include "thirdparty/cthreads.h"
 #include <stdio.h>
 #include <unistd.h>
 #define CLAY_IMPLEMENTATION
-#include "clay.h"
-#include "raylib/raylib.h"
-#include "raylib/clay_renderer_raylib.c"
+#include "thirdparty/clay.h"
+#include "thirdparty/raylib/raylib.h"
+#include "thirdparty/raylib/clay_renderer_raylib.c"
 #include "layout.c"
 #include <linux/limits.h>
 #include <assert.h>
@@ -20,7 +20,7 @@
 // thx ascii!
 // #define MULTI_SEPARATOR '\x1c'
 #define MULTI_SEPARATOR '|'
-#include "tinyfiledialogs.c"
+#include "thirdparty/tinyfiledialogs.c"
 
 #define MODIFIERS 3 // only 3 modifiers at the same time: !, </> and ^
 #define ASHLAR_PREFIX "ashlar:"
