@@ -73,3 +73,5 @@ App for creating collages with [imagemagick](https://imagemagick.org)
     ./build/dicolmumag
     ```
 
+<br>
+<div align="center">Made on 🌏 with ❤️</div>
