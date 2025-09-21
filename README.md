@@ -39,6 +39,7 @@ App for creating collages with [imagemagick](https://imagemagick.org)
 - [x] Change location for temporary files
 - [x] Specify output resolution and margins
 - [ ] Specify maximum images per output
+- [ ] Add labels to images
 
 ## Requirements
 

@@ -1,5 +1,5 @@
-#ifndef STRINGS_H
-#define STRINGS_H
+#ifndef STRINGS_C
+#define STRINGS_C
 
 #include <stdint.h>
 
@@ -36,5 +36,5 @@ const char* errors[] = {
     "Magick was terminated",
 };
 
-#endif // STRINGS_H
+#endif // STRINGS_C
 
