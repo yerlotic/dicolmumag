@@ -10,7 +10,7 @@ set(BUILD_GAMES    OFF CACHE BOOL "" FORCE) # don't build the supplied example g
 # set(PLATFORM       SDL)
 
 set(CUSTOMIZE_BUILD ON)
-set(USE_EXTERNAL_GLFW ON)
+# set(USE_EXTERNAL_GLFW ON)
 
 FetchContent_Declare(
     raylib

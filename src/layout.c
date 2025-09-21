@@ -8,9 +8,15 @@
 #include "thirdparty/cthreads.h"
 #define NOB_IMPLEMENTATION
 #include "thirdparty/nob.h"
-#include "strings.h"
+#include "strings.c"
+
+float scale = 1.0;
+#define S(x) ((int) (x) * scale)
 
 const uint8_t FONT_ID_BODY_16 = 0;
+const uint8_t FONT_ID_SIDEBAR = 1;
+const uint8_t FONT_ID_BUTTONS = 2;
+const uint8_t FONT_ID_DOCUMNT = 3;
 const uint8_t FONT_LOAD_SIZE = 40;
 const uint8_t button_font_size = 20;
 const uint8_t sidebar_font_size = 23;
@@ -19,11 +25,11 @@ const uint8_t title_font_size = 40;
 
 #define CLAY_DYNAMIC_STRING(string) (CLAY__INIT(Clay_String) { .isStaticallyAllocated = false, .length = strlen(string), .chars = (string) })
 #define CLAY_SB_STRING(sb) (CLAY__INIT(Clay_String) { .isStaticallyAllocated = false, .length = (sb).count, .chars = (sb).items })
-#define BUTTON_RADIUS CLAY_CORNER_RADIUS(10)
-#define LAYOUT_RADIUS CLAY_CORNER_RADIUS(10)
-#define SANE_TEXT_CONFIG(font_size) CLAY_TEXT_CONFIG({ .fontId = FONT_ID_BODY_16, .fontSize = (font_size), .textColor = colors[colorscheme][COLOR_TEXT] })
-#define DEFAULT_TEXT SANE_TEXT_CONFIG(document_font_size)
-#define BUTTON_TEXT  SANE_TEXT_CONFIG(button_font_size)
+#define BUTTON_RADIUS CLAY_CORNER_RADIUS(S(10))
+#define LAYOUT_RADIUS CLAY_CORNER_RADIUS(S(10))
+#define SANE_TEXT_CONFIG(font_size, font_id) CLAY_TEXT_CONFIG({ .fontId = (font_id), .fontSize = S(font_size), .textColor = colors[colorscheme][COLOR_TEXT] })
+#define DEFAULT_TEXT SANE_TEXT_CONFIG(document_font_size, FONT_ID_DOCUMNT)
+#define BUTTON_TEXT  SANE_TEXT_CONFIG(button_font_size,   FONT_ID_BUTTONS)
 
 #define MAGICK_RESIZE_IGNORE_RATIO    "!"
 #define MAGICK_RESIZE_SHRINK_LARGER   ">"
@@ -35,7 +41,7 @@ const uint8_t title_font_size = 40;
 static inline void RenderHeaderButton(Clay_String text) {
     CLAY({
         .layout = {
-            .padding = { 16, 16, 8, 8 },
+            .padding = { S(16), S(16), S(8), S(8) },
             .childAlignment = {
                 .x = CLAY_ALIGN_X_CENTER,
                 .y = CLAY_ALIGN_Y_CENTER,
@@ -46,8 +52,8 @@ static inline void RenderHeaderButton(Clay_String text) {
         .cornerRadius = BUTTON_RADIUS,
     }) {
         CLAY_TEXT(text, CLAY_TEXT_CONFIG({
-            .fontId = FONT_ID_BODY_16,
-            .fontSize = button_font_size,
+            .fontId = FONT_ID_BUTTONS,
+            .fontSize = S(button_font_size),
             .textColor = colors[colorscheme][COLOR_TEXT],
             .textAlignment = CLAY_TEXT_ALIGN_CENTER,
             .wrapMode = CLAY_TEXT_WRAP_NONE,
@@ -61,7 +67,7 @@ static inline void RenderDropdownMenuItem(Clay_String text) {
         .cornerRadius = BUTTON_RADIUS,
         .id = CLAY_SID(text),
         .layout = {
-            .padding = CLAY_PADDING_ALL(16),
+            .padding = CLAY_PADDING_ALL(S(16)),
             .sizing = {
                 .width = CLAY_SIZING_GROW(0)
             },
@@ -72,7 +78,7 @@ static inline void RenderDropdownMenuItem(Clay_String text) {
 
 static inline void RenderNumberPicker(char* value) {
     CLAY({
-        .layout = { .padding = { 16, 16, 8, 8 }},
+        .layout = { .padding = { S(16), S(16), S(8), S(8) }},
         .backgroundColor = BUTTON_COLOR,
         // .id = CLAY_SID(name),
         .cornerRadius = BUTTON_RADIUS,
@@ -88,10 +94,10 @@ static inline void RenderColorChannel(Clay_String text, Clay_Color color, char *
         },
         .id = CLAY_SID(text),
     }) {
-        CLAY({ .layout = { .sizing = { .width = 25 }}}) {
+        CLAY({ .layout = { .sizing = { .width = S(25) }}}) {
             CLAY_TEXT(text, CLAY_TEXT_CONFIG({
                 .fontId = FONT_ID_BODY_16,
-                .fontSize = document_font_size,
+                .fontSize = S(document_font_size),
                 .textColor = color,
             }));
             CLAY_TEXT(CLAY_STRING(":"), DEFAULT_TEXT);
@@ -105,16 +111,16 @@ static inline void RenderColor(Clay_Color color) {
     uint8_t radius = 5;
     uint8_t size = 50;
     CLAY({
-        .cornerRadius = CLAY_CORNER_RADIUS(radius),
+        .cornerRadius = CLAY_CORNER_RADIUS(S(radius)),
         .backgroundColor = color,
         .border = {
             .color = TERNARY_COLOR(Clay_Hovered(), colors[colorscheme][COLOR_SURFACE1], colors[colorscheme][COLOR_SURFACE0]),
-            .width = CLAY_BORDER_OUTSIDE(border_width)
+            .width = CLAY_BORDER_OUTSIDE(S(border_width))
         },
         .layout = {
             .sizing = {
-                .height = CLAY_SIZING_FIXED(size),
-                .width = CLAY_SIZING_FIXED(size)
+                .height = CLAY_SIZING_FIXED(S(size)),
+                .width = CLAY_SIZING_FIXED(S(size))
             },
         },
     }) {}
@@ -296,11 +302,11 @@ static inline void RenderMagickColor(rgba *color, uint16_t state) {
         .id = CLAY_ID(id_str), \
         .cornerRadius = BUTTON_RADIUS, \
     }) { \
-        CLAY({ .id = CLAY_ID(id_str "W"), .layout = { .padding = { .left = 16, .top = 8, .bottom = 8 } } }) { \
+        CLAY({ .id = CLAY_ID(id_str "W"), .layout = { .padding = { .left = S(16), .top = S(8), .bottom = S(8) } } }) { \
             CLAY_TEXT(CLAY_DYNAMIC_STRING((element)->str.w), BUTTON_TEXT); \
         } \
-        CLAY({ .id = CLAY_ID(id_str "Each"), .layout = { .padding = {.top = 8, .bottom = 8} }}) { CLAY_TEXT(CLAY_STRING("x"), BUTTON_TEXT); } \
-        CLAY({ .id = CLAY_ID(id_str "H"), .layout = { .padding = { .right = 16, .top = 8, .bottom = 8 } } }) { \
+        CLAY({ .id = CLAY_ID(id_str "Each"), .layout = { .padding = {.top = S(8), .bottom = S(8)} }}) { CLAY_TEXT(CLAY_STRING("x"), BUTTON_TEXT); } \
+        CLAY({ .id = CLAY_ID(id_str "H"), .layout = { .padding = { .right = S(16), .top = S(8), .bottom = S(8) } } }) { \
             CLAY_TEXT(CLAY_DYNAMIC_STRING((element)->str.h), BUTTON_TEXT); \
         } \
     } \
@@ -329,7 +335,7 @@ static inline void RenderFlag(Clay_String text,
         background = OPACITY(colors[colorscheme][COLOR_GREEN], 35);
     CLAY({
         .layout = {
-            .padding = { 16, 16, 8, 8 },
+            .padding = { S(16), S(16), S(8), S(8) },
             .childAlignment = {
                 .x = CLAY_ALIGN_X_CENTER,
                 .y = CLAY_ALIGN_Y_CENTER,
@@ -345,8 +351,8 @@ static inline void RenderFlag(Clay_String text,
         Clay_OnHover(HandleFlagInteraction, (intptr_t)clickData);
 
         CLAY_TEXT(text, CLAY_TEXT_CONFIG({
-            .fontId = FONT_ID_BODY_16,
-            .fontSize = button_font_size,
+            .fontId = FONT_ID_BUTTONS,
+            .fontSize = S(button_font_size),
             .textColor = colors[colorscheme][COLOR_TEXT],
             .textAlignment = CLAY_TEXT_ALIGN_CENTER,
             .wrapMode = CLAY_TEXT_WRAP_NONE,
@@ -455,19 +461,19 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
         .layout = {
             .layoutDirection = CLAY_TOP_TO_BOTTOM,
             .sizing = layoutExpand,
-            .padding = CLAY_PADDING_ALL(16),
-            .childGap = 16,
+            .padding = CLAY_PADDING_ALL(S(16)),
+            .childGap = S(16),
         }
     }) {
         // Child elements go inside braces
         CLAY({ .id = CLAY_ID("HeaderBar"),
             .layout = {
                 .sizing = {
-                    .height = CLAY_SIZING_FIXED(60),
+                    .height = CLAY_SIZING_FIXED(S(60)),
                     .width = CLAY_SIZING_GROW(0)
                 },
-                .padding = CLAY_PADDING_ALL(16),
-                .childGap = 16,
+                .padding = CLAY_PADDING_ALL(S(16)),
+                .childGap = S(16),
                 .childAlignment = {
                     .y = CLAY_ALIGN_Y_CENTER,
                 }
@@ -479,7 +485,7 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
             // Header buttons go here
             CLAY({
                 .id = CLAY_ID("FileButton"),
-                .layout = { .padding = { 16, 16, 8, 8 }},
+                .layout = { .padding = { S(16), S(16), S(8), S(8) }},
                 .backgroundColor = BUTTON_COLOR,
                 .cornerRadius = BUTTON_RADIUS,
             }) {
@@ -500,14 +506,14 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                             },
                         },
                         .layout = {
-                            .padding = { 0, 0, 8, 8 }
+                            .padding = { 0, 0, S(8), S(8) }
                         }
                     }) {
                         CLAY({
                             .layout = {
                                 .layoutDirection = CLAY_TOP_TO_BOTTOM,
                                 .sizing = {
-                                    .width = CLAY_SIZING_FIXED(200)
+                                    .width = CLAY_SIZING_FIXED(S(200))
                                 },
                             },
                             .backgroundColor = colors[colorscheme][COLOR_SURFACE0],
@@ -522,7 +528,7 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                                 .cornerRadius = BUTTON_RADIUS,
                                 .id = CLAY_SID(quit),
                                 .layout = {
-                                    .padding = CLAY_PADDING_ALL(16),
+                                    .padding = CLAY_PADDING_ALL(S(16)),
                                 .sizing = {
                                     .width = CLAY_SIZING_GROW(0)
                                 },
@@ -530,7 +536,7 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                                 CLAY_TEXT(quit, BUTTON_TEXT);
                                 CLAY({ .layout = { .sizing = { CLAY_SIZING_GROW(0) }}}) {}
                                 CLAY_TEXT(CLAY_STRING("Ctrl-Q"),
-                                        CLAY_TEXT_CONFIG({ .fontId = FONT_ID_BODY_16, .fontSize = button_font_size, .textColor = colors[colorscheme][COLOR_OVERLAY0] }));
+                                        CLAY_TEXT_CONFIG({ .fontId = FONT_ID_BUTTONS, .fontSize = S(button_font_size), .textColor = colors[colorscheme][COLOR_OVERLAY0] }));
                             }
                         }
                     }
@@ -546,12 +552,12 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                 CLAY({.id = CLAY_ID("file")}) {CLAY_TEXT(CLAY_SB_STRING(data->params.outputFile), DEFAULT_TEXT);}
             } else {
                 CLAY({.id = CLAY_ID("error")}) {
-                    CLAY_TEXT(CLAY_DYNAMIC_STRING(errors[data->errorIndex]), CLAY_TEXT_CONFIG({ .fontId = FONT_ID_BODY_16, .fontSize = document_font_size, .textColor = colors[colorscheme][COLOR_RED] }));
+                    CLAY_TEXT(CLAY_DYNAMIC_STRING(errors[data->errorIndex]), CLAY_TEXT_CONFIG({ .fontId = FONT_ID_BODY_16, .fontSize = S(document_font_size), .textColor = colors[colorscheme][COLOR_RED] }));
                 }
             }
             CLAY({ .layout = { .sizing = { CLAY_SIZING_GROW(0) }}}) {}
             CLAY({
-                .layout = { .padding = { 16, 16, 8, 8 }},
+                .layout = { .padding = { S(16), S(16), S(8), S(8) }},
                 .backgroundColor = BUTTON_COLOR,
                 .id = CLAY_ID("ResizeAll"),
                 .cornerRadius = BUTTON_RADIUS,
@@ -564,7 +570,7 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
 
         CLAY({
             .id = CLAY_ID("LowerContent"),
-            .layout = { .sizing = layoutExpand, .childGap = 16 },
+            .layout = { .sizing = layoutExpand, .childGap = S(16) },
 
         }) {
             CLAY({
@@ -573,10 +579,10 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                 .clip = { .vertical = true, .childOffset = Clay_GetScrollOffset() },
                 .layout = {
                     .layoutDirection = CLAY_TOP_TO_BOTTOM,
-                    .padding = CLAY_PADDING_ALL(16),
-                    .childGap = 8,
+                    .padding = CLAY_PADDING_ALL(S(16)),
+                    .childGap = S(8),
                     .sizing = {
-                        .width = CLAY_SIZING_FIXED(260),
+                        .width = CLAY_SIZING_FIXED(S(260)),
                         .height = CLAY_SIZING_GROW(0)
                     },
                 },
@@ -586,7 +592,7 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                     Document document = documents.documents[i];
                     Clay_LayoutConfig sidebarButtonLayout = {
                         .sizing = { .width = CLAY_SIZING_GROW(0) },
-                        .padding = CLAY_PADDING_ALL(16)
+                        .padding = CLAY_PADDING_ALL(S(16))
                     };
 
                     SidebarClickData *clickData = (SidebarClickData *)(data->frameArena.memory + data->frameArena.offset);
@@ -603,12 +609,12 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                         CLAY({
                             .layout = sidebarButtonLayout,
                             .backgroundColor = OPACITY(colors[colorscheme][COLOR_GREEN], 35),
-                            .cornerRadius = CLAY_CORNER_RADIUS(8)
+                            .cornerRadius = CLAY_CORNER_RADIUS(S(8))
                         }) {
                             Clay_OnHover(HandleSidebarInteraction, (intptr_t)clickData);
                             CLAY_TEXT(document.title, CLAY_TEXT_CONFIG({
-                                .fontId = FONT_ID_BODY_16,
-                                .fontSize = sidebar_font_size,
+                                .fontId = FONT_ID_SIDEBAR,
+                                .fontSize = S(sidebar_font_size),
                                 .textColor = colors[colorscheme][COLOR_TEXT],
                             }));
                         }
@@ -616,10 +622,10 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                         CLAY({ .layout = sidebarButtonLayout, .backgroundColor = BUTTON_COLOR, .cornerRadius = CLAY_CORNER_RADIUS(8) }) {
                             Clay_OnHover(HandleSidebarInteraction, (intptr_t)clickData);
                             CLAY_TEXT(document.title, CLAY_TEXT_CONFIG({
-                                        .fontId = FONT_ID_BODY_16,
-                                        .fontSize = sidebar_font_size,
-                                        .textColor = colors[colorscheme][COLOR_TEXT],
-                                        }));
+                                .fontId = FONT_ID_SIDEBAR,
+                                .fontSize = S(sidebar_font_size),
+                                .textColor = colors[colorscheme][COLOR_TEXT],
+                            }));
                         }
                     }
                 }
@@ -630,8 +636,8 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                 .clip = { .vertical = true, /*.horizontal = true,*/ .childOffset = Clay_GetScrollOffset() },
                 .layout = {
                     .layoutDirection = CLAY_TOP_TO_BOTTOM,
-                    .childGap = 16,
-                    .padding = CLAY_PADDING_ALL(16),
+                    .childGap = S(16),
+                    .padding = CLAY_PADDING_ALL(S(16)),
                     .sizing = {
                         .height = CLAY_SIZING_GROW(0),
                         .width = CLAY_SIZING_GROW(0),
@@ -642,7 +648,7 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                 Document selectedDocument = documents.documents[data->selectedDocumentIndex];
                 CLAY_TEXT(selectedDocument.title, CLAY_TEXT_CONFIG({
                     .fontId = FONT_ID_BODY_16,
-                    .fontSize = title_font_size,
+                    .fontSize = S(title_font_size),
                     .textColor = colors[colorscheme][COLOR_TEXT]
                 }));
                 CLAY_TEXT(selectedDocument.contents, DEFAULT_TEXT);
@@ -744,7 +750,7 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                         CLAY({.layout = {.layoutDirection = CLAY_LEFT_TO_RIGHT, .childGap = 8, .padding = 8}}) {
                             CLAY_TEXT(CLAY_STRING("Current:"), BUTTON_TEXT);
                             if (data->params.tempDir.count == 0)
-                                CLAY_TEXT(CLAY_STRING("default"), CLAY_TEXT_CONFIG({ .fontId = FONT_ID_BODY_16, .fontSize = button_font_size, .textColor = colors[colorscheme][COLOR_OVERLAY0] }));
+                                CLAY_TEXT(CLAY_STRING("default"), CLAY_TEXT_CONFIG({ .fontId = FONT_ID_BUTTONS, .fontSize = S(button_font_size), .textColor = colors[colorscheme][COLOR_OVERLAY0] }));
                             else
                                 CLAY_TEXT(CLAY_SB_STRING(data->params.tempDir), BUTTON_TEXT);
                         }

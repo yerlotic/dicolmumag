@@ -43,12 +43,16 @@ typedef struct AppState {
     Vector2 scrollDelta;
     int renderWidth;
     int renderHeight;
+    float scale;
 } AppState;
 
+#define MIN(a,b) (((a) < (b)) ? (a) : (b))
 #define pressed(id) IsMouseButtonPressed(0) && Clay_PointerOver(Clay_GetElementId(CLAY_STRING(id)))
 #define released(id) IsMouseButtonReleased(0) && Clay_PointerOver(Clay_GetElementId(CLAY_STRING(id)))
-#define CLAY_DIMENSIONS (Clay_Dimensions) { .width = GetScreenWidth(), \
-                                            .height = GetScreenHeight() }
+// #define CLAY_DIMENSIONS (Clay_Dimensions) { .width = GetScreenWidth(), \
+//                                             .height = GetScreenHeight() }
+#define CLAY_DIMENSIONS (Clay_Dimensions) { .width = GetRenderWidth(), \
+                                            .height = GetRenderHeight() }
 #define RunMagickThreaded() \
     cthreads_thread_ensure_cancelled(data->magickThread, &data->params.threadRunning); \
     cthreads_thread_create(&data->magickThread, NULL, RunMagickThread, (void *)data, NULL);
@@ -443,6 +447,7 @@ AppState GetAppState() {
         .scrollDelta = GetMouseWheelMoveV(),
         .renderHeight = GetRenderHeight(),
         .renderWidth = GetRenderWidth(),
+        .scale = scale,
         // .renderHeight = GetScreenHeight(),
         // .renderWidth = GetScreenWidth(),
     };
@@ -460,6 +465,7 @@ bool StatesEqual(AppState *this, AppState *that) {
     if (!VectorsEqual(&this->scrollDelta, &that->scrollDelta)) return false;
     if (this->renderWidth != that->renderWidth) return false;
     if (this->renderHeight != that->renderHeight) return false;
+    if (this->scale != that->scale) return false;
     return true;
 }
 
@@ -660,6 +666,13 @@ bool testMagick(char* magickBin) {
     return true;
 }
 
+#define reloadFonts() do { \
+    fonts[FONT_ID_BODY_16] = LoadFontEx(fontpath, FONT_LOAD_SIZE * scale,    codepoints, 512); \
+    fonts[FONT_ID_SIDEBAR] = LoadFontEx(fontpath, sidebar_font_size * scale, codepoints, 512); \
+    fonts[FONT_ID_BUTTONS] = LoadFontEx(fontpath, button_font_size * scale,  codepoints, 512); \
+    fonts[FONT_ID_DOCUMNT] = LoadFontEx(fontpath, document_font_size * scale,codepoints, 512); \
+} while(0)
+
 int main(void) {
     char* title = "Magick deez nuts";
     // vsync makes resizes slower, we don't want this
@@ -670,10 +683,10 @@ int main(void) {
     // raylib with GLFW: bad crop every time
     // HIGHDPI scales everything nicely
     //
-    Clay_Raylib_Initialize(1024, 768, title, FLAG_WINDOW_RESIZABLE | FLAG_MSAA_4X_HINT);
-    // Clay_Raylib_Initialize(1024, 768, title, FLAG_WINDOW_RESIZABLE | FLAG_MSAA_4X_HINT | FLAG_WINDOW_HIGHDPI);
+    // Clay_Raylib_Initialize(1024, 768, title, FLAG_WINDOW_RESIZABLE | FLAG_MSAA_4X_HINT);
+    Clay_Raylib_Initialize(1024, 768, title, FLAG_WINDOW_RESIZABLE | FLAG_MSAA_4X_HINT | FLAG_WINDOW_HIGHDPI);
 
-    Font fonts[1];
+    Font fonts[4];
     char *fontpath = {0};
     if (defaultFont(&fontpath) == -1) {
         return -1;
@@ -682,9 +695,14 @@ int main(void) {
     int codepoints[512] = {0};
     for (int i = 0; i < 95; i++) codepoints[i] = 32 + i;
     for (int i = 0; i < 255; i++) codepoints[96 + i] = 0x400 + i;
-    fonts[FONT_ID_BODY_16] = LoadFontEx(fontpath, FONT_LOAD_SIZE, codepoints, 512);
-    free(fontpath);
+    scale = GetWindowScaleDPI().x;
+    fprintf(stderr, "new scale: %f\n", scale);
+    reloadFonts();
+    // free(fontpath);
     SetTextureFilter(fonts[FONT_ID_BODY_16].texture, TEXTURE_FILTER_BILINEAR);
+    SetTextureFilter(fonts[FONT_ID_SIDEBAR].texture, TEXTURE_FILTER_BILINEAR);
+    SetTextureFilter(fonts[FONT_ID_BUTTONS].texture, TEXTURE_FILTER_BILINEAR);
+    SetTextureFilter(fonts[FONT_ID_DOCUMNT].texture, TEXTURE_FILTER_BILINEAR);
 
     uint64_t clayRequiredMemory = Clay_MinMemorySize();
     Clay_Arena clayMemory = Clay_CreateArenaWithCapacityAndMemory(clayRequiredMemory, malloc(clayRequiredMemory));
@@ -701,8 +719,8 @@ int main(void) {
     SetTargetFPS(GetMonitorRefreshRate(GetCurrentMonitor()));
     // Disable ESC to exit
     SetExitKey(KEY_NULL);
-#ifdef UI_TESTING
     Clay_SetDebugModeEnabled(true);
+#ifdef UI_TESTING
 #endif // UI_TESTING
 #ifdef LAZY_RENDER
     AppState old_state = {0};
@@ -721,6 +739,24 @@ int main(void) {
         state = GetAppState();
         Clay_RenderCommandArray renderCommands = CreateLayout(clayContext, &data, state);
         BeginDrawing();
+        if (IsKeyDown(KEY_LEFT_SHIFT) && IsKeyPressed(KEY_EQUAL)) {
+            scale += 0.1;
+            reloadFonts();
+            fprintf(stderr, "%f\n", scale);
+        } else if (IsKeyPressed(KEY_MINUS)) {
+            scale -= 0.1;
+            reloadFonts();
+            fprintf(stderr, "%f\n", scale);
+        } else if (IsKeyPressed(KEY_EQUAL)) {
+            scale = 1;
+            reloadFonts();
+            fprintf(stderr, "%f\n", scale);
+        }
+        if (scale < 0.5) {
+            scale = 0.5;
+        } else if (scale > 10) {
+            scale = 10;
+        }
         // ClearBackground(BLACK);
 #ifdef LAZY_RENDER
         int time = (int)GetTime();
