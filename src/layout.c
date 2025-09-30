@@ -6,6 +6,7 @@
 // #define LATTE
 #include "colors.c"
 #include "thirdparty/cthreads.h"
+#include "thirdparty/raylib/raylib.h"
 #define NOB_IMPLEMENTATION
 #include "thirdparty/nob.h"
 #include "strings.c"
@@ -17,11 +18,14 @@ const uint8_t FONT_ID_BODY_16 = 0;
 const uint8_t FONT_ID_SIDEBAR = 1;
 const uint8_t FONT_ID_BUTTONS = 2;
 const uint8_t FONT_ID_DOCUMNT = 3;
+const uint8_t FONT_ID_WELCOME = 4;
+const uint8_t FONTS_IDS = 5;
 const uint8_t FONT_LOAD_SIZE = 40;
 const uint8_t button_font_size = 20;
 const uint8_t sidebar_font_size = 23;
 const uint8_t document_font_size = 30;
 const uint8_t title_font_size = 40;
+const uint8_t welcome_font_size = 80;
 
 #define CLAY_DYNAMIC_STRING(string) (CLAY__INIT(Clay_String) { .isStaticallyAllocated = false, .length = strlen(string), .chars = (string) })
 #define CLAY_SB_STRING(sb) (CLAY__INIT(Clay_String) { .isStaticallyAllocated = false, .length = (sb).count, .chars = (sb).items })
@@ -172,6 +176,7 @@ enum {
     MAGICK_RESIZE_I,
     MAGICK_SET_RESOLUTION_I,
     MAGICK_ADVANCED_SETTINGS,
+    MAGICK_WELCOME_PAGE_I,
 };
 
 typedef struct rgba {
@@ -231,6 +236,8 @@ typedef struct magick_params_t {
 
     rgba color;
     rgba_str color_str;
+
+    Texture2D logo;
 
     Nob_String_Builder magickBinary;
     Nob_Proc magickProc;
@@ -372,11 +379,13 @@ ClayVideoDemo_Data ClayVideoDemo_Initialize() {
     documents.documents[MAGICK_RESIZE_I] = (Document){ .title = CLAY_STRING("Enable Resize"), .contents = CLAY_STRING("This option enables resizes. You can configure how input images are resized in "ADVANCED_SETTINGS_Q) };
     documents.documents[MAGICK_SET_RESOLUTION_I] = (Document){ .title = CLAY_STRING("Set output resolution"), .contents = CLAY_STRING("With this option you can directly set the desired output resolution for the collage in "ADVANCED_SETTINGS_Q" tab\nIf this option is disabled, the resolution for the output image (filename at the top) will be chosen automatically") };
     documents.documents[MAGICK_ADVANCED_SETTINGS] = (Document){ .title = CLAY_STRING(ADVANCED_SETTINGS_S), .contents = CLAY_STRING("This tab contains advanced settings (surprise!)") };
+    documents.documents[MAGICK_WELCOME_PAGE_I] = (Document){ };
 
     ClayVideoDemo_Data data = {
         .frameArena = { .memory = (intptr_t)malloc(1024) },
         .shouldClose = false,
-        .selectedDocumentIndex = MAGICK_ADVANCED_SETTINGS,
+        // .selectedDocumentIndex = MAGICK_ADVANCED_SETTINGS,
+        .selectedDocumentIndex = MAGICK_WELCOME_PAGE_I,
         .errorIndex = 0,
         .params = {
             .state = MAGICK_BEST_FIT | MAGICK_OPEN_ON_DONE | MAGICK_RESIZE | MAGICK_SHRINK_LARGER,
@@ -425,6 +434,7 @@ ClayVideoDemo_Data ClayVideoDemo_Initialize() {
                 },
                 .selected = 1,
             },
+            .logo = LoadTexture("../resources/banner.png"),
         },
         .magickThread = {0},
     };
@@ -542,7 +552,7 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                     }
                 }
             }
-            RenderHeaderButton(CLAY_STRING("Select Images"));
+            RenderHeaderButton(CLAY_STRING(SELECT_IMAGES));
             if (data->params.magickProc == NOB_INVALID_PROC)
                 RenderHeaderButton(CLAY_STRING("Run"));
             else
@@ -645,13 +655,18 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                 },
                 .cornerRadius = LAYOUT_RADIUS,
             }) {
-                Document selectedDocument = documents.documents[data->selectedDocumentIndex];
-                CLAY_TEXT(selectedDocument.title, CLAY_TEXT_CONFIG({
-                    .fontId = FONT_ID_BODY_16,
-                    .fontSize = S(title_font_size),
-                    .textColor = colors[colorscheme][COLOR_TEXT]
-                }));
-                CLAY_TEXT(selectedDocument.contents, DEFAULT_TEXT);
+
+                if (data->selectedDocumentIndex != MAGICK_WELCOME_PAGE_I) {
+                    Document selectedDocument = documents.documents[data->selectedDocumentIndex];
+                    CLAY_TEXT(selectedDocument.title, CLAY_TEXT_CONFIG({
+                        .fontId = FONT_ID_BODY_16,
+                        .fontSize = S(title_font_size),
+                        .textColor = colors[colorscheme][COLOR_TEXT]
+                    }));
+                    CLAY_TEXT(selectedDocument.contents, DEFAULT_TEXT);
+                }
+
+
                 if (data->selectedDocumentIndex == MAGICK_ADVANCED_SETTINGS) {
                     CLAY({
                         .id = CLAY_ID("ColorSettings"),
@@ -671,7 +686,7 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                                     .width = CLAY_SIZING_GROW(105),
                                 },
                                 .padding = CLAY_PADDING_ALL(10),
-                                .childGap = 8,
+                                .childGap = S(8),
                             },
                         }) {
                             RenderColorChannel(CLAY_STRING("r"), colors[colorscheme][COLOR_RED],   data->params.color_str.r);
@@ -685,25 +700,25 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                     CLAY({
                         .id = CLAY_ID("GravitySettings"),
                         .layout = {
-                            .childGap = 8,
+                            .childGap = S(8),
                             .layoutDirection = CLAY_TOP_TO_BOTTOM,
                         }
                     }) {
-                        CLAY({.layout = {.layoutDirection = CLAY_LEFT_TO_RIGHT, .childGap = 8}}) {
+                        CLAY({.layout = {.layoutDirection = CLAY_LEFT_TO_RIGHT, .childGap = S(8)}}) {
                             CLAY_TEXT(CLAY_STRING("Gravity: "), DEFAULT_TEXT);
                             CLAY({
                                     .backgroundColor = BUTTON_COLOR,
                                     .id = CLAY_ID("Gravity"),
                                     .cornerRadius = BUTTON_RADIUS,
                                     }) {
-                                CLAY({ .id = CLAY_ID("GravitySelection"), .layout = { .padding = { 16, 16, 8, 8 } } }) {
+                                CLAY({ .id = CLAY_ID("GravitySelection"), .layout = { .padding = { S(16), S(16), S(8), S(8) } } }) {
                                     CLAY_TEXT(CLAY_DYNAMIC_STRING(data->params.gravity.values[data->params.gravity.selected]), BUTTON_TEXT);
                                 }
                             }
                         }
                     }
                     CLAY({.id = CLAY_ID("ResizeSettings"), .layout = {.layoutDirection = CLAY_TOP_TO_BOTTOM, .childGap = 8}}) {
-                        CLAY({.layout = {.layoutDirection = CLAY_LEFT_TO_RIGHT, .childGap = 8}}) {
+                        CLAY({.layout = {.layoutDirection = CLAY_LEFT_TO_RIGHT, .childGap = S(8)}}) {
                             CLAY_TEXT(CLAY_STRING("Resize each image: "), DEFAULT_TEXT);
                             RenderResize(&data->params.resizes[RESIZES_INPUT], RESIZE_INPUT_S);
                         }
@@ -719,7 +734,7 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                     CLAY({
                         .id = CLAY_ID("OutputSettings"),
                         .layout = {
-                            .childGap = 8,
+                            .childGap = S(8),
                             .layoutDirection = CLAY_TOP_TO_BOTTOM,
                             .childAlignment = {
                                 .x = CLAY_ALIGN_X_LEFT,
@@ -728,11 +743,11 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                         }
                     }) {
                         CLAY_TEXT(CLAY_STRING(OUTPUT_RES), DEFAULT_TEXT);
-                        CLAY({.layout = {.layoutDirection = CLAY_LEFT_TO_RIGHT, .childGap = 8, .padding = 8, .childAlignment = {.y = CLAY_ALIGN_Y_CENTER}}}) {
+                        CLAY({.layout = {.layoutDirection = CLAY_LEFT_TO_RIGHT, .childGap = S(8), .padding = S(8), .childAlignment = {.y = CLAY_ALIGN_Y_CENTER}}}) {
                             CLAY_TEXT(CLAY_STRING("Dimentions:"), BUTTON_TEXT);
                             RenderResize(&data->params.resizes[RESIZES_OUTPUT_RES], RESIZE_OUTPUT_S);
                         }
-                        CLAY({.layout = {.layoutDirection = CLAY_LEFT_TO_RIGHT, .childGap = 8, .padding = 8, .childAlignment = {.y = CLAY_ALIGN_Y_CENTER}}}) {
+                        CLAY({.layout = {.layoutDirection = CLAY_LEFT_TO_RIGHT, .childGap = S(8), .padding = S(8), .childAlignment = {.y = CLAY_ALIGN_Y_CENTER}}}) {
                             CLAY_TEXT(CLAY_STRING("Margin:"), BUTTON_TEXT);
                             RenderResize(&data->params.resizes[RESIZES_OUTPUT_MARGIN], RESIZE_OUTPUT_MARGIN_S);
                         }
@@ -741,13 +756,13 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                     CLAY({
                         .id = CLAY_ID("LocationSettings"),
                         .layout = {
-                            .childGap = 8,
+                            .childGap = S(8),
                             .layoutDirection = CLAY_TOP_TO_BOTTOM,
                         }
                     }) {
                         CLAY_TEXT(CLAY_STRING(TEMP_FILES), DEFAULT_TEXT);
-                        CLAY({.layout = {.padding = 8}}) {CLAY_TEXT(CLAY_STRING(TEMP_FILES_EXPLANATION), BUTTON_TEXT);}
-                        CLAY({.layout = {.layoutDirection = CLAY_LEFT_TO_RIGHT, .childGap = 8, .padding = 8}}) {
+                        CLAY({.layout = {.padding = S(8)}}) {CLAY_TEXT(CLAY_STRING(TEMP_FILES_EXPLANATION), BUTTON_TEXT);}
+                        CLAY({.layout = {.layoutDirection = CLAY_LEFT_TO_RIGHT, .childGap = S(8), .padding = S(8)}}) {
                             CLAY_TEXT(CLAY_STRING("Current:"), BUTTON_TEXT);
                             if (data->params.tempDir.count == 0)
                                 CLAY_TEXT(CLAY_STRING("default"), CLAY_TEXT_CONFIG({ .fontId = FONT_ID_BUTTONS, .fontSize = S(button_font_size), .textColor = colors[colorscheme][COLOR_OVERLAY0] }));
@@ -760,11 +775,75 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                     CLAY({
                         .id = CLAY_ID("MagickBinary"),
                         .layout = {
-                            .childGap = 8,
+                            .childGap = S(8),
                         }
                     }) {
                         CLAY_TEXT(CLAY_STRING(MAGICK_EXEC), DEFAULT_TEXT);
                         RenderHeaderButton(CLAY_SB_STRING(data->params.magickBinary));
+                    }
+                } else if (data->selectedDocumentIndex == MAGICK_WELCOME_PAGE_I) {
+                    CLAY({
+                        .id = CLAY_ID("MagickWelcome"),
+                        .layout = {
+                            .childGap = S(20),
+                            .padding = CLAY_PADDING_ALL(S(20)),
+                            .childAlignment = {
+                                .x = CLAY_ALIGN_X_CENTER,
+                                .y = CLAY_ALIGN_Y_CENTER,
+                            },
+                            .layoutDirection = CLAY_TOP_TO_BOTTOM,
+                            .sizing = {
+                                .width = CLAY_SIZING_GROW(0),
+                                .height = CLAY_SIZING_GROW(0),
+                            }
+                        }
+                    }) {
+                        CLAY_TEXT(CLAY_STRING("Welcome to Dicolmumag"),
+                            CLAY_TEXT_CONFIG({
+                                .fontId = FONT_ID_WELCOME,
+                                .fontSize = S(welcome_font_size),
+                                .textColor = colors[colorscheme][COLOR_TEXT],
+                                .textAlignment = CLAY_TEXT_ALIGN_CENTER,
+                            }));
+                        CLAY({
+                            .aspectRatio = {.aspectRatio = (float) data->params.logo.width / data->params.logo.height},
+                            .layout = {
+                                .sizing = {
+                                    .width = CLAY_SIZING_FIT(S(500)),
+                                    .height = CLAY_SIZING_FIT(S(500)),
+                                }
+                            },
+                            .image = { .imageData = &data->params.logo }
+
+                        }) {}
+                        CLAY_TEXT(CLAY_STRING("Create collages cuz why not"), CLAY_TEXT_CONFIG({
+                            .fontId = FONT_ID_DOCUMNT,
+                            .fontSize = S(document_font_size),
+                            .textColor = colors[colorscheme][COLOR_TEXT],
+                            .textAlignment = CLAY_TEXT_ALIGN_CENTER,
+                        }));
+
+                        Clay_String start = CLAY_STRING(START_USING);
+                        CLAY({
+                            .layout = {
+                                .padding = { S(16), S(16), S(8), S(8) },
+                                .childAlignment = {
+                                    .x = CLAY_ALIGN_X_CENTER,
+                                    .y = CLAY_ALIGN_Y_CENTER,
+                                },
+                            },
+                            .backgroundColor = BUTTON_COLOR,
+                            .id = CLAY_SID(start),
+                            .cornerRadius = BUTTON_RADIUS,
+                        }) {
+                            CLAY_TEXT(start, CLAY_TEXT_CONFIG({
+                                .fontId = FONT_ID_DOCUMNT,
+                                .fontSize = S(document_font_size),
+                                .textColor = colors[colorscheme][COLOR_TEXT],
+                                .textAlignment = CLAY_TEXT_ALIGN_CENTER,
+                                .wrapMode = CLAY_TEXT_WRAP_NONE,
+                            }));
+                        }
                     }
                 }
             }
