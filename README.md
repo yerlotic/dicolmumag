@@ -23,6 +23,7 @@ App for creating collages with [imagemagick](https://imagemagick.org)
 </summary>
 <br>
 <div align="center">
+<img src="resources/welcome.png" width=80% height=80% alt="Welcome screenshot">
 <img src="resources/screenshot.png" width=80% height=80% alt="Screenshot">
 <img src="resources/collage1.avif" width=80% height=80% alt="Collage 1">
 </div>
