@@ -7,11 +7,14 @@ include(FetchContent)
 set(FETCHCONTENT_QUIET FALSE)
 set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE) # don't build the supplied examples
 set(BUILD_GAMES    OFF CACHE BOOL "" FORCE) # don't build the supplied example games
-# set(PLATFORM       SDL)
+# set(PLATFORM       Desktop)
+set(PLATFORM       SDL)
 
 set(CUSTOMIZE_BUILD ON)
-# set(USE_EXTERNAL_GLFW ON)
+set(USE_EXTERNAL_GLFW OFF)
+set(GLFW_BUILD_WAYLAND ON)
 
+add_definitions(-DPLATFORM_DESKTOP_SDL3=1)
 FetchContent_Declare(
     raylib
     GIT_REPOSITORY "https://github.com/raysan5/raylib.git"
@@ -27,7 +30,7 @@ add_executable(dicolmumag src/main.c)
 target_compile_options(dicolmumag PUBLIC)
 target_include_directories(dicolmumag PUBLIC .)
 
-target_link_libraries(dicolmumag PUBLIC raylib fontconfig m)
+target_link_libraries(dicolmumag PUBLIC raylib fontconfig m SDL3)
 
 # set(CMAKE_C_FLAGS "-Werror -Wall -Wextra -Wpedantic -fwrapv -fanalyzer")
 set(CMAKE_C_FLAGS "-Wall -Wextra -Wpedantic -fwrapv -Wno-missing-braces")

@@ -49,10 +49,10 @@ typedef struct AppState {
 #define MIN(a,b) (((a) < (b)) ? (a) : (b))
 #define pressed(id) IsMouseButtonPressed(0) && Clay_PointerOver(Clay_GetElementId(CLAY_STRING(id)))
 #define released(id) IsMouseButtonReleased(0) && Clay_PointerOver(Clay_GetElementId(CLAY_STRING(id)))
-// #define CLAY_DIMENSIONS (Clay_Dimensions) { .width = GetScreenWidth(), \
-//                                             .height = GetScreenHeight() }
-#define CLAY_DIMENSIONS (Clay_Dimensions) { .width = GetRenderWidth(), \
-                                            .height = GetRenderHeight() }
+#define CLAY_DIMENSIONS (Clay_Dimensions) { .width = GetScreenWidth(), \
+                                            .height = GetScreenHeight() }
+// #define CLAY_DIMENSIONS (Clay_Dimensions) { .width = GetRenderWidth(), \
+//                                             .height = GetRenderHeight() }
 #define RunMagickThreaded() \
     cthreads_thread_ensure_cancelled(data->magickThread, &data->params.threadRunning); \
     cthreads_thread_create(&data->magickThread, NULL, RunMagickThread, (void *)data, NULL);
@@ -539,7 +539,7 @@ bool UpdateResizes(resize_element_t *resizes, int8_t scroll) {
 Clay_RenderCommandArray CreateLayout(Clay_Context* context, ClayVideoDemo_Data *data, AppState appstate) {
     Clay_SetCurrentContext(context);
     // Run once per frame
-    Clay_SetLayoutDimensions(CLAY_DIMENSIONS);
+    Clay_SetLayoutDimensions((Clay_Dimensions){appstate.renderWidth, appstate.renderHeight});
     Vector2 mousePosition = appstate.mousePosition;
     Vector2 scrollDelta = appstate.scrollDelta;
     Clay_SetPointerState(
@@ -573,7 +573,12 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, ClayVideoDemo_Data *
     } else if (released("Support")) {
         nob_cmd_append(&cmd, "xdg-open", SUPPORT_URL);
         nob_cmd_run_async_silent(cmd);
-    } else if (released("Select Images")) {
+    } else if (released(SELECT_IMAGES)) {
+        GetInputFiles(&data->params.inputFiles);
+        nob_kill(&data->params.magickProc);
+        RunMagickThreaded();
+    } else if (released(START_USING)) {
+        data->selectedDocumentIndex = MAGICK_ADVANCED_SETTINGS;
         GetInputFiles(&data->params.inputFiles);
         nob_kill(&data->params.magickProc);
         RunMagickThreaded();
@@ -666,12 +671,22 @@ bool testMagick(char* magickBin) {
     return true;
 }
 
-#define reloadFonts() do { \
-    fonts[FONT_ID_BODY_16] = LoadFontEx(fontpath, FONT_LOAD_SIZE * scale,    codepoints, 512); \
-    fonts[FONT_ID_SIDEBAR] = LoadFontEx(fontpath, sidebar_font_size * scale, codepoints, 512); \
-    fonts[FONT_ID_BUTTONS] = LoadFontEx(fontpath, button_font_size * scale,  codepoints, 512); \
-    fonts[FONT_ID_DOCUMNT] = LoadFontEx(fontpath, document_font_size * scale,codepoints, 512); \
-} while(0)
+static inline void reloadFonts(Font *fonts, char *fontpath, int codepoints[512]) {
+    static bool ever_loaded = false;
+    if (ever_loaded) {
+        UnloadFont(fonts[FONT_ID_BODY_16]);
+        UnloadFont(fonts[FONT_ID_SIDEBAR]);
+        UnloadFont(fonts[FONT_ID_BUTTONS]);
+        UnloadFont(fonts[FONT_ID_DOCUMNT]);
+        UnloadFont(fonts[FONT_ID_WELCOME]);
+    }
+    fonts[FONT_ID_BODY_16] = LoadFontEx(fontpath, FONT_LOAD_SIZE * scale,    codepoints, 512);
+    fonts[FONT_ID_SIDEBAR] = LoadFontEx(fontpath, sidebar_font_size * scale, codepoints, 512);
+    fonts[FONT_ID_BUTTONS] = LoadFontEx(fontpath, button_font_size * scale,  codepoints, 512);
+    fonts[FONT_ID_DOCUMNT] = LoadFontEx(fontpath, document_font_size * scale,codepoints, 512);
+    fonts[FONT_ID_WELCOME] = LoadFontEx(fontpath, welcome_font_size * scale, codepoints, 512);
+    ever_loaded = true;
+}
 
 int main(void) {
     char* title = "Magick deez nuts";
@@ -683,10 +698,10 @@ int main(void) {
     // raylib with GLFW: bad crop every time
     // HIGHDPI scales everything nicely
     //
-    // Clay_Raylib_Initialize(1024, 768, title, FLAG_WINDOW_RESIZABLE | FLAG_MSAA_4X_HINT);
-    Clay_Raylib_Initialize(1024, 768, title, FLAG_WINDOW_RESIZABLE | FLAG_MSAA_4X_HINT | FLAG_WINDOW_HIGHDPI);
+    Clay_Raylib_Initialize(1024, 768, title, FLAG_WINDOW_RESIZABLE | FLAG_MSAA_4X_HINT);
+    // Clay_Raylib_Initialize(1024, 768, title, FLAG_WINDOW_RESIZABLE | FLAG_MSAA_4X_HINT | FLAG_WINDOW_HIGHDPI);
 
-    Font fonts[4];
+    Font fonts[FONTS_IDS];
     char *fontpath = {0};
     if (defaultFont(&fontpath) == -1) {
         return -1;
@@ -697,7 +712,7 @@ int main(void) {
     for (int i = 0; i < 255; i++) codepoints[96 + i] = 0x400 + i;
     scale = GetWindowScaleDPI().x;
     fprintf(stderr, "new scale: %f\n", scale);
-    reloadFonts();
+    reloadFonts(fonts, fontpath, codepoints);
     // free(fontpath);
     SetTextureFilter(fonts[FONT_ID_BODY_16].texture, TEXTURE_FILTER_BILINEAR);
     SetTextureFilter(fonts[FONT_ID_SIDEBAR].texture, TEXTURE_FILTER_BILINEAR);
@@ -719,8 +734,8 @@ int main(void) {
     SetTargetFPS(GetMonitorRefreshRate(GetCurrentMonitor()));
     // Disable ESC to exit
     SetExitKey(KEY_NULL);
-    Clay_SetDebugModeEnabled(true);
 #ifdef UI_TESTING
+    Clay_SetDebugModeEnabled(true);
 #endif // UI_TESTING
 #ifdef LAZY_RENDER
     AppState old_state = {0};
@@ -741,15 +756,15 @@ int main(void) {
         BeginDrawing();
         if (IsKeyDown(KEY_LEFT_SHIFT) && IsKeyPressed(KEY_EQUAL)) {
             scale += 0.1;
-            reloadFonts();
+            reloadFonts(fonts, fontpath, codepoints);
             fprintf(stderr, "%f\n", scale);
         } else if (IsKeyPressed(KEY_MINUS)) {
             scale -= 0.1;
-            reloadFonts();
+            reloadFonts(fonts, fontpath, codepoints);
             fprintf(stderr, "%f\n", scale);
         } else if (IsKeyPressed(KEY_EQUAL)) {
             scale = 1;
-            reloadFonts();
+            reloadFonts(fonts, fontpath, codepoints);
             fprintf(stderr, "%f\n", scale);
         }
         if (scale < 0.5) {

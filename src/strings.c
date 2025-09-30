@@ -2,7 +2,7 @@
 #define STRINGS_C
 
 #include <stdint.h>
-
+#define SELECT_IMAGES "Select Images"
 #define ADVANCED_SETTINGS_S "Advanced Settings"
 #define ADVANCED_SETTINGS_Q "\"Advanced Settings\""
 
@@ -15,6 +15,7 @@
 #define TEMP_FILES_EXPLANATION "When changed, it uses available storage as memory. This option allows to work around memory issues but makes everything slower"
 
 #define MAGICK_EXEC "Magick executable:"
+#define START_USING "Start using!"
 
 typedef enum MagickStatus : uint8_t {
     MAGICK_ERROR_OK,
