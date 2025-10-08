@@ -31,6 +31,7 @@ App for creating collages with [imagemagick](https://imagemagick.org)
 
 ## Features
 
+- [x] Windows support
 - [x] Indication of success or failure (e. g. when magick is not available)
 - [x] Change color scheme
 - [x] Specify gravity
@@ -39,6 +40,7 @@ App for creating collages with [imagemagick](https://imagemagick.org)
 - [x] Resize input images
 - [x] Change location for temporary files
 - [x] Specify output resolution and margins
+- [ ] Tell the user that output resolution is disabled or not
 - [ ] Specify maximum images per output
 - [ ] Add labels to images
 
