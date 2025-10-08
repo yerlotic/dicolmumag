@@ -3,6 +3,8 @@
 set -euo pipefail  # safe mode
 export LC_ALL=C    # speed
 
+source "$(dirname -- "${BASH_SOURCE[0]}")/resources/functions.sh"
+
 build=build
 magick_ver=7.1.2-5
 raylib_ver=5.5
@@ -30,6 +32,14 @@ if ! [ -f "magick/magick.exe" ]; then
     7z x -y "$m_archive" -o./magick
 fi
 
+if ! [ -f icon.ico ]; then
+    round-corners "$ICON_RADIUS" "$ICON" icon.ico
+fi
+
+! [ -f my.rc ] && echo "id ICON icon.ico" > my.rc
+
+x86_64-w64-mingw32-windres my.rc -O coff -o my.res
+
 args=(
     -O3
     -Wall -Wextra -Wpedantic -fwrapv -Wno-missing-braces
@@ -38,6 +48,7 @@ args=(
     # -Wformat
     # -ggdb
     ../src/main.c
+    my.res
     -o ./dicolmumag.exe
     -mwindows # probably important
     -I../src/thirdparty/
@@ -60,6 +71,7 @@ if [ "${1:-}" == pack ]; then
     cp "/usr/share/fonts/noto/NotoSans-Regular.ttf" font.ttf
     mv dicolmumag.exe font.ttf "$out"/
     cp ../resources/banner.png magick/magick.exe "$out"/
+
     # zip -o "$out".zip -r "$out"/
     zip -ro "$out"{.zip,} &
     shift

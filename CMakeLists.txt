@@ -61,6 +61,12 @@ if(DEBUG)
     add_definitions(-DDEBUG=1)
 endif()
 
+option(INSTALLED "Use system resources (/usr/share/dicolmumag)" OFF)
+if(INSTALLED)
+    message(STATUS "INSTALLED")
+    add_definitions(-DINSTALLED=1)
+endif()
+
 option(APPIMAGE "Compile for App Image" OFF)
 if(APPIMAGE)
     message(STATUS "APPIMAGE")
