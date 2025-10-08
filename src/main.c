@@ -1,21 +1,25 @@
-#include "thirdparty/nob.h"
-#include "thirdparty/cthreads.h"
 #include <stdio.h>
 #include <unistd.h>
+#include <assert.h>
+#define SUPPORT_URL "https://youtu.be/dQw4w9WgXcQ"
+#ifdef _WIN32
+#include "thirdparty/raylib/fix_win32_compatibility.h"
+#include <processthreadsapi.h>
+#else
+#include <fontconfig/fontconfig.h>
+#include <linux/limits.h>
+#endif // _WIN32
+
 #define CLAY_IMPLEMENTATION
 #include "thirdparty/clay.h"
 #include "thirdparty/raylib/raylib.h"
 #include "thirdparty/raylib/clay_renderer_raylib.c"
-#include "layout.c"
-#include <linux/limits.h>
-#include <assert.h>
-#include <fontconfig/fontconfig.h>
-#define SUPPORT_URL "https://youtu.be/dQw4w9WgXcQ"
-#include "thirdparty/cthreads.c"
-#ifdef _WIN32
-#include <processthreadsapi.h>
-#endif // _WIN32
 
+#include "thirdparty/nob.h"
+#define CTHREADS_DEBUG
+#include "thirdparty/cthreads.h"
+#include "thirdparty/cthreads.c"
+#include "layout.c"
 // ascii file separator
 // thx ascii!
 // #define MULTI_SEPARATOR '\x1c'
@@ -47,15 +51,26 @@ typedef struct AppState {
 } AppState;
 
 #define MIN(a,b) (((a) < (b)) ? (a) : (b))
-#define pressed(id) IsMouseButtonPressed(0) && Clay_PointerOver(Clay_GetElementId(CLAY_STRING(id)))
-#define released(id) IsMouseButtonReleased(0) && Clay_PointerOver(Clay_GetElementId(CLAY_STRING(id)))
+#define pressed(id)  (IsMouseButtonPressed(0)  && Clay_PointerOver(Clay_GetElementId(CLAY_STRING(id))))
+#define released(id) (IsMouseButtonReleased(0) && Clay_PointerOver(Clay_GetElementId(CLAY_STRING(id))))
 #define CLAY_DIMENSIONS (Clay_Dimensions) { .width = GetScreenWidth(), \
                                             .height = GetScreenHeight() }
-// #define CLAY_DIMENSIONS (Clay_Dimensions) { .width = GetRenderWidth(), \
-//                                             .height = GetRenderHeight() }
-#define RunMagickThreaded() \
+// #define CLAY_DIMENSIONS (Clay_Dimensions) { .width = GetRenderWidth(), .height = GetRenderHeight() }
+#ifdef NO_THREADING
+  #define RunMagickThreaded() \
+    data->selectedDocumentIndex = MAGICK_ADVANCED_SETTINGS; \
+    RunMagick(&data->params)
+#else
+  #define RunMagickThreaded() \
+    data->selectedDocumentIndex = MAGICK_ADVANCED_SETTINGS; \
+    fprintf(stderr, "Cancelling thread\n"); \
+    nob_kill(&data->params.magickProc); \
     cthreads_thread_ensure_cancelled(data->magickThread, &data->params.threadRunning); \
-    cthreads_thread_create(&data->magickThread, NULL, RunMagickThread, (void *)data, NULL);
+    fprintf(stderr, "Starting thread\n"); \
+    cthreads_thread_create(&data->magickThread, NULL, RunMagickThread, (void *)data, &data->threadArgs); \
+    fprintf(stderr, "Thread STARTED\n")
+#endif // NO_THREADING
+
 
 void HandleClayErrors(Clay_ErrorData errorData) {
     printf("[CLAY] [ERROR] %s\n", errorData.errorText.chars);
@@ -72,15 +87,19 @@ void HandleClayErrors(Clay_ErrorData errorData) {
 // Declarations
 bool testMagick(char* magickBin);
 
-
 void nob_kill(Nob_Proc *proc) {
+    fprintf(stderr, "nob_kill\n");
     if (*proc == NOB_INVALID_PROC) return;
+    fprintf(stderr, "\033[31mkilling\033[0m\n");
 #ifdef _WIN32
-    TerminateProcess(proc, 69);
+    TerminateProcess(*proc, 69);
+    WaitForSingleObject(*proc, INFINITE);
 #else
     kill(*proc, SIGKILL);
 #endif // _WIN32
-    *proc = NOB_INVALID_PROC;
+    // *proc = NOB_INVALID_PROC;
+    // Dont do that ^ cuz status should be collected
+    // so processes don't become zombies
 }
 
 ProcStatus nob_proc_running(Nob_Proc proc) {
@@ -89,10 +108,48 @@ ProcStatus nob_proc_running(Nob_Proc proc) {
         return PROCESS_EXITED_OK;
     }
 #ifdef _WIN32
-    int exit_code = GetExitCodeProcess(proc, STILL_ACTIVE);
+    // LPDWORD exit_code = 0;
+    // BOOL success = GetExitCodeProcess(proc, exit_code);
+    // if (!success) {
+    //     fprintf(stderr, "Could not get exit code of a process: %s\n", nob_win32_error_message(GetLastError()));
+    //     CloseHandle(proc);
+    //     return PROCESS_OS_BULLSHIT;
+    // }
+    // fprintf(stderr, "Code: %p\n", exit_code);
+    // if (exit_code == NULL) {
+    //     return PROCESS_RUNNING;
+    // }
+    //
+    // fprintf(stderr, "Returning STILL_ACTIVE\n");
+    // if (*exit_code == STILL_ACTIVE)
+    //     return PROCESS_RUNNING;
+    // fprintf(stderr, "Returning PROCESS_CRASHED\n");
+    // CloseHandle(proc);
+    // return PROCESS_CRASHED;
+
+    if (WaitForSingleObject(proc, 0) == WAIT_TIMEOUT)
+        return PROCESS_RUNNING;
+
+    DWORD exit_status;
+    if (GetExitCodeProcess(proc, &exit_status) == 0) {
+        fprintf(stderr, "Could not get process exit code. System Error Code: %s\n", nob_win32_error_message(GetLastError()));
+        CloseHandle(proc);
+        return PROCESS_OS_BULLSHIT;
+    }
+
+    if (exit_status != 0) {
+        fprintf(stderr, "Command exited with exit code %lu\n", exit_status);
+        CloseHandle(proc);
+        if (exit_status == 69)
+            return PROCESS_WAS_TERMINATED;
+        return PROCESS_CRASHED;
+    }
+
     CloseHandle(proc);
-    return exit_code ? PROCESS_CRASHED : PROCESS_EXITED_OK;
+    return PROCESS_EXITED_OK;
+
 #else
+
     int status;
     pid_t return_pid = waitpid(proc, &status, WNOHANG);
     if (return_pid == -1) {
@@ -132,8 +189,10 @@ void cthreads_thread_ensure_cancelled(struct cthreads_thread thread, ProcStatus 
 
 #ifdef _WIN32
 #define BLACKHOLE "nul"
+#define LAUNCHER "explorer.exe"
 #else
 #define BLACKHOLE "/dev/null"
+#define LAUNCHER  "xdg-open"
 #endif // _WIN32
 #define nob_cmd_run_async_silent(cmd) do { \
     Nob_Fd blackhole = nob_fd_open_for_write(BLACKHOLE); \
@@ -278,7 +337,25 @@ MagickStatus RunMagick(magick_params_t *params) {
     nob_cmd_append(&cmd, "-gravity", params->gravity.values[params->gravity.selected]);
     nob_cmd_append(&cmd, ashlar_path.items);
 
-    params->magickProc = nob_cmd_run_async(cmd);
+    MagickStatus res = MAGICK_ERROR_OK;
+    fprintf(stderr, "Staring magick\n");
+#ifdef NO_THREADING
+    if (!nob_cmd_run_sync(cmd)) {
+        res = MAGICK_ERROR_PROCESS_CRASHED;
+        fprintf(stderr, "Running magick failed\n");
+    } else {
+        fprintf(stderr, "Running magick ok\n");
+    }
+#else
+    if (params->magickProc == NOB_INVALID_PROC) {
+        params->magickProc = nob_cmd_run_async(cmd);
+        if (params->magickProc == NOB_INVALID_PROC)
+            fprintf(stderr, "run_async returned invalid proc!!!!\n");
+        fprintf(stderr, "Started magick\n");
+    } else {
+        fprintf(stderr, "BRO WTF how is here a race condition\n");
+    }
+#endif // NO_THREADING
 
     // Freeing memory
     nob_sb_free(ashlar_path);
@@ -289,22 +366,24 @@ MagickStatus RunMagick(magick_params_t *params) {
     nob_free_all(&to_free);
     nob_cmd_free(to_free);
     nob_cmd_free(cmd);
-    return MAGICK_ERROR_OK;
+    fprintf(stderr, "RunMagick exited\n");
+    return res;
 }
 
 void *RunMagickThread(void *arg) {
     ClayVideoDemo_Data *data = (ClayVideoDemo_Data *) arg;
-    // if (data->errorIndex != MAGICK_ERROR_NOT_WORK ||
-    //     data->errorIndex != MAGICK_ERROR_INVALID_BINARY_SELECTED) {
-    // }
+    if (data->params.threadRunning == true)
+        return NULL;
+    // idk how to actually escape race conditions
+    data->params.threadRunning = true;
+
     if (!testMagick(data->params.magickBinary.items)) {
         data->errorIndex = MAGICK_ERROR_NOT_WORK;
         return NULL;
     }
-    data->params.threadRunning = true;
-    fprintf(stderr, "%d\n", data->errorIndex);
+    fprintf(stderr, "errorIndex befor: %d\n", data->errorIndex);
     data->errorIndex = RunMagick(&data->params);
-    fprintf(stderr, "%d\n", data->errorIndex);
+    fprintf(stderr, "errorIndex after: %d\n", data->errorIndex);
     data->params.threadRunning = false;
     return NULL;
 }
@@ -369,6 +448,9 @@ void SetTempDir(Nob_String_Builder *sb) {
 
 // https://gitlab.com/camconn/fontconfig-example
 int defaultFont(char** res) {
+#ifdef _WIN32
+    *res = ".\\font.ttf";
+#else
     FcConfig*       conf;
     FcFontSet*      fs;
     FcObjectSet*    os = 0;
@@ -429,6 +511,7 @@ int defaultFont(char** res) {
 
     if (os)
         FcObjectSetDestroy(os);
+#endif // _WIN32
 
     return 0;
 }
@@ -553,7 +636,7 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, ClayVideoDemo_Data *
         ProcStatus status = nob_proc_running(data->params.magickProc);
         if (status == PROCESS_EXITED_OK) {
             data->errorIndex = MAGICK_ERROR_OK;
-            nob_cmd_append(&cmd, "xdg-open", data->params.outputFile.items);
+            nob_cmd_append(&cmd, LAUNCHER, data->params.outputFile.items);
             nob_cmd_run_async_silent(cmd);
             cmd.count = 0;
         } else if (status == PROCESS_CRASHED) {
@@ -571,7 +654,7 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, ClayVideoDemo_Data *
         data->shouldClose = true;
         printf("close\n");
     } else if (released("Support")) {
-        nob_cmd_append(&cmd, "xdg-open", SUPPORT_URL);
+        nob_cmd_append(&cmd, LAUNCHER, SUPPORT_URL);
         nob_cmd_run_async_silent(cmd);
     } else if (released(SELECT_IMAGES)) {
         GetInputFiles(&data->params.inputFiles);
@@ -584,9 +667,10 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, ClayVideoDemo_Data *
         RunMagickThreaded();
     } else if (released(SELECT_TEMP)) {
         SetTempDir(&data->params.tempDir);
-    } else if (released("Run")) {
+    } else if (released("Run") || ((IsKeyPressed(KEY_R) && data->params.magickProc == NOB_INVALID_PROC))) {
+        nob_kill(&data->params.magickProc);
         RunMagickThreaded();
-    } else if (released("Stop")) {
+    } else if (released("Stop") || IsKeyPressed(KEY_R)) {
         nob_kill(&data->params.magickProc);
         cthreads_thread_ensure_cancelled(data->magickThread, &data->params.threadRunning);
     } else if (released("MagickBinary")) {
@@ -603,7 +687,7 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, ClayVideoDemo_Data *
         colorscheme = (colorscheme + 1) % COLORSCHEMES;
     } else if (released("Open result")) {
         if (data->params.outputFile.items[0] != '\0') {
-            nob_cmd_append(&cmd, "xdg-open", data->params.outputFile.items);
+            nob_cmd_append(&cmd, LAUNCHER, data->params.outputFile.items);
             nob_cmd_run_async_silent(cmd);
             nob_cmd_free(cmd);
         } else {
@@ -660,15 +744,16 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, ClayVideoDemo_Data *
 
 bool testMagick(char* magickBin) {
     Nob_Cmd cmd = {0};
+    bool res = true;
+
     nob_cmd_append(&cmd, magickBin, "-version");
 
     if (!nob_cmd_run_sync_and_reset(&cmd)) {
         fprintf(stderr, "Bro, where is yr magick??\n");
-        nob_cmd_free(cmd);
-        return false;
+        res = false;
     }
     nob_cmd_free(cmd);
-    return true;
+    return res;
 }
 
 static inline void reloadFonts(Font *fonts, char *fontpath, int codepoints[512]) {

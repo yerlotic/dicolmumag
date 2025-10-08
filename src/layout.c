@@ -221,6 +221,7 @@ typedef enum ProcStatus : uint8_t {
     PROCESS_EXITED_OK,
     PROCESS_CRASHED,
     PROCESS_WAS_TERMINATED,
+    PROCESS_OS_BULLSHIT, // OS tells that something went bad
 } ProcStatus;
 
 #define resizes_len 3
@@ -250,7 +251,10 @@ typedef struct {
     float yOffset;
     ClayVideoDemo_Arena frameArena;
     magick_params_t params;
+    // These should be stored on the heap to prevent
+    // race condition caused by stack being gone
     struct cthreads_thread magickThread;
+    struct cthreads_args threadArgs;
     bool shouldClose;
 } ClayVideoDemo_Data;
 
@@ -434,21 +438,30 @@ ClayVideoDemo_Data ClayVideoDemo_Initialize() {
                 },
                 .selected = 1,
             },
+#ifdef _WIN32
+            .logo = LoadTexture("banner.png"),
+#else
             .logo = LoadTexture("../resources/banner.png"),
+#endif // _WIN32
         },
         .magickThread = {0},
     };
     nob_sb_append_cstr(&data.params.outputFile, "res.png");
+    nob_sb_append_null(&data.params.outputFile);
 
-#ifdef APPIMAGE
+#ifdef _WIN32
+    nob_sb_append_cstr(&data.params.magickBinary, "magick.exe");
+#else
+  #ifdef APPIMAGE
     fprintf(stderr, "Appdir: %s\n", getenv("APPDIR"));
     nob_sb_append_cstr(&data.params.magickBinary, getenv("APPDIR"));
     nob_sb_append_cstr(&data.params.magickBinary, "/usr/bin/magick");
-#else
+  #else
     nob_sb_append_cstr(&data.params.magickBinary, "magick");
-#endif // APPIMAGE
-
+  #endif // APPIMAGE
+#endif // _WIN32
     nob_sb_append_null(&data.params.magickBinary);
+
     return data;
 }
 

@@ -31,9 +31,9 @@ int cthreads_thread_create(struct cthreads_thread *thread, struct cthreads_threa
     args->data = data;
 
     if (attr) thread->wThread = CreateThread(NULL, attr->stacksize ? attr->stacksize : 0,
-                                             __cthreads_winthreads_function_wrapper, args, 
+                                             __cthreads_winthreads_function_wrapper, args,
                                              attr->dwCreationFlags ? (DWORD)attr->dwCreationFlags : 0, NULL);
-    else thread->wThread = CreateThread(NULL, 0, __cthreads_winthreads_function_wrapper, args, 0, NULL);
+    else thread->wThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)__cthreads_winthreads_function_wrapper, args, 0, NULL);
 
     return thread->wThread == NULL;
   #else
@@ -179,7 +179,7 @@ int cthreads_thread_cancel(struct cthreads_thread thread) {
     #ifdef CTHREADS_DEBUG
       puts("cthreads_mutex_init");
     #endif
-  
+
     /* CTHREADS_MUTEX_ATTR is always available on non-Windows platforms */
     if (attr) {
       if (pthread_mutexattr_init(&pAttr)) return 1;
@@ -471,7 +471,7 @@ size_t cthreads_error_string(int error_code, char *buf, size_t length) {
   #ifdef _WIN32
     LPSTR error_str = NULL;
 
-    /* 
+    /*
       INFO: The string that is written also contains a \n, which we must ignore, besides the
               NULL terminator.
     */
@@ -498,7 +498,7 @@ size_t cthreads_error_string(int error_code, char *buf, size_t length) {
     #ifdef CTHREADS_DEBUG
       puts("cthreads_sem_init");
     #endif
-  
+
     #ifdef _WIN32
       sem->wSemaphore = CreateSemaphore(NULL, initial_count, LONG_MAX, NULL);
 
@@ -507,7 +507,7 @@ size_t cthreads_error_string(int error_code, char *buf, size_t length) {
       return sem_init(&sem->pSemaphore,0, initial_count);
     #endif
   }
-  
+
   int cthreads_sem_wait(struct cthreads_semaphore *sem) {
     #ifdef CTHREADS_DEBUG
       puts("cthreads_sem_wait");
@@ -519,7 +519,7 @@ size_t cthreads_error_string(int error_code, char *buf, size_t length) {
       return sem_wait(&sem->pSemaphore);
     #endif
   }
-  
+
   int cthreads_sem_trywait(struct cthreads_semaphore *sem) {
     #ifdef CTHREADS_DEBUG
       puts("cthreads_sem_trywait");
@@ -531,7 +531,7 @@ size_t cthreads_error_string(int error_code, char *buf, size_t length) {
       return sem_trywait(&sem->pSemaphore);
     #endif
   }
-  
+
   int cthreads_sem_timedwait(struct cthreads_semaphore *sem, unsigned int ms) {
     #ifdef CTHREADS_DEBUG
       puts("cthreads_sem_timedwait");
@@ -542,10 +542,10 @@ size_t cthreads_error_string(int error_code, char *buf, size_t length) {
     #else
       struct timespec ts;
       if (clock_gettime(CLOCK_REALTIME, &ts)) return 1;
- 
+
       ts.tv_sec += ms / 1000;
       ts.tv_nsec += (ms % 1000) * 1000000;
- 
+
       return sem_timedwait(&sem->pSemaphore, &ts);
     #endif
   }
@@ -560,7 +560,7 @@ size_t cthreads_error_string(int error_code, char *buf, size_t length) {
       return sem_post(&sem->pSemaphore);
     #endif
   }
-  
+
   int cthreads_sem_destroy(struct cthreads_semaphore *sem) {
     #ifdef CTHREADS_DEBUG
       puts("cthreads_sem_destroy");

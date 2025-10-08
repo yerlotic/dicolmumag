@@ -35,6 +35,7 @@ const char* errors[] = {
     "Select some images",
     "Magick crashed!",
     "Magick was terminated",
+    "OS thinks stuff is VERY wrong",
 };
 
 #endif // STRINGS_C

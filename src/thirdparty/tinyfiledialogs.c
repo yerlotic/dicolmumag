@@ -113,7 +113,7 @@ misrepresented as being the original software.
 #define MULTI_SEPARATOR '|'
 #endif
 #define S_(x) #x
-#define S(x) S_(x)
+#define UNWRAP(x) S_(x)
 
 char tinyfd_version[8] = "3.19.1";
 
@@ -1900,7 +1900,7 @@ wchar_t * tinyfd_openFileDialogW(
                 p -= lBuffLen;
                 memmove(p, lBuff, lBuffLen*sizeof(wchar_t));
                 p--;
-                *p = L MULTI_SEPARATOR;
+                *p = L'|';
             }
             p++;
             wcscpy(lBuff, p);
@@ -7062,7 +7062,7 @@ char * tinyfd_openFileDialog(
         }
         strcat( lDialogString , ");\
 \nif not isinstance(lFiles, tuple):\n\tprint(lFiles)\nelse:\
-\n\tlFilesString=''\n\tfor lFile in lFiles:\n\t\tlFilesString+=str(lFile)+" S(MULTI_SEPARATOR) "\
+\n\tlFilesString=''\n\tfor lFile in lFiles:\n\t\tlFilesString+=str(lFile)+" UNWRAP(MULTI_SEPARATOR) "\
 \n\tprint(lFilesString[:-1])\n\"" ) ;
     }
     else if ( tkinter2Present( ) )
@@ -7133,7 +7133,7 @@ frontmost of process \\\"Python\\\" to true' ''');");
         }
         strcat( lDialogString , ");\
 \nif not isinstance(lFiles, tuple):\n\tprint lFiles\nelse:\
-\n\tlFilesString=''\n\tfor lFile in lFiles:\n\t\tlFilesString+=str(lFile)+" S(MULTI_SEPARATOR) "\
+\n\tlFilesString=''\n\tfor lFile in lFiles:\n\t\tlFilesString+=str(lFile)+" UNWRAP(MULTI_SEPARATOR) "\
 \n\tprint lFilesString[:-1]\n\"" ) ;
     }
     else if ( xdialogPresent() || dialogName() )

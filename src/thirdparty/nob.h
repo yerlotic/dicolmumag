@@ -969,7 +969,8 @@ Nob_Proc nob_cmd_run_async_redirect(Nob_Cmd cmd, Nob_Cmd_Redirect redirect)
 
     nob__win32_cmd_quote(cmd, &sb);
     nob_sb_append_null(&sb);
-    BOOL bSuccess = CreateProcessA(NULL, sb.items, NULL, NULL, TRUE, 0, NULL, NULL, &siStartInfo, &piProcInfo);
+    // BOOL bSuccess = CreateProcessA(NULL, sb.items, NULL, NULL, TRUE, 0, NULL, NULL, &siStartInfo, &piProcInfo);
+    BOOL bSuccess = CreateProcessA(NULL, sb.items, NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &siStartInfo, &piProcInfo);
     nob_sb_free(sb);
 
     if (!bSuccess) {
