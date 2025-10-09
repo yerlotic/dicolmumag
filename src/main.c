@@ -774,7 +774,7 @@ static inline void reloadFonts(Font *fonts, char *fontpath, int codepoints[512])
 }
 
 int main(void) {
-    char* title = "Magick deez nuts";
+    char* title = "Dicolmumag — create collages with ease of creation, proceed to easily collide with creativity and proceedings";
     // vsync makes resizes slower, we don't want this
     // but antialiasing is nice
     //
