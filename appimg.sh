@@ -3,14 +3,9 @@
 set -euo pipefail  # safe mode
 export LC_ALL=C    # speed
 
+source "$(dirname -- "${BASH_SOURCE[0]}")/resources/functions.sh"
+
 APP_ROOT=AppDir.AppDir
-NAME=dicolmumag
-EXE_NAME=dicolmumag
-ICON_BASE="$NAME.png"
-ICON_RADIUS=50
-ICON_RES=256x256
-# relative to build directory
-ICON="../resources/$ICON_BASE"
 DESKTOP="../resources/$NAME.desktop"
 
 if ! command -v make-portable 2>/dev/null; then
@@ -29,26 +24,6 @@ else
     tool_available=false
 fi
 
-# round corners in place
-# Usage round-corners radius input.png output.jpg
-round-corners() {
-    args=(
-        "$2" -resize "$ICON_RES"
-        \(
-            +clone -alpha extract
-            -draw "fill black polygon 0,0 0,$1 $1,0 fill white circle $1,$1 $1,0"
-            \( +clone -flip \)
-            -compose Multiply
-            -composite \( +clone -flop \)
-            -compose Multiply -composite
-        \)
-        -alpha off
-        -compose CopyOpacity
-        -composite "$3"
-        )
-    magick "${args[@]}"
-}
-
 [ "$(basename "$PWD")" != build ] && cd build
 
 rm -rf "$APP_ROOT"
@@ -58,12 +33,15 @@ cmake_flags=(
     -DCUSTOMIZE_BUILD=ON
     -DBUILD_SHARED_LIBS=ON
     -DLAZY_RENDER=ON
+    -DINSTALLED=ON
     -DCMAKE_BUILD_TYPE=Release
 )
 cmake .. "${cmake_flags[@]}" -DAPPIMAGE=OFF && make "-j$(nproc)"
 
 sudo rm /bin/"$EXE_NAME" || true
 sudo cp "$EXE_NAME" /bin/
+sudo mkdir -p /usr/share/dicolmumag
+sudo cp ../resources/banner.png /usr/share/dicolmumag
 
 echo "$PWD"
 mkdir -vp "$APP_ROOT"/usr/{lib,bin}
@@ -75,8 +53,6 @@ mkdir -vp "$APP_ROOT"/usr/{lib,bin}
     ln -fs lib lib64
 )
 cp "$EXE_NAME" "$APP_ROOT"/usr/bin/
-
-# ldd "$EXE_NAME" | grep '=>' | sed 's_.* => /\(.*\) (.*)_cp "/\1" "AppDir/.AppDir/\1"; patchelf --replace-needed "/\1" "\1" "$EXE_NAME"\n_g' | tee /dev/stderr | bash
 
 mkdir -p "$APP_ROOT"/usr/share/{icons,applications}
 
@@ -108,12 +84,15 @@ cp -rv /usr/lib/ImageMagick-*.*.*/ "$APP_ROOT"/usr/lib/
 # rebuild to use APPIMAGE
 cmake .. "${cmake_flags[@]}" -DAPPIMAGE=ON && make "-j$(nproc)"
 
+# shellcheck disable=2016
+ldd "$EXE_NAME" | grep '=>' | sed 's|.* => /\(.*\) (.*)|cp "/\1" "AppDir.AppDir/usr/lib/$(basename "\1")"; patchelf --replace-needed "/\1" "usr/lib/$(basename "\1")" "$EXE_NAME"\n|g' | tee /dev/stderr | bash
+
 # replace the executable
 mv ./"$EXE_NAME" "$APP_ROOT"/usr/bin/"$EXE_NAME".wrapped
 
 if [ "$tool_available" == true ]; then
     rm -rf "$APP_ROOT"/usr/share/icons/* "${APP_ROOT:?}"/home
-    round-corners "$ICON_RADIUS" "$ICON" "$APP_ROOT"/"$ICON_BASE"
+    round-corners "$ICON_RADIUS" "$ICON" "$APP_ROOT/$ICON_BASE"
     appimagetool -n "$APP_ROOT"
 fi
 

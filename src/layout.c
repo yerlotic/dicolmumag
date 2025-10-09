@@ -441,7 +441,11 @@ ClayVideoDemo_Data ClayVideoDemo_Initialize() {
 #ifdef _WIN32
             .logo = LoadTexture("banner.png"),
 #else
+  #ifdef INSTALLED
+            .logo = LoadTexture("/usr/share/dicolmumag/banner.png"),
+  #else
             .logo = LoadTexture("../resources/banner.png"),
+  #endif // RELEASE
 #endif // _WIN32
         },
         .magickThread = {0},
