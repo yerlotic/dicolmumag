@@ -60,15 +60,15 @@ App for creating collages with [ImageMagick](https://imagemagick.org)
     Compile definitions
     </summary>
 
-    | Name           | Description                                               |
-    | -------------- | --------------------------------------------------------- |
-    | `APPIMAGE`     | Use magick binary from `$APPDIR`. Not relevant on Windows |
-    | `DEBUG`        | Enable some `printf`s                                     |
-    | `INSTALLED`    | Use `/usr/...` paths. Not relevant on Windows             |
-    | `LAZY_RENDER`  | Why render when u can do nothing?                         |
-    | `NO_SCALING`   | Disable scaling with <kbd>+</kbd>/<kbd>-</kbd>            |
-    | `NO_THREADING` | Magick will be launched in the main thread                |
-    | `UI_TESTING`   | Enable FPS counter and Clay debug mode                    |
+    | Name           | Description                                    | Notes |
+    | -------------- | ---------------------------------------------- | ----- |
+    | `APPIMAGE`     | Use magick binary from `$APPDIR`               | POSIX |
+    | `DEBUG`        | Enable some `printf`s                          |       |
+    | `INSTALLED`    | Use `/usr/...` paths                           | POSIX |
+    | `LAZY_RENDER`  | Why render when u can do nothing?              |       |
+    | `NO_SCALING`   | Disable scaling with <kbd>+</kbd>/<kbd>-</kbd> |       |
+    | `NO_THREADING` | Magick will be launched in the main thread     |       |
+    | `UI_TESTING`   | Enable FPS counter and Clay debug mode         |       |
     </details>
 
     ```shell
@@ -81,6 +81,31 @@ App for creating collages with [ImageMagick](https://imagemagick.org)
     ```shell
     ./build/dicolmumag
     ```
+
+## Troubleshooting
+
+<details><summary>
+
+### Windows
+</summary>
+
+1. Type <kbd>Win+R</kbd>, type `cmd`, hit <kbd>Enter</kbd>
+2. Enter a disk letter with `dicolmumag_win` folder extracted. For example:
+
+  ```powershell
+  D:
+  ```
+3. Type `cd <path>`, where `<path>` is a path to folder with `dicolmumag.exe`
+
+  ```powershell
+  cd path\to\dicolmumag_win
+  ```
+4. Run the program with logs visible:
+
+  ```powershell
+  .\dicolmumag.exe 2>&1 | echo
+  ```
+</details>
 
 <br>
 <div align="center">Made on 🌍 with ❤️</div>
