@@ -31,9 +31,11 @@ const uint8_t welcome_font_size = 80;
 #define CLAY_SB_STRING(sb) (CLAY__INIT(Clay_String) { .isStaticallyAllocated = false, .length = (sb).count, .chars = (sb).items })
 #define BUTTON_RADIUS CLAY_CORNER_RADIUS(S(10))
 #define LAYOUT_RADIUS CLAY_CORNER_RADIUS(S(10))
-#define SANE_TEXT_CONFIG(font_size, font_id) CLAY_TEXT_CONFIG({ .fontId = (font_id), .fontSize = S(font_size), .textColor = colors[colorscheme][COLOR_TEXT] })
-#define DEFAULT_TEXT SANE_TEXT_CONFIG(document_font_size, FONT_ID_DOCUMNT)
-#define BUTTON_TEXT  SANE_TEXT_CONFIG(button_font_size,   FONT_ID_BUTTONS)
+#define JUST_TEXT_CONFIG(font_size, font_id, color) CLAY_TEXT_CONFIG({ .fontId = (font_id), .fontSize = S(font_size), .textColor = (color) })
+#define SANE_TEXT_CONFIG(font_size, font_id) JUST_TEXT_CONFIG((font_size), (font_id), colors[colorscheme][COLOR_TEXT])
+#define DEFAULT_TEXT  SANE_TEXT_CONFIG(document_font_size, FONT_ID_DOCUMNT)
+#define DISABLED_TEXT JUST_TEXT_CONFIG(document_font_size, FONT_ID_DOCUMNT, colors[colorscheme][COLOR_OVERLAY0])
+#define BUTTON_TEXT   SANE_TEXT_CONFIG(button_font_size,   FONT_ID_BUTTONS)
 
 #define MAGICK_RESIZE_IGNORE_RATIO    "!"
 #define MAGICK_RESIZE_SHRINK_LARGER   ">"
@@ -130,6 +132,13 @@ static inline void RenderColor(Clay_Color color) {
     }) {}
 }
 
+static inline void StatedText(Clay_String text, bool enabled) {
+    if (enabled)
+        CLAY_TEXT(text, DEFAULT_TEXT);
+    else
+        CLAY_TEXT(text, DISABLED_TEXT);
+}
+
 typedef struct {
     Clay_String title;
     Clay_String contents;
@@ -216,7 +225,7 @@ typedef struct gravity_t {
     uint8_t selected;
 } gravity_t;
 
-typedef enum ProcStatus : uint8_t {
+typedef enum __attribute__((packed)) ProcStatus {
     PROCESS_RUNNING,
     PROCESS_EXITED_OK,
     PROCESS_CRASHED,
@@ -692,7 +701,7 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                         },
                     }) {
                         CLAY({.layout = { .layoutDirection = CLAY_TOP_TO_BOTTOM }}) {
-                            CLAY_TEXT(CLAY_STRING("Background Color: "), DEFAULT_TEXT);
+                            StatedText(CLAY_STRING("Background Color: "), !(data->params.state & MAGICK_TRANSPARENT_BG));
                             RenderMagickColor(&data->params.color, data->params.state);
                         }
                         CLAY({
@@ -736,7 +745,7 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                     }
                     CLAY({.id = CLAY_ID("ResizeSettings"), .layout = {.layoutDirection = CLAY_TOP_TO_BOTTOM, .childGap = 8}}) {
                         CLAY({.layout = {.layoutDirection = CLAY_LEFT_TO_RIGHT, .childGap = S(8)}}) {
-                            CLAY_TEXT(CLAY_STRING("Resize each image: "), DEFAULT_TEXT);
+                            StatedText(CLAY_STRING("Resize each image: "), data->params.state & MAGICK_RESIZE);
                             RenderResize(&data->params.resizes[RESIZES_INPUT], RESIZE_INPUT_S);
                         }
                         RenderFlag(CLAY_STRING("Ignore aspect ratio"), &data->params.state, MAGICK_IGNORE_RATIO, MAGICK_IGNORE_RATIO, &data->frameArena);
@@ -759,7 +768,7 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                             },
                         }
                     }) {
-                        CLAY_TEXT(CLAY_STRING(OUTPUT_RES), DEFAULT_TEXT);
+                        StatedText(CLAY_STRING(OUTPUT_RES), data->params.state & MAGICK_SET_RESOLUTION);
                         CLAY({.layout = {.layoutDirection = CLAY_LEFT_TO_RIGHT, .childGap = S(8), .padding = S(8), .childAlignment = {.y = CLAY_ALIGN_Y_CENTER}}}) {
                             CLAY_TEXT(CLAY_STRING("Dimentions:"), BUTTON_TEXT);
                             RenderResize(&data->params.resizes[RESIZES_OUTPUT_RES], RESIZE_OUTPUT_S);
