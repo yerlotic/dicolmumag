@@ -26,6 +26,10 @@
 #define MULTI_SEPARATOR '|'
 #include "thirdparty/tinyfiledialogs.c"
 
+#ifndef FALLBACK_FPS
+#define FALLBACK_FPS 60
+#endif // FALLBACK_FPS
+
 #define MODIFIERS 3 // only 3 modifiers at the same time: !, </> and ^
 #define ASHLAR_PREFIX "ashlar:"
 #define SLEEP_THRESHOLD 5 //seconds of activity before not rendering that many frames
@@ -47,7 +51,9 @@ typedef struct AppState {
     Vector2 scrollDelta;
     int renderWidth;
     int renderHeight;
+#ifndef NO_SCALING
     float scale;
+#endif // NO_SCALING
 } AppState;
 
 #define MIN(a,b) (((a) < (b)) ? (a) : (b))
@@ -557,7 +563,9 @@ AppState GetAppState() {
         .scrollDelta = GetMouseWheelMoveV(),
         .renderHeight = GetRenderHeight(),
         .renderWidth = GetRenderWidth(),
+#ifndef NO_SCALING
         .scale = scale,
+#endif // NO_SCALING
         // .renderHeight = GetScreenHeight(),
         // .renderWidth = GetScreenWidth(),
     };
@@ -575,7 +583,9 @@ bool StatesEqual(AppState *this, AppState *that) {
     if (!VectorsEqual(&this->scrollDelta, &that->scrollDelta)) return false;
     if (this->renderWidth != that->renderWidth) return false;
     if (this->renderHeight != that->renderHeight) return false;
+#ifndef NO_SCALING
     if (this->scale != that->scale) return false;
+#endif // NO_SCALING
     return true;
 }
 
@@ -822,10 +832,11 @@ int main(void) {
     int codepoints[512] = {0};
     for (int i = 0; i < 95; i++) codepoints[i] = 32 + i;
     for (int i = 0; i < 255; i++) codepoints[96 + i] = 0x400 + i;
+#ifndef NO_SCALING
     scale = GetWindowScaleDPI().x;
     fprintf(stderr, "new scale: %f\n", scale);
+#endif // NO_SCALING
     reloadFonts(fonts, fontpath, codepoints);
-    // free(fontpath);
     SetTextureFilter(fonts[FONT_ID_BODY_16].texture, TEXTURE_FILTER_BILINEAR);
     SetTextureFilter(fonts[FONT_ID_SIDEBAR].texture, TEXTURE_FILTER_BILINEAR);
     SetTextureFilter(fonts[FONT_ID_BUTTONS].texture, TEXTURE_FILTER_BILINEAR);
@@ -843,7 +854,15 @@ int main(void) {
     }
 
     Clay_SetMeasureTextFunction(Raylib_MeasureText, fonts);
-    SetTargetFPS(GetMonitorRefreshRate(GetCurrentMonitor()));
+    int target_fps = GetMonitorRefreshRate(GetCurrentMonitor());
+    // Something is wrong
+    if (target_fps <= 0) {
+#ifdef DEBUG
+        fprintf(stderr, "Falling back to %d fps\n", FALLBACK_FPS);
+#endif // DEBUG
+        target_fps = FALLBACK_FPS;
+    }
+    SetTargetFPS(target_fps);
     // Disable ESC to exit
     SetExitKey(KEY_NULL);
 #ifdef UI_TESTING
@@ -866,6 +885,7 @@ int main(void) {
         state = GetAppState();
         Clay_RenderCommandArray renderCommands = CreateLayout(clayContext, &data, state);
         BeginDrawing();
+#ifndef NO_SCALING
         if (IsKeyDown(KEY_LEFT_SHIFT) && IsKeyPressed(KEY_EQUAL)) {
             scale += 0.1;
             reloadFonts(fonts, fontpath, codepoints);
@@ -884,6 +904,7 @@ int main(void) {
         } else if (scale > 10) {
             scale = 10;
         }
+#endif // NO_SCALING
         // ClearBackground(BLACK);
 #ifdef LAZY_RENDER
         int time = (int)GetTime();
