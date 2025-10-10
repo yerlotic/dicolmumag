@@ -17,7 +17,7 @@
 #define MAGICK_EXEC "Magick executable:"
 #define START_USING "Start using!"
 
-typedef enum MagickStatus : uint8_t {
+typedef enum __attribute__((packed)) MagickStatus {
     MAGICK_ERROR_OK,
     MAGICK_ERROR_CANCELLED,
     MAGICK_ERROR_NOT_WORK,

@@ -201,15 +201,40 @@ void cthreads_thread_ensure_cancelled(struct cthreads_thread thread, ProcStatus 
 
 MagickStatus GetInputFiles(Nob_Cmd *inputFiles) {
     int allow_multiple_selects = true;
+    // int allow_multiple_selects = false;
+
+    // TODO: wrap this into a macro
+#ifdef _WIN32
+    wchar_t const *filter_params[] = {L"*.png", L"*.svg", L"*.jpg", L"*.jpeg"};
+    wchar_t *input_path = tinyfd_openFileDialogW(
+        L"Path to images",
+        L"./",
+        sizeof(filter_params) / sizeof(filter_params[0]),
+        filter_params,
+        L"Image file",
+        allow_multiple_selects);
+#else
     char const *filter_params[] = {"*.png", "*.svg", "*.jpg", "*.jpeg"};
-    char *input_path = tinyfd_openFileDialog("Path to images", "./", sizeof(filter_params) / sizeof(filter_params[0]), filter_params, "Image file", allow_multiple_selects);
+    char *input_path = tinyfd_openFileDialog(
+        "Path to images",
+        "./",
+        sizeof(filter_params) / sizeof(filter_params[0]),
+        filter_params,
+        "Image file",
+        allow_multiple_selects);
+#endif // _WIN32
 
     if (!input_path) {
         fprintf(stderr, "Too bad no input files\n");
         return MAGICK_ERROR_CANCELLED;
     }
-
+#ifdef _WIN32
+    wchar_t c;
+#define ZERO L'\0'
+#else
     char c;
+#define ZERO '\0'
+#endif // _WIN32
     Nob_Cmd to_free = {0};
     Nob_String_Builder buf = {0};
     nob_free_all(inputFiles);
@@ -218,20 +243,22 @@ MagickStatus GetInputFiles(Nob_Cmd *inputFiles) {
     // parse files
     for (int i = 0; ; i++) {
         c = input_path[i];
-        if (c == MULTI_SEPARATOR || c == '\0') {
+        if (c == MULTI_SEPARATOR || c == ZERO) {
             nob_sb_append_null(&buf);
             // moving buffer to another place on the heap
             char *pointer = strdup(buf.items);
+            fprintf(stderr, "File: %s\n", pointer);
             nob_cmd_append(inputFiles, pointer);
             nob_cmd_append(&to_free, pointer);
             buf.count = 0;
         } else {
             nob_sb_append_buf(&buf, &c, 1);
         }
-        if (c == '\0') break;
+        if (c == ZERO) break;
     }
     nob_sb_free(buf);
     return MAGICK_ERROR_OK;
+#undef ZERO
 }
 
 MagickStatus RunMagick(magick_params_t *params) {
