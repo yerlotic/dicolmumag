@@ -14,7 +14,7 @@
 <div align="center">
 <sup>
 
-App for creating collages with [imagemagick](https://imagemagick.org)
+App for creating collages with [ImageMagick](https://imagemagick.org)
 </div>
 
 <details><summary>
@@ -60,10 +60,12 @@ App for creating collages with [imagemagick](https://imagemagick.org)
     Compile definitions
     </summary>
 
+    - `APPIMAGE` — Use magick binary from `$APPDIR`. Not relevant on Windows
+    - `DEBUG` — Enable some `printf`s
+    - `INSTALLED` — Use `/usr/...` paths. Not relevant on Windows
     - `LAZY_RENDER` — Why render when u can do nothing?
+    - `NO_THREADING` — Magick will be launched in the main thread
     - `UI_TESTING` — Enable FPS counter and Clay debug mode
-    - `DEBUG` — Enable `printf`s
-    - `APPIMAGE` — Use magick from `$APPDIR`
     </details>
 
     ```shell
@@ -78,4 +80,4 @@ App for creating collages with [imagemagick](https://imagemagick.org)
     ```
 
 <br>
-<div align="center">Made on 🌏 with ❤️</div>
+<div align="center">Made on 🌍 with ❤️</div>
