@@ -11,8 +11,13 @@
 #include "thirdparty/nob.h"
 #include "strings.c"
 
+#ifdef NO_SCALING
+const float scale = 1.0;
+#define S(x) (x)
+#else
 float scale = 1.0;
 #define S(x) ((int) (x) * scale)
+#endif // NO_SCALING
 
 const uint8_t FONT_ID_BODY_16 = 0;
 const uint8_t FONT_ID_SIDEBAR = 1;

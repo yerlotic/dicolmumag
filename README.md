@@ -64,6 +64,7 @@ App for creating collages with [ImageMagick](https://imagemagick.org)
     - `DEBUG` — Enable some `printf`s
     - `INSTALLED` — Use `/usr/...` paths. Not relevant on Windows
     - `LAZY_RENDER` — Why render when u can do nothing?
+    - `NO_SCALING` — Disable scaling with <kbd>+</kbd>/<kbd>-</kbd>
     - `NO_THREADING` — Magick will be launched in the main thread
     - `UI_TESTING` — Enable FPS counter and Clay debug mode
     </details>
