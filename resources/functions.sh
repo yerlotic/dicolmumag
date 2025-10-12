@@ -4,7 +4,7 @@ export ICON_RES=256x256
 export ICON_RADIUS=50
 export NAME=dicolmumag
 export EXE_NAME=dicolmumag
-export ICON_BASE="$NAME.png"
+export ICON_BASE="icon.png"
 # relative to build directory
 export ICON="../resources/$ICON_BASE"
 # round corners in place

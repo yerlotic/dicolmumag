@@ -7,6 +7,7 @@
 #include "colors.c"
 #include "thirdparty/cthreads.h"
 #include "thirdparty/raylib/raylib.h"
+#include "thirdparty/tinyfiledialogs.h"
 #define NOB_IMPLEMENTATION
 #include "thirdparty/nob.h"
 #include "strings.c"
@@ -307,6 +308,29 @@ static inline void HandleSidebarInteraction(
             // Select the corresponding document
             *clickData->selectedDocumentIndex = clickData->requestedDocumentIndex;
         }
+    }
+}
+
+static inline void HandleActiveColor(
+    Clay_ElementId elementId,
+    Clay_PointerData pointerData,
+    intptr_t userData
+) {
+    (void) elementId;
+    (void) userData;
+    magick_params_t *params = (magick_params_t*)userData;
+    rgba *color = &params->color;
+    rgba_str *color_str = &params->color_str;
+    if (pointerData.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME) {
+        fprintf(stderr, "You pressed color, nice!\n");
+        unsigned char aoResultRGB[3] = {color->r, color->g, color->b};
+        fprintf(stderr, "old rgb: {%d, %d, %d}\n", color->r, color->g, color->b);
+        if (tinyfd_colorChooser("Choose a background color", NULL, aoResultRGB, aoResultRGB) == NULL)
+            return;
+        color->r = aoResultRGB[0]; sprintf(color_str->r, "%d", color->r);
+        color->g = aoResultRGB[1]; sprintf(color_str->g, "%d", color->g);
+        color->b = aoResultRGB[2]; sprintf(color_str->b, "%d", color->b);
+        fprintf(stderr, "new rgb: {%d, %d, %d}\n", color->r, color->g, color->b);
     }
 }
 
@@ -708,6 +732,7 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                         CLAY({.layout = { .layoutDirection = CLAY_TOP_TO_BOTTOM }}) {
                             StatedText(CLAY_STRING("Background Color: "), !(data->params.state & MAGICK_TRANSPARENT_BG));
                             RenderMagickColor(&data->params.color, data->params.state);
+                            Clay_OnHover(HandleActiveColor, (intptr_t)&data->params);
                         }
                         CLAY({
                             .id = CLAY_ID("ColorSettingsRGB"),

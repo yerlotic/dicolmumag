@@ -810,6 +810,39 @@ static inline void reloadFonts(Font *fonts, char *fontpath, int codepoints[512])
     ever_loaded = true;
 }
 
+static inline Image LoadAppIcon() {
+#ifdef _WIN32
+    return LoadImage("icon.png");
+#else
+  #ifdef INSTALLED
+    return LoadImage("/usr/share/dicolmumag/icon.png");
+  #else
+    return LoadImage("../resources/icon.png");
+  #endif // RELEASE
+#endif // _WIN32
+}
+
+void SetAppFPS() {
+    int target_fps = GetMonitorRefreshRate(GetCurrentMonitor());
+    // Something is wrong
+    if (target_fps <= 0) {
+#ifdef DEBUG
+        fprintf(stderr, "Falling back to %d fps\n", FALLBACK_FPS);
+#endif // DEBUG
+        target_fps = FALLBACK_FPS;
+    }
+    SetTargetFPS(target_fps);
+}
+
+static inline void SetAppIcon() {
+    Image icon = LoadAppIcon();
+#ifdef _WIN32
+    ImageFormat(&icon, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
+#endif // _WIN32
+    SetWindowIcon(icon);
+    UnloadImage(icon);
+}
+
 int main(void) {
     char* title = "Dicolmumag — create collages with ease of creation, proceed to easily collide with creativity and proceedings";
     // vsync makes resizes slower, we don't want this
@@ -846,6 +879,7 @@ int main(void) {
     Clay_Arena clayMemory = Clay_CreateArenaWithCapacityAndMemory(clayRequiredMemory, malloc(clayRequiredMemory));
     Clay_Context *clayContext = Clay_Initialize(clayMemory, CLAY_DIMENSIONS, (Clay_ErrorHandler) { HandleClayErrors, NULL }); // This final argument is new since the video was published
     ClayVideoDemo_Data data = ClayVideoDemo_Initialize();
+    Clay_SetMeasureTextFunction(Raylib_MeasureText, fonts);
 
     if (!testMagick(data.params.magickBinary.items)) {
         // yes, this is an mdash
@@ -853,16 +887,9 @@ int main(void) {
         data.errorIndex = MAGICK_ERROR_NOT_WORK;
     }
 
-    Clay_SetMeasureTextFunction(Raylib_MeasureText, fonts);
-    int target_fps = GetMonitorRefreshRate(GetCurrentMonitor());
-    // Something is wrong
-    if (target_fps <= 0) {
-#ifdef DEBUG
-        fprintf(stderr, "Falling back to %d fps\n", FALLBACK_FPS);
-#endif // DEBUG
-        target_fps = FALLBACK_FPS;
-    }
-    SetTargetFPS(target_fps);
+    SetAppIcon();
+    SetAppFPS();
+
     // Disable ESC to exit
     SetExitKey(KEY_NULL);
 #ifdef UI_TESTING
@@ -943,7 +970,6 @@ int main(void) {
 #endif // UI_TESTING
         EndDrawing();
     }
-    fprintf(stderr, "Cancelling threads\n");
 
     Clay_Raylib_Close();
 }

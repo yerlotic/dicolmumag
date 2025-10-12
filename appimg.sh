@@ -41,7 +41,7 @@ cmake .. "${cmake_flags[@]}" -DAPPIMAGE=OFF && make "-j$(nproc)"
 sudo rm /bin/"$EXE_NAME" || true
 sudo cp "$EXE_NAME" /bin/
 sudo mkdir -p /usr/share/dicolmumag
-sudo cp ../resources/banner.png /usr/share/dicolmumag
+sudo cp ../resources/{banner,icon}.png /usr/share/dicolmumag
 
 echo "$PWD"
 mkdir -vp "$APP_ROOT"/usr/{lib,bin}
