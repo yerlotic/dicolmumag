@@ -430,7 +430,7 @@ ClayVideoDemo_Data ClayVideoDemo_Initialize() {
         .selectedDocumentIndex = MAGICK_WELCOME_PAGE_I,
         .errorIndex = 0,
         .params = {
-            .state = MAGICK_BEST_FIT | MAGICK_OPEN_ON_DONE | MAGICK_RESIZE | MAGICK_SHRINK_LARGER,
+            .state = MAGICK_BEST_FIT | MAGICK_OPEN_ON_DONE | MAGICK_RESIZE,
             .outputFile = {0},
             .tempDir = {0},
             .magickBinary = {0},
