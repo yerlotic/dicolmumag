@@ -619,7 +619,7 @@ bool UpdateResizes(resize_element_t *resizes, int8_t scroll) {
         nob_sb_append_buf(&sb, "W", 1);
         if (Clay_PointerOver(Clay_GetElementId(CLAY_SB_STRING(sb)))) {
             resize->values.w += step * scroll;
-            if (strncmp(resize->id.chars, RESIZE_OUTPUT_MARGIN_S, resize->id.length) == 0)
+            if (strncmp(resize->id.chars, ID_RESIZE_OUTPUT_MARGIN, resize->id.length) == 0)
                 sprintf(resize->str.w, "%d", (int8_t) resize->values.w);
             else
                 sprintf(resize->str.w, "%d", resize->values.w);
@@ -630,7 +630,7 @@ bool UpdateResizes(resize_element_t *resizes, int8_t scroll) {
         nob_sb_append_buf(&sb, "H", 1);
         if (Clay_PointerOver(Clay_GetElementId(CLAY_SB_STRING(sb)))) {
             resize->values.h += step * scroll;
-            if (strncmp(resize->id.chars, RESIZE_OUTPUT_MARGIN_S, resize->id.length) == 0)
+            if (strncmp(resize->id.chars, ID_RESIZE_OUTPUT_MARGIN, resize->id.length) == 0)
                 sprintf(resize->str.h, "%d", (int8_t) resize->values.h);
             else
                 sprintf(resize->str.h, "%d", resize->values.h);
@@ -642,7 +642,7 @@ bool UpdateResizes(resize_element_t *resizes, int8_t scroll) {
         if (Clay_PointerOver(Clay_GetElementId(CLAY_SB_STRING(sb)))) {
             resize->values.w += step * scroll;
             resize->values.h += step * scroll;
-            if (strncmp(resize->id.chars, RESIZE_OUTPUT_MARGIN_S, resize->id.length) == 0) {
+            if (strncmp(resize->id.chars, ID_RESIZE_OUTPUT_MARGIN, resize->id.length) == 0) {
                 sprintf(resize->str.w, "%d", (int8_t) resize->values.w);
                 sprintf(resize->str.h, "%d", (int8_t) resize->values.h);
             } else {
@@ -687,13 +687,13 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, ClayVideoDemo_Data *
     }
 
     int8_t scroll = scrollDirection(scrollDelta);
-    if (released("Quit")) {
+    if (released(ID_QUIT)) {
         data->shouldClose = true;
         printf("close\n");
-    } else if (released("Support")) {
+    } else if (released(BUTTON_SUPPORT )) {
         nob_cmd_append(&cmd, LAUNCHER, SUPPORT_URL);
         nob_cmd_run_async_silent(cmd);
-    } else if (released(SELECT_IMAGES)) {
+    } else if (released(BUTTON_SELECT_IMAGES)) {
         GetInputFiles(&data->params.inputFiles);
         nob_kill(&data->params.magickProc);
         RunMagickThreaded();
@@ -704,25 +704,25 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, ClayVideoDemo_Data *
         RunMagickThreaded();
     } else if (released(SELECT_TEMP)) {
         SetTempDir(&data->params.tempDir);
-    } else if (released("Run") || ((IsKeyPressed(KEY_R) && data->params.magickProc == NOB_INVALID_PROC))) {
+    } else if (released(BUTTON_RUN) || ((IsKeyPressed(KEY_R) && data->params.magickProc == NOB_INVALID_PROC))) {
         nob_kill(&data->params.magickProc);
         RunMagickThreaded();
-    } else if (released("Stop") || IsKeyPressed(KEY_R)) {
+    } else if (released(BUTTON_STOP) || IsKeyPressed(KEY_R)) {
         nob_kill(&data->params.magickProc);
         cthreads_thread_ensure_cancelled(data->magickThread, &data->params.threadRunning);
-    } else if (released("MagickBinary")) {
+    } else if (released(BUTTON_SELECT_MAGICK)) {
         printf("bin befor: %s\n", data->params.magickBinary.items);
         data->errorIndex = ChangeMagickBinary(&data->params.magickBinary);
         printf("bin aftir: %d\n", data->errorIndex);
-    } else if (released("error")) {
+    } else if (released(ID_ERROR)) {
         data->errorIndex = MAGICK_ERROR_OK;
-    } else if (released("file")) {
+    } else if (released(ID_INPUT_FILE)) {
         printf("befor: %s\n", data->params.outputFile.items);
         ChangeOutputPath(&data->params.outputFile);
         printf("aftir: %s\n", data->params.outputFile.items);
-    } else if (released("Change colorscheme")) {
+    } else if (released(BUTTON_CHANGE_UI_COLOR)) {
         colorscheme = (colorscheme + 1) % COLORSCHEMES;
-    } else if (released("Open result")) {
+    } else if (released(BUTTON_OPEN_RESULT)) {
         if (data->params.outputFile.items[0] != '\0') {
             nob_cmd_append(&cmd, LAUNCHER, data->params.outputFile.items);
             nob_cmd_run_async_silent(cmd);
