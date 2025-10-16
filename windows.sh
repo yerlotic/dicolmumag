@@ -49,7 +49,7 @@ args=(
     # -ggdb
     ../src/main.c
     my.res
-    -o ./dicolmumag.exe
+    -o ./"$NAME.exe"
     -mwindows # probably important
     -I../src/thirdparty/
     # -lm
@@ -64,12 +64,12 @@ args=(
 
 x86_64-w64-mingw32-gcc "${args[@]}"
 
-out=dicolmumag_win
+out="${NAME}_win"
 if [ "${1:-}" == pack ]; then
     rm -rf "$out"{,.zip}
     mkdir "$out"
     cp "/usr/share/fonts/noto/NotoSans-Regular.ttf" font.ttf
-    mv dicolmumag.exe font.ttf "$out"/
+    mv "$NAME.exe" font.ttf "$out"/
     cp ../resources/{banner,icon}.png magick/magick.exe "$out"/
 
     # zip -o "$out".zip -r "$out"/
@@ -80,9 +80,9 @@ fi
 if [ "${1:-}" == run ]; then
     cd "$out"
     [ -n "${WAYLAND_DISPLAY:-}" ] && unset DISPLAY
-    # WINEDEBUG=-all wine dicolmumag.exe || winedbg --gdb dicolmumag.exe
-    wine dicolmumag.exe || winedbg --gdb dicolmumag.exe &
+    # WINEDEBUG=-all wine "$NAME.exe" || winedbg --gdb "$NAME.exe"
+    wine "$NAME.exe" || winedbg --gdb "$NAME.exe" &
     # WINEDEBUG=+all
-    # winedbg --gdb dicolmumag.exe
+    # winedbg --gdb "$NAME.exe"
 fi
 wait
