@@ -409,19 +409,15 @@ static inline void RenderFlag(Clay_String text,
     }
 }
 
-#define RESIZE_INPUT_S "Resize"
-#define RESIZE_OUTPUT_S "OutputDimentions"
-#define RESIZE_OUTPUT_MARGIN_S "OutputMargin"
-
 ClayVideoDemo_Data ClayVideoDemo_Initialize() {
     // Update DocumentArray
-    documents.documents[MAGICK_BEST_FIT_I] = (Document){ .title = CLAY_STRING("Best fit"), .contents = CLAY_STRING("This ashlar option aligns images on both sides of the resulting image") };
-    documents.documents[MAGICK_TRANSPARENT_BG_I] = (Document){ .title = CLAY_STRING("Transparent background"), .contents = CLAY_STRING("Makes the background transparent\nThis overrides background configuration in "ADVANCED_SETTINGS_Q" tab") };
-    documents.documents[MAGICK_OPEN_ON_DONE_I] = (Document){ .title = CLAY_STRING("Open when done"), .contents = CLAY_STRING("Enable this to see the result right after it's done!\n\nNothing more\nsurely") };
-    documents.documents[MAGICK_RESIZE_I] = (Document){ .title = CLAY_STRING("Enable Resize"), .contents = CLAY_STRING("This option enables resizes. You can configure how input images are resized in "ADVANCED_SETTINGS_Q) };
-    documents.documents[MAGICK_SET_RESOLUTION_I] = (Document){ .title = CLAY_STRING("Set output resolution"), .contents = CLAY_STRING("With this option you can directly set the desired output resolution for the collage in "ADVANCED_SETTINGS_Q" tab\nIf this option is disabled, the resolution for the output image (filename at the top) will be chosen automatically") };
-    documents.documents[MAGICK_ADVANCED_SETTINGS] = (Document){ .title = CLAY_STRING(ADVANCED_SETTINGS_S), .contents = CLAY_STRING("This tab contains advanced settings (surprise!)") };
-    documents.documents[MAGICK_WELCOME_PAGE_I] = (Document){ };
+    documents.documents[MAGICK_BEST_FIT_I] = (Document){ .title = CLAY_STRING(TEXT_BEST_FIT), .contents = CLAY_STRING(TEXT_BEST_FIT_EXPL) };
+    documents.documents[MAGICK_TRANSPARENT_BG_I] = (Document){ .title = CLAY_STRING(TEXT_TRANSPARENT_BG), .contents = CLAY_STRING(TEXT_TRANSPARENT_BG_EXPL) };
+    documents.documents[MAGICK_OPEN_ON_DONE_I] = (Document){ .title = CLAY_STRING(TEXT_OPEN_ON_DONE), .contents = CLAY_STRING(TEXT_OPEN_ON_DONE_EXPL) };
+    documents.documents[MAGICK_RESIZE_I] = (Document){ .title = CLAY_STRING(TEXT_ENABLE_RESIZE), .contents = CLAY_STRING(TEXT_ENABLE_RESIZE_EXPL) };
+    documents.documents[MAGICK_SET_RESOLUTION_I] = (Document){ .title = CLAY_STRING(TEXT_SET_OUTPUT_RES), .contents = CLAY_STRING(TEXT_SET_OUTPUT_RES_EXPL) };
+    documents.documents[MAGICK_ADVANCED_SETTINGS] = (Document){ .title = CLAY_STRING(ADVANCED_SETTINGS_S), .contents = CLAY_STRING(TEXT_ADVANCED_SETTINGS_EXPL) };
+    documents.documents[MAGICK_WELCOME_PAGE_I] = (Document){0};
 
     ClayVideoDemo_Data data = {
         .frameArena = { .memory = (intptr_t)malloc(1024) },
@@ -437,19 +433,19 @@ ClayVideoDemo_Data ClayVideoDemo_Initialize() {
             .inputFiles = {0},
             .resizes = {
                 {
-                    .id = CLAY_STRING(RESIZE_INPUT_S),
+                    .id = CLAY_STRING(ID_RESIZE_INPUT),
                     .values = {.w =  1000,  .h =  1000 },
                     .str    = {.w = "1000", .h = "1000"},
                     .step = 50,
                 },
                 {
-                    .id = CLAY_STRING(RESIZE_OUTPUT_S),
+                    .id = CLAY_STRING(ID_RESIZE_OUTPUT),
                     .values = {.w =  4000,  .h =  4000 },
                     .str    = {.w = "4000", .h = "4000"},
                     .step = 50,
                 },
                 {
-                    .id = CLAY_STRING(RESIZE_OUTPUT_MARGIN_S),
+                    .id = CLAY_STRING(ID_RESIZE_OUTPUT_MARGIN),
                     .values = {.w =  4,  .h =  4 },
                     .str    = {.w = "4", .h = "4"},
                     .step = 1,
@@ -521,7 +517,7 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
 
     // Build UI here
     CLAY({
-        .id = CLAY_ID("OuterContainer"),
+        .id = CLAY_ID(ID_OUTER),
         .backgroundColor = colors[colorscheme][COLOR_MANTLE],
         .layout = {
             .layoutDirection = CLAY_TOP_TO_BOTTOM,
@@ -531,7 +527,7 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
         }
     }) {
         // Child elements go inside braces
-        CLAY({ .id = CLAY_ID("HeaderBar"),
+        CLAY({ .id = CLAY_ID(ID_HEADER),
             .layout = {
                 .sizing = {
                     .height = CLAY_SIZING_FIXED(S(60)),
@@ -549,21 +545,21 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
         }) {
             // Header buttons go here
             CLAY({
-                .id = CLAY_ID("FileButton"),
+                .id = CLAY_ID(ID_FILE_BUTTON),
                 .layout = { .padding = { S(16), S(16), S(8), S(8) }},
                 .backgroundColor = BUTTON_COLOR,
                 .cornerRadius = BUTTON_RADIUS,
             }) {
-                CLAY_TEXT(CLAY_STRING("File"), BUTTON_TEXT);
+                CLAY_TEXT(CLAY_STRING(BUTTON_FILE), BUTTON_TEXT);
 
                 bool fileMenuVisible =
-                    Clay_PointerOver(Clay_GetElementId(CLAY_STRING("FileButton")))
+                    Clay_PointerOver(Clay_GetElementId(CLAY_STRING(ID_FILE_BUTTON)))
                     ||
-                    Clay_PointerOver(Clay_GetElementId(CLAY_STRING("FileMenu")));
+                    Clay_PointerOver(Clay_GetElementId(CLAY_STRING(ID_FILE_MENU)));
 
                 if (fileMenuVisible) {
                     CLAY({
-                        .id = CLAY_ID("FileMenu"),
+                        .id = CLAY_ID(ID_FILE_MENU),
                         .floating = {
                             .attachTo = CLAY_ATTACH_TO_PARENT,
                             .attachPoints = {
@@ -585,9 +581,9 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                             .cornerRadius = BUTTON_RADIUS,
                         }) {
                             // Render dropdown items here
-                            RenderDropdownMenuItem(CLAY_STRING("Open result"));
-                            RenderDropdownMenuItem(CLAY_STRING("Change colorscheme"));
-                            Clay_String quit = CLAY_STRING("Quit");
+                            RenderDropdownMenuItem(CLAY_STRING(BUTTON_OPEN_RESULT));
+                            RenderDropdownMenuItem(CLAY_STRING(BUTTON_CHANGE_UI_COLOR));
+                            Clay_String quit = CLAY_STRING(ID_QUIT);
                             CLAY({
                                 .backgroundColor = colors[colorscheme][COLOR_SURFACE0],
                                 .cornerRadius = BUTTON_RADIUS,
@@ -607,16 +603,16 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                     }
                 }
             }
-            RenderHeaderButton(CLAY_STRING(SELECT_IMAGES));
+            RenderHeaderButton(CLAY_STRING(BUTTON_SELECT_IMAGES));
             if (data->params.magickProc == NOB_INVALID_PROC)
-                RenderHeaderButton(CLAY_STRING("Run"));
+                RenderHeaderButton(CLAY_STRING(BUTTON_RUN));
             else
-                RenderHeaderButton(CLAY_STRING("Stop"));
+                RenderHeaderButton(CLAY_STRING(BUTTON_STOP));
             CLAY({ .layout = { .sizing = { CLAY_SIZING_GROW(0) }}}) {}
             if (errors[data->errorIndex][0] == '\0') {
-                CLAY({.id = CLAY_ID("file")}) {CLAY_TEXT(CLAY_SB_STRING(data->params.outputFile), DEFAULT_TEXT);}
+                CLAY({.id = CLAY_ID(ID_INPUT_FILE)}) {CLAY_TEXT(CLAY_SB_STRING(data->params.outputFile), DEFAULT_TEXT);}
             } else {
-                CLAY({.id = CLAY_ID("error")}) {
+                CLAY({.id = CLAY_ID(ID_ERROR)}) {
                     CLAY_TEXT(CLAY_DYNAMIC_STRING(errors[data->errorIndex]), CLAY_TEXT_CONFIG({ .fontId = FONT_ID_BODY_16, .fontSize = S(document_font_size), .textColor = colors[colorscheme][COLOR_RED] }));
                 }
             }
@@ -624,22 +620,22 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
             CLAY({
                 .layout = { .padding = { S(16), S(16), S(8), S(8) }},
                 .backgroundColor = BUTTON_COLOR,
-                .id = CLAY_ID("ResizeAll"),
+                .id = CLAY_ID(ID_RESIZE_ALL),
                 .cornerRadius = BUTTON_RADIUS,
             }) {
-                CLAY_TEXT(CLAY_STRING("Resize: "), BUTTON_TEXT);
+                CLAY_TEXT(CLAY_STRING(SECTION_RESIZE), BUTTON_TEXT);
                 CLAY_TEXT(CLAY_DYNAMIC_STRING(data->params.resizes[RESIZES_INPUT].str.w), BUTTON_TEXT);
             }
-            RenderHeaderButton(CLAY_STRING("Support"));
+            RenderHeaderButton(CLAY_STRING(BUTTON_SUPPORT));
         }
 
         CLAY({
-            .id = CLAY_ID("LowerContent"),
+            .id = CLAY_ID(ID_LOWER_CONTENT),
             .layout = { .sizing = layoutExpand, .childGap = S(16) },
 
         }) {
             CLAY({
-                .id = CLAY_ID("Sidebar"),
+                .id = CLAY_ID(ID_SIDEBAR),
                 .backgroundColor = contentBackgroundColor,
                 .clip = { .vertical = true, .childOffset = Clay_GetScrollOffset() },
                 .layout = {
@@ -696,7 +692,7 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                 }
             }
 
-            CLAY({ .id = CLAY_ID("MainContent"),
+            CLAY({ .id = CLAY_ID(ID_MAIN),
                 .backgroundColor = contentBackgroundColor,
                 .clip = { .vertical = true, /*.horizontal = true,*/ .childOffset = Clay_GetScrollOffset() },
                 .layout = {
@@ -724,18 +720,18 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
 
                 if (data->selectedDocumentIndex == MAGICK_ADVANCED_SETTINGS) {
                     CLAY({
-                        .id = CLAY_ID("ColorSettings"),
+                        .id = CLAY_ID(ID_COLOR_SETTINGS),
                         .layout = {
                             .layoutDirection = CLAY_LEFT_TO_RIGHT,
                         },
                     }) {
                         CLAY({.layout = { .layoutDirection = CLAY_TOP_TO_BOTTOM }}) {
-                            StatedText(CLAY_STRING("Background Color: "), !(data->params.state & MAGICK_TRANSPARENT_BG));
+                            StatedText(CLAY_STRING(SECTION_BACKGROUND_COLOR), !(data->params.state & MAGICK_TRANSPARENT_BG));
                             RenderMagickColor(&data->params.color, data->params.state);
                             Clay_OnHover(HandleActiveColor, (intptr_t)&data->params);
                         }
                         CLAY({
-                            .id = CLAY_ID("ColorSettingsRGB"),
+                            .id = CLAY_ID(ID_COLOR_SETTINGS_RGB),
                             .layout = {
                                 .layoutDirection = CLAY_TOP_TO_BOTTOM,
                                 .sizing = {
@@ -751,44 +747,44 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                             RenderColorChannel(CLAY_STRING("a"), colors[colorscheme][COLOR_TEXT],  data->params.color_str.a);
                         }
                         if (data->params.state & MAGICK_TRANSPARENT_BG)
-                            CLAY_TEXT(CLAY_STRING("Transparent background setting overrides this option"), DEFAULT_TEXT);
+                            CLAY_TEXT(CLAY_STRING(TEXT_TRANSPARENT_BG_WARNING), DEFAULT_TEXT);
                     }
                     CLAY({
-                        .id = CLAY_ID("GravitySettings"),
+                        .id = CLAY_ID(ID_GRAVITY_SETTINGS),
                         .layout = {
                             .childGap = S(8),
                             .layoutDirection = CLAY_TOP_TO_BOTTOM,
                         }
                     }) {
                         CLAY({.layout = {.layoutDirection = CLAY_LEFT_TO_RIGHT, .childGap = S(8)}}) {
-                            CLAY_TEXT(CLAY_STRING("Gravity: "), DEFAULT_TEXT);
+                            CLAY_TEXT(CLAY_STRING(SECTION_GRAVITY), DEFAULT_TEXT);
                             CLAY({
                                     .backgroundColor = BUTTON_COLOR,
-                                    .id = CLAY_ID("Gravity"),
+                                    .id = CLAY_ID(ID_GRAVITY),
                                     .cornerRadius = BUTTON_RADIUS,
                                     }) {
-                                CLAY({ .id = CLAY_ID("GravitySelection"), .layout = { .padding = { S(16), S(16), S(8), S(8) } } }) {
+                                CLAY({ .id = CLAY_ID(ID_GRAVITY_SELECTION), .layout = { .padding = { S(16), S(16), S(8), S(8) } } }) {
                                     CLAY_TEXT(CLAY_DYNAMIC_STRING(data->params.gravity.values[data->params.gravity.selected]), BUTTON_TEXT);
                                 }
                             }
                         }
                     }
-                    CLAY({.id = CLAY_ID("ResizeSettings"), .layout = {.layoutDirection = CLAY_TOP_TO_BOTTOM, .childGap = 8}}) {
+                    CLAY({.id = CLAY_ID(ID_RESIZE_SETTINGS), .layout = {.layoutDirection = CLAY_TOP_TO_BOTTOM, .childGap = 8}}) {
                         CLAY({.layout = {.layoutDirection = CLAY_LEFT_TO_RIGHT, .childGap = S(8)}}) {
-                            StatedText(CLAY_STRING("Resize each image: "), data->params.state & MAGICK_RESIZE);
-                            RenderResize(&data->params.resizes[RESIZES_INPUT], RESIZE_INPUT_S);
+                            StatedText(CLAY_STRING(SECTION_RESIZE_EACH), data->params.state & MAGICK_RESIZE);
+                            RenderResize(&data->params.resizes[RESIZES_INPUT], ID_RESIZE_INPUT);
                         }
-                        RenderFlag(CLAY_STRING("Ignore aspect ratio"), &data->params.state, MAGICK_IGNORE_RATIO, MAGICK_IGNORE_RATIO, &data->frameArena);
+                        RenderFlag(CLAY_STRING(TEXT_IGNORE_ASPECT), &data->params.state, MAGICK_IGNORE_RATIO, MAGICK_IGNORE_RATIO, &data->frameArena);
                         // Well... this would only work for two
-                        RenderFlag(CLAY_STRING("Only Shrink Larger"), &data->params.state,
+                        RenderFlag(CLAY_STRING(TEXT_SHRINK_LARGER), &data->params.state,
                                 (data->params.state & MAGICK_ENLARGE_SMALLER) ? MAGICK_ENLARGE_SMALLER | MAGICK_SHRINK_LARGER : MAGICK_SHRINK_LARGER, MAGICK_SHRINK_LARGER, &data->frameArena);
-                        RenderFlag(CLAY_STRING("Only Enlarge Smaller"), &data->params.state,
+                        RenderFlag(CLAY_STRING(TEXT_ENLARGE_SMALLER), &data->params.state,
                                 (data->params.state & MAGICK_SHRINK_LARGER) ? MAGICK_SHRINK_LARGER | MAGICK_ENLARGE_SMALLER : MAGICK_ENLARGE_SMALLER, MAGICK_ENLARGE_SMALLER, &data->frameArena);
-                        RenderFlag(CLAY_STRING("Fill area"), &data->params.state, MAGICK_FILL_AREA, MAGICK_FILL_AREA, &data->frameArena);
+                        RenderFlag(CLAY_STRING(TEXT_FILL_AREA), &data->params.state, MAGICK_FILL_AREA, MAGICK_FILL_AREA, &data->frameArena);
                     }
 
                     CLAY({
-                        .id = CLAY_ID("OutputSettings"),
+                        .id = CLAY_ID(ID_OUTPUT_SETTINGS),
                         .layout = {
                             .childGap = S(8),
                             .layoutDirection = CLAY_TOP_TO_BOTTOM,
@@ -798,30 +794,30 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                             },
                         }
                     }) {
-                        StatedText(CLAY_STRING(OUTPUT_RES), data->params.state & MAGICK_SET_RESOLUTION);
+                        StatedText(CLAY_STRING(TEXT_OUTPUT_RES), data->params.state & MAGICK_SET_RESOLUTION);
                         CLAY({.layout = {.layoutDirection = CLAY_LEFT_TO_RIGHT, .childGap = S(8), .padding = S(8), .childAlignment = {.y = CLAY_ALIGN_Y_CENTER}}}) {
-                            CLAY_TEXT(CLAY_STRING("Dimentions:"), BUTTON_TEXT);
-                            RenderResize(&data->params.resizes[RESIZES_OUTPUT_RES], RESIZE_OUTPUT_S);
+                            CLAY_TEXT(CLAY_STRING(TEXT_DIMENSIONS), BUTTON_TEXT);
+                            RenderResize(&data->params.resizes[RESIZES_OUTPUT_RES], ID_RESIZE_OUTPUT);
                         }
                         CLAY({.layout = {.layoutDirection = CLAY_LEFT_TO_RIGHT, .childGap = S(8), .padding = S(8), .childAlignment = {.y = CLAY_ALIGN_Y_CENTER}}}) {
-                            CLAY_TEXT(CLAY_STRING("Margin:"), BUTTON_TEXT);
-                            RenderResize(&data->params.resizes[RESIZES_OUTPUT_MARGIN], RESIZE_OUTPUT_MARGIN_S);
+                            CLAY_TEXT(CLAY_STRING(TEXT_MARGIN), BUTTON_TEXT);
+                            RenderResize(&data->params.resizes[RESIZES_OUTPUT_MARGIN], ID_RESIZE_OUTPUT_MARGIN);
                         }
                     }
 
                     CLAY({
-                        .id = CLAY_ID("LocationSettings"),
+                        .id = CLAY_ID(ID_LOCATION_SETTINGS),
                         .layout = {
                             .childGap = S(8),
                             .layoutDirection = CLAY_TOP_TO_BOTTOM,
                         }
                     }) {
-                        CLAY_TEXT(CLAY_STRING(TEMP_FILES), DEFAULT_TEXT);
+                        CLAY_TEXT(CLAY_STRING(TEXT_TEMP_FILES), DEFAULT_TEXT);
                         CLAY({.layout = {.padding = S(8)}}) {CLAY_TEXT(CLAY_STRING(TEMP_FILES_EXPLANATION), BUTTON_TEXT);}
                         CLAY({.layout = {.layoutDirection = CLAY_LEFT_TO_RIGHT, .childGap = S(8), .padding = S(8)}}) {
-                            CLAY_TEXT(CLAY_STRING("Current:"), BUTTON_TEXT);
+                            CLAY_TEXT(CLAY_STRING(TEXT_CURRENT), BUTTON_TEXT);
                             if (data->params.tempDir.count == 0)
-                                CLAY_TEXT(CLAY_STRING("default"), CLAY_TEXT_CONFIG({ .fontId = FONT_ID_BUTTONS, .fontSize = S(button_font_size), .textColor = colors[colorscheme][COLOR_OVERLAY0] }));
+                                CLAY_TEXT(CLAY_STRING(TEXT_TEMP_DEFAULT), CLAY_TEXT_CONFIG({ .fontId = FONT_ID_BUTTONS, .fontSize = S(button_font_size), .textColor = colors[colorscheme][COLOR_OVERLAY0] }));
                             else
                                 CLAY_TEXT(CLAY_SB_STRING(data->params.tempDir), BUTTON_TEXT);
                         }
@@ -829,7 +825,7 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                     }
 
                     CLAY({
-                        .id = CLAY_ID("MagickBinary"),
+                        .id = CLAY_ID(BUTTON_SELECT_MAGICK),
                         .layout = {
                             .childGap = S(8),
                         }
@@ -839,7 +835,7 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                     }
                 } else if (data->selectedDocumentIndex == MAGICK_WELCOME_PAGE_I) {
                     CLAY({
-                        .id = CLAY_ID("MagickWelcome"),
+                        .id = CLAY_ID(ID_WELCOME),
                         .layout = {
                             .childGap = S(20),
                             .padding = CLAY_PADDING_ALL(S(20)),
@@ -854,7 +850,7 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                             }
                         }
                     }) {
-                        CLAY_TEXT(CLAY_STRING("Welcome to Dicolmumag"),
+                        CLAY_TEXT(CLAY_STRING(TEXT_WELCOME),
                             CLAY_TEXT_CONFIG({
                                 .fontId = FONT_ID_WELCOME,
                                 .fontSize = S(welcome_font_size),
@@ -872,7 +868,7 @@ Clay_RenderCommandArray ClayVideoDemo_CreateLayout(ClayVideoDemo_Data *data) {
                             .image = { .imageData = &data->params.logo }
 
                         }) {}
-                        CLAY_TEXT(CLAY_STRING("Create collages cuz why not"), CLAY_TEXT_CONFIG({
+                        CLAY_TEXT(CLAY_STRING(TEXT_SLOGAN), CLAY_TEXT_CONFIG({
                             .fontId = FONT_ID_DOCUMNT,
                             .fontSize = S(document_font_size),
                             .textColor = colors[colorscheme][COLOR_TEXT],
