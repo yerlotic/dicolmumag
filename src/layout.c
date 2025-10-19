@@ -41,7 +41,7 @@ typedef struct {
     intptr_t memory;
 } AppArena;
 
-typedef enum {
+typedef CLAY_PACKED_ENUM {
     MAGICK_BEST_FIT        = 1 << 0,
     MAGICK_TRANSPARENT_BG  = 1 << 1,
     MAGICK_OPEN_ON_DONE    = 1 << 2,
@@ -56,7 +56,7 @@ typedef enum {
 } MagickState;
 
 // Indexes for `documents` array
-enum {
+CLAY_PACKED_ENUM {
     MAGICK_BEST_FIT_I,
     MAGICK_TRANSPARENT_BG_I,
     MAGICK_OPEN_ON_DONE_I,
@@ -91,7 +91,7 @@ typedef struct resize_element_t {
     uint8_t step;
 } resize_element_t;
 
-enum {
+CLAY_PACKED_ENUM {
     RESIZES_INPUT,
     RESIZES_OUTPUT_RES,
     RESIZES_OUTPUT_MARGIN,
@@ -103,7 +103,7 @@ typedef struct gravity_t {
     uint8_t selected;
 } gravity_t;
 
-typedef enum __attribute__((packed)) ProcStatus {
+typedef CLAY_PACKED_ENUM ProcStatus {
     PROCESS_RUNNING,
     PROCESS_EXITED_OK,
     PROCESS_CRASHED,
@@ -253,7 +253,7 @@ static inline void RenderFlag(Clay_String text,
                 AppArena *arena) {
     Clay_Color background = BUTTON_COLOR;
     if (*state & displayFlag)
-        background = OPACITY(colors[colorscheme][COLOR_GREEN], 35);
+        background = OPACITY(c10n(COLOR_GREEN), 35);
     CLAY({
         .layout = {
             .padding = defaultPadding,
@@ -274,14 +274,14 @@ static inline void RenderFlag(Clay_String text,
         CLAY_TEXT(text, CLAY_TEXT_CONFIG({
             .fontId = FONT_ID_BUTTONS,
             .fontSize = S(button_font_size),
-            .textColor = colors[colorscheme][COLOR_TEXT],
+            .textColor = c10n(COLOR_TEXT),
             .textAlignment = CLAY_TEXT_ALIGN_CENTER,
             .wrapMode = CLAY_TEXT_WRAP_NONE,
         }));
     }
 }
 
-AppData AppDataInit() {
+AppData AppDataInit(void) {
     // Update DocumentArray
     documents.documents[MAGICK_BEST_FIT_I] = (Document){ .title = CLAY_STRING(TEXT_BEST_FIT), .contents = CLAY_STRING(TEXT_BEST_FIT_EXPL) };
     documents.documents[MAGICK_TRANSPARENT_BG_I] = (Document){ .title = CLAY_STRING(TEXT_TRANSPARENT_BG), .contents = CLAY_STRING(TEXT_TRANSPARENT_BG_EXPL) };
@@ -385,12 +385,12 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
         .height = CLAY_SIZING_GROW(0)
     };
 
-    Clay_Color contentBackgroundColor = colors[colorscheme][COLOR_BASE];
+    Clay_Color contentBackgroundColor = c10n(COLOR_BASE);
     defaultPadding = (Clay_Padding) { S(16), S(16), S(8), S(8) };
     // Build UI here
     CLAY({
         .id = CLAY_ID(ID_OUTER),
-        .backgroundColor = colors[colorscheme][COLOR_MANTLE],
+        .backgroundColor = c10n(COLOR_MANTLE),
         .layout = {
             .layoutDirection = CLAY_TOP_TO_BOTTOM,
             .sizing = layoutExpand,
@@ -449,7 +449,7 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
                                     .width = CLAY_SIZING_FIXED(S(200))
                                 },
                             },
-                            .backgroundColor = colors[colorscheme][COLOR_SURFACE0],
+                            .backgroundColor = c10n(COLOR_SURFACE0),
                             .cornerRadius = BUTTON_RADIUS,
                         }) {
                             // Render dropdown items here
@@ -457,7 +457,7 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
                             RenderDropdownMenuItem(CLAY_STRING(BUTTON_CHANGE_UI_COLOR));
                             Clay_String quit = CLAY_STRING(ID_QUIT);
                             CLAY({
-                                .backgroundColor = colors[colorscheme][COLOR_SURFACE0],
+                                .backgroundColor = c10n(COLOR_SURFACE0),
                                 .cornerRadius = BUTTON_RADIUS,
                                 .id = CLAY_SID(quit),
                                 .layout = {
@@ -467,9 +467,9 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
                                 },
                             }}) {
                                 CLAY_TEXT(quit, BUTTON_TEXT);
-                                CLAY({ .layout = { .sizing = { CLAY_SIZING_GROW(0) }}}) {}
+                                HorizontalSeparator();
                                 CLAY_TEXT(CLAY_STRING("Ctrl-Q"),
-                                        CLAY_TEXT_CONFIG({ .fontId = FONT_ID_BUTTONS, .fontSize = S(button_font_size), .textColor = colors[colorscheme][COLOR_OVERLAY0] }));
+                                        CLAY_TEXT_CONFIG({ .fontId = FONT_ID_BUTTONS, .fontSize = S(button_font_size), .textColor = c10n(COLOR_OVERLAY0) }));
                             }
                         }
                     }
@@ -480,15 +480,15 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
                 RenderHeaderButton(CLAY_STRING(BUTTON_RUN));
             else
                 RenderHeaderButton(CLAY_STRING(BUTTON_STOP));
-            CLAY({ .layout = { .sizing = { CLAY_SIZING_GROW(0) }}}) {}
+            HorizontalSeparator();
             if (errors[data->errorIndex][0] == '\0') {
                 CLAY({.id = CLAY_ID(ID_INPUT_FILE)}) {CLAY_TEXT(CLAY_SB_STRING(data->params.outputFile), DEFAULT_TEXT);}
             } else {
                 CLAY({.id = CLAY_ID(ID_ERROR)}) {
-                    CLAY_TEXT(CLAY_DYNAMIC_STRING(errors[data->errorIndex]), CLAY_TEXT_CONFIG({ .fontId = FONT_ID_BODY_16, .fontSize = S(document_font_size), .textColor = colors[colorscheme][COLOR_RED] }));
+                    CLAY_TEXT(CLAY_DYNAMIC_STRING(errors[data->errorIndex]), CLAY_TEXT_CONFIG({ .fontId = FONT_ID_BODY_16, .fontSize = S(document_font_size), .textColor = c10n(COLOR_RED) }));
                 }
             }
-            CLAY({ .layout = { .sizing = { CLAY_SIZING_GROW(0) }}}) {}
+            HorizontalSeparator();
             CLAY({
                 .layout = { .padding = defaultPadding},
                 .backgroundColor = BUTTON_COLOR,
@@ -541,14 +541,14 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
                        ) {
                         CLAY({
                             .layout = sidebarButtonLayout,
-                            .backgroundColor = OPACITY(colors[colorscheme][COLOR_GREEN], 35),
+                            .backgroundColor = OPACITY(c10n(COLOR_GREEN), 35),
                             .cornerRadius = CLAY_CORNER_RADIUS(S(8))
                         }) {
                             Clay_OnHover(HandleSidebarInteraction, (intptr_t)clickData);
                             CLAY_TEXT(document.title, CLAY_TEXT_CONFIG({
                                 .fontId = FONT_ID_SIDEBAR,
                                 .fontSize = S(sidebar_font_size),
-                                .textColor = colors[colorscheme][COLOR_TEXT],
+                                .textColor = c10n(COLOR_TEXT),
                             }));
                         }
                     } else {
@@ -557,7 +557,7 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
                             CLAY_TEXT(document.title, CLAY_TEXT_CONFIG({
                                 .fontId = FONT_ID_SIDEBAR,
                                 .fontSize = S(sidebar_font_size),
-                                .textColor = colors[colorscheme][COLOR_TEXT],
+                                .textColor = c10n(COLOR_TEXT),
                             }));
                         }
                     }
@@ -584,7 +584,7 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
                     CLAY_TEXT(selectedDocument.title, CLAY_TEXT_CONFIG({
                         .fontId = FONT_ID_BODY_16,
                         .fontSize = S(title_font_size),
-                        .textColor = colors[colorscheme][COLOR_TEXT]
+                        .textColor = c10n(COLOR_TEXT)
                     }));
                     CLAY_TEXT(selectedDocument.contents, DEFAULT_TEXT);
                 }
@@ -613,10 +613,10 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
                                 .childGap = S(8),
                             },
                         }) {
-                            RenderColorChannel(CLAY_STRING("r"), colors[colorscheme][COLOR_RED],   data->params.color_str.r);
-                            RenderColorChannel(CLAY_STRING("g"), colors[colorscheme][COLOR_GREEN], data->params.color_str.g);
-                            RenderColorChannel(CLAY_STRING("b"), colors[colorscheme][COLOR_BLUE],  data->params.color_str.b);
-                            RenderColorChannel(CLAY_STRING("a"), colors[colorscheme][COLOR_TEXT],  data->params.color_str.a);
+                            RenderColorChannel(CLAY_STRING("r"), c10n(COLOR_RED),   data->params.color_str.r);
+                            RenderColorChannel(CLAY_STRING("g"), c10n(COLOR_GREEN), data->params.color_str.g);
+                            RenderColorChannel(CLAY_STRING("b"), c10n(COLOR_BLUE),  data->params.color_str.b);
+                            RenderColorChannel(CLAY_STRING("a"), c10n(COLOR_TEXT),  data->params.color_str.a);
                         }
                         if (data->params.state & MAGICK_TRANSPARENT_BG)
                             CLAY_TEXT(CLAY_STRING(TEXT_TRANSPARENT_BG_WARNING), DEFAULT_TEXT);
@@ -685,11 +685,11 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
                         }
                     }) {
                         CLAY_TEXT(CLAY_STRING(TEXT_TEMP_FILES), DEFAULT_TEXT);
-                        CLAY({.layout = {.padding = S(8)}}) {CLAY_TEXT(CLAY_STRING(TEMP_FILES_EXPLANATION), BUTTON_TEXT);}
-                        CLAY({.layout = {.layoutDirection = CLAY_LEFT_TO_RIGHT, .childGap = S(8), .padding = S(8)}}) {
+                        CLAY({.layout = {.padding = {.left = S(8)}}}) {CLAY_TEXT(CLAY_STRING(TEMP_FILES_EXPLANATION), BUTTON_TEXT);}
+                        CLAY({.layout = {.layoutDirection = CLAY_LEFT_TO_RIGHT, .childGap = S(8), .padding = {.left = S(8)}}}) {
                             CLAY_TEXT(CLAY_STRING(TEXT_CURRENT), BUTTON_TEXT);
                             if (data->params.tempDir.count == 0)
-                                CLAY_TEXT(CLAY_STRING(TEXT_TEMP_DEFAULT), CLAY_TEXT_CONFIG({ .fontId = FONT_ID_BUTTONS, .fontSize = S(button_font_size), .textColor = colors[colorscheme][COLOR_OVERLAY0] }));
+                                CLAY_TEXT(CLAY_STRING(TEXT_TEMP_DEFAULT), CLAY_TEXT_CONFIG({ .fontId = FONT_ID_BUTTONS, .fontSize = S(button_font_size), .textColor = c10n(COLOR_OVERLAY0) }));
                             else
                                 CLAY_TEXT(CLAY_SB_STRING(data->params.tempDir), BUTTON_TEXT);
                         }
@@ -726,7 +726,7 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
                             CLAY_TEXT_CONFIG({
                                 .fontId = FONT_ID_WELCOME,
                                 .fontSize = S(welcome_font_size),
-                                .textColor = colors[colorscheme][COLOR_TEXT],
+                                .textColor = c10n(COLOR_TEXT),
                                 .textAlignment = CLAY_TEXT_ALIGN_CENTER,
                             }));
                         CLAY({
@@ -743,7 +743,7 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
                         CLAY_TEXT(CLAY_STRING(TEXT_SLOGAN), CLAY_TEXT_CONFIG({
                             .fontId = FONT_ID_DOCUMNT,
                             .fontSize = S(document_font_size),
-                            .textColor = colors[colorscheme][COLOR_TEXT],
+                            .textColor = c10n(COLOR_TEXT),
                             .textAlignment = CLAY_TEXT_ALIGN_CENTER,
                         }));
 
@@ -763,7 +763,7 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
                             CLAY_TEXT(start, CLAY_TEXT_CONFIG({
                                 .fontId = FONT_ID_DOCUMNT,
                                 .fontSize = S(document_font_size),
-                                .textColor = colors[colorscheme][COLOR_TEXT],
+                                .textColor = c10n(COLOR_TEXT),
                                 .textAlignment = CLAY_TEXT_ALIGN_CENTER,
                                 .wrapMode = CLAY_TEXT_WRAP_NONE,
                             }));
