@@ -1,3 +1,5 @@
+#ifndef COLORS_C
+#define COLORS_C
 #include "thirdparty/clay.h"
 
 int8_t colorscheme = 1;
@@ -162,3 +164,4 @@ Clay_Color colors[COLORSCHEMES][COLORSCHEME_CAPACITY] = {
 #define TOGGLE_COLOR TERNARY_COLOR(Clay_Hovered(), OPACITY(colors[colorscheme][COLOR_GREEN],    ACTIVE_PERCENT), OPACITY(colors[colorscheme][COLOR_SURFACE1], 15))
 #define COLOR_ACTIVE OPACITY(colors[colorscheme][COLOR_OVERLAY0], ACTIVE_PERCENT)
 
+#endif // COLORS_C

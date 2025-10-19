@@ -404,7 +404,7 @@ MagickStatus RunMagick(magick_params_t *params) {
 }
 
 void *RunMagickThread(void *arg) {
-    ClayVideoDemo_Data *data = (ClayVideoDemo_Data *) arg;
+    AppData *data = (AppData *) arg;
     if (data->params.threadRunning == true)
         return NULL;
     // idk how to actually escape race conditions
@@ -656,7 +656,7 @@ bool UpdateResizes(resize_element_t *resizes, int8_t scroll) {
     return scrolled;
 }
 
-Clay_RenderCommandArray CreateLayout(Clay_Context* context, ClayVideoDemo_Data *data, AppState appstate) {
+Clay_RenderCommandArray CreateLayout(Clay_Context* context, AppData *data, AppState appstate) {
     Clay_SetCurrentContext(context);
     // Run once per frame
     Clay_SetLayoutDimensions((Clay_Dimensions){appstate.renderWidth, appstate.renderHeight});
@@ -776,7 +776,7 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, ClayVideoDemo_Data *
         );
     }
 
-    return ClayVideoDemo_CreateLayout(data);
+    return AppCreateLayout(data);
 }
 
 bool testMagick(char* magickBin) {
@@ -877,8 +877,8 @@ int main(void) {
 
     uint64_t clayRequiredMemory = Clay_MinMemorySize();
     Clay_Arena clayMemory = Clay_CreateArenaWithCapacityAndMemory(clayRequiredMemory, malloc(clayRequiredMemory));
-    Clay_Context *clayContext = Clay_Initialize(clayMemory, CLAY_DIMENSIONS, (Clay_ErrorHandler) { HandleClayErrors, NULL }); // This final argument is new since the video was published
-    ClayVideoDemo_Data data = ClayVideoDemo_Initialize();
+    Clay_Context *clayContext = Clay_Initialize(clayMemory, CLAY_DIMENSIONS, (Clay_ErrorHandler) { HandleClayErrors, NULL });
+    AppData data = AppDataInit();
     Clay_SetMeasureTextFunction(Raylib_MeasureText, fonts);
 
     if (!testMagick(data.params.magickBinary.items)) {
