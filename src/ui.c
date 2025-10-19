@@ -30,12 +30,13 @@ const uint8_t welcome_font_size = 80;
 #define BUTTON_RADIUS CLAY_CORNER_RADIUS(S(10))
 #define LAYOUT_RADIUS CLAY_CORNER_RADIUS(S(10))
 #define JUST_TEXT_CONFIG(font_size, font_id, color) CLAY_TEXT_CONFIG({ .fontId = (font_id), .fontSize = S(font_size), .textColor = (color) })
-#define SANE_TEXT_CONFIG(font_size, font_id) JUST_TEXT_CONFIG((font_size), (font_id), colors[colorscheme][COLOR_TEXT])
+#define SANE_TEXT_CONFIG(font_size, font_id) JUST_TEXT_CONFIG((font_size), (font_id), c10n(COLOR_TEXT))
 #define DEFAULT_TEXT  SANE_TEXT_CONFIG(document_font_size, FONT_ID_DOCUMNT)
-#define DISABLED_TEXT JUST_TEXT_CONFIG(document_font_size, FONT_ID_DOCUMNT, colors[colorscheme][COLOR_OVERLAY0])
+#define DISABLED_TEXT JUST_TEXT_CONFIG(document_font_size, FONT_ID_DOCUMNT, c10n(COLOR_OVERLAY0))
 #define BUTTON_TEXT   SANE_TEXT_CONFIG(button_font_size,   FONT_ID_BUTTONS)
 
 Clay_Padding defaultPadding;
+
 static inline void RenderHeaderButton(Clay_String text) {
     CLAY({
         .layout = {
@@ -131,5 +132,8 @@ static inline void StatedText(Clay_String text, bool enabled) {
         CLAY_TEXT(text, DISABLED_TEXT);
 }
 
+static inline void HorizontalSeparator(void) {
+    CLAY({ .layout = { .sizing = { .width = CLAY_SIZING_GROW(0) }}}) {}
+}
 
 #endif // UI_C

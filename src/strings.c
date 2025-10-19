@@ -2,6 +2,7 @@
 #define STRINGS_C
 
 #include <stdint.h>
+#include "thirdparty/clay.h"
 
 // ID for elements
 #define ID_COLOR_SETTINGS "ColorSettings"
@@ -81,7 +82,7 @@
 #define MAGICK_EXEC "Magick executable:"
 #define START_USING "Start using!"
 
-typedef enum __attribute__((packed)) MagickStatus {
+typedef CLAY_PACKED_ENUM {
     MAGICK_ERROR_OK,
     MAGICK_ERROR_CANCELLED,
     MAGICK_ERROR_NOT_WORK,

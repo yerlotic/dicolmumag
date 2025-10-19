@@ -843,7 +843,7 @@ static inline void SetAppIcon() {
     UnloadImage(icon);
 }
 
-int main(void) {
+int main() {
     char* title = "Dicolmumag — create collages with ease of creation, proceed to easily collide with creativity and proceedings";
     // vsync makes resizes slower, we don't want this
     // but antialiasing is nice

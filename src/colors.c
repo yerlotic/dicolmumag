@@ -164,4 +164,9 @@ Clay_Color colors[COLORSCHEMES][COLORSCHEME_CAPACITY] = {
 #define TOGGLE_COLOR TERNARY_COLOR(Clay_Hovered(), OPACITY(colors[colorscheme][COLOR_GREEN],    ACTIVE_PERCENT), OPACITY(colors[colorscheme][COLOR_SURFACE1], 15))
 #define COLOR_ACTIVE OPACITY(colors[colorscheme][COLOR_OVERLAY0], ACTIVE_PERCENT)
 
+// colorization
+static inline Clay_Color c10n(uint8_t COLOR) {
+    return colors[colorscheme][COLOR];
+}
+
 #endif // COLORS_C
