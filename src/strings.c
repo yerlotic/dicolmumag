@@ -4,6 +4,178 @@
 #include <stdint.h>
 #include "thirdparty/clay.h"
 
+#define APP_LANGUAGES 2
+#define APP_STRINGS 66
+
+uint8_t language = 0;
+
+// Prefix: AS - AppString
+CLAY_PACKED_ENUM {
+    // Buttons
+    AS_BUTTON_CHANGE_UI_COLOR,
+    AS_BUTTON_CHANGE_LANGUAGE,
+    AS_BUTTON_FILE,
+    AS_BUTTON_OPEN_RESULT,
+    AS_BUTTON_RUN,
+    AS_BUTTON_SELECT_IMAGES,
+    AS_BUTTON_STOP,
+    AS_BUTTON_SUPPORT,
+
+    // Text
+    AS_TEXT_TRANSPARENT_BG_WARNING,
+    AS_TEXT_IGNORE_ASPECT,
+    AS_TEXT_SHRINK_LARGER,
+    AS_TEXT_ENLARGE_SMALLER,
+    AS_TEXT_FILL_AREA,
+    AS_TEXT_DIMENSIONS,
+    AS_TEXT_MARGIN,
+    AS_TEXT_CURRENT,
+    AS_TEXT_WELCOME,
+    AS_TEXT_SLOGAN,
+    AS_TEXT_BEST_FIT,
+    AS_TEXT_BEST_FIT_EXPL,
+    AS_TEXT_TRANSPARENT_BG,
+    AS_TEXT_TRANSPARENT_BG_EXPL,
+    AS_TEXT_OPEN_ON_DONE,
+    AS_TEXT_OPEN_ON_DONE_EXPL,
+    AS_TEXT_ENABLE_RESIZE,
+    AS_TEXT_ENABLE_RESIZE_EXPL,
+    AS_TEXT_SET_OUTPUT_RES,
+    AS_TEXT_SET_OUTPUT_RES_EXPL,
+    AS_TEXT_ADVANCED_SETTINGS_EXPL,
+    AS_TEXT_TEMP_FILES,
+    AS_TEXT_TEMP_DEFAULT,
+
+    // Sections
+    AS_SECTION_RESIZE,
+    AS_SECTION_BACKGROUND_COLOR,
+    AS_SECTION_GRAVITY,
+    AS_SECTION_RESIZE_EACH,
+
+    // Misc
+    AS_ADVANCED_SETTINGS_S,
+    AS_TEXT_OUTPUT_RES,
+    AS_SELECT_TEMP,
+    AS_TEMP_FILES_EXPLANATION,
+    AS_MAGICK_EXEC,
+    AS_START_USING,
+};
+
+#define APP_STRING(AS_INDEX, STRING) [AS_INDEX] = CLAY_STRING(STRING)
+
+
+static const Clay_String strings[APP_LANGUAGES][APP_STRINGS] = {
+    {
+#define ADVANCED_SETTINGS_S "Advanced Settings"
+#define ADVANCED_SETTINGS_Q "\"Advanced Settings\""
+
+        // Buttons
+        APP_STRING(AS_BUTTON_CHANGE_UI_COLOR, "Change colorscheme"),
+        APP_STRING(AS_BUTTON_CHANGE_LANGUAGE, "Change language"),
+        APP_STRING(AS_BUTTON_FILE, "File"),
+        APP_STRING(AS_BUTTON_OPEN_RESULT, "Open result"),
+        APP_STRING(AS_BUTTON_RUN, "Run"),
+        APP_STRING(AS_BUTTON_SELECT_IMAGES, "Select Images"),
+        APP_STRING(AS_BUTTON_STOP, "Stop"),
+        APP_STRING(AS_BUTTON_SUPPORT, "Support"),
+
+        // Text
+        APP_STRING(AS_TEXT_TRANSPARENT_BG_WARNING, "Transparent background setting overrides this option"),
+        APP_STRING(AS_TEXT_IGNORE_ASPECT, "Ignore aspect ratio"),
+        APP_STRING(AS_TEXT_SHRINK_LARGER, "Only Shrink Larger"),
+        APP_STRING(AS_TEXT_ENLARGE_SMALLER, "Only Enlarge Smaller"),
+        APP_STRING(AS_TEXT_FILL_AREA, "Fill area"),
+        APP_STRING(AS_TEXT_DIMENSIONS, "Dimentions:"),
+        APP_STRING(AS_TEXT_MARGIN, "Margin:"),
+        APP_STRING(AS_TEXT_CURRENT, "Current:"),
+        APP_STRING(AS_TEXT_WELCOME, "Welcome to Dicolmumag"),
+        APP_STRING(AS_TEXT_SLOGAN, "Create collages cuz why not"),
+        APP_STRING(AS_TEXT_BEST_FIT, "Best fit"),
+        APP_STRING(AS_TEXT_BEST_FIT_EXPL, "This ashlar option aligns images on both sides of the resulting image"),
+        APP_STRING(AS_TEXT_TRANSPARENT_BG, "Transparent background"),
+        APP_STRING(AS_TEXT_TRANSPARENT_BG_EXPL, "Makes the background transparent\nThis overrides background configuration in "ADVANCED_SETTINGS_Q"tab"),
+        APP_STRING(AS_TEXT_OPEN_ON_DONE, "Open when done"),
+        APP_STRING(AS_TEXT_OPEN_ON_DONE_EXPL, "Enable this to see the result right after it's done!\n\nNothing more\nsurely"),
+        APP_STRING(AS_TEXT_ENABLE_RESIZE, "Enable Resize"),
+        APP_STRING(AS_TEXT_ENABLE_RESIZE_EXPL, "This option enables resizes. You can configure how input images are resized in "ADVANCED_SETTINGS_Q),
+        APP_STRING(AS_TEXT_SET_OUTPUT_RES, "Set output resolution"),
+        APP_STRING(AS_TEXT_SET_OUTPUT_RES_EXPL, "With this option you can directly set the desired output resolution for the collage in "ADVANCED_SETTINGS_Q" tab\nIf this option is disabled, the resolution for the output image (filename at the top) will be chosen automatically"),
+        APP_STRING(AS_TEXT_ADVANCED_SETTINGS_EXPL, "This tab contains advanced settings (surprise!)"),
+        APP_STRING(AS_TEXT_TEMP_FILES, "Temporary files"),
+        APP_STRING(AS_TEXT_TEMP_DEFAULT, "default"),
+
+        // Sections
+        APP_STRING(AS_SECTION_RESIZE, "Resize: "),
+        APP_STRING(AS_SECTION_BACKGROUND_COLOR, "Background Color: "),
+        APP_STRING(AS_SECTION_GRAVITY, "Gravity: "),
+        APP_STRING(AS_SECTION_RESIZE_EACH, "Resize each image: "),
+
+        // Misc
+        APP_STRING(AS_TEXT_OUTPUT_RES, "Output resolution"),
+
+        APP_STRING(AS_SELECT_TEMP, "Change location"),
+        APP_STRING(AS_TEMP_FILES_EXPLANATION, "When changed, it uses available storage as memory. This option allows to work around memory issues but makes everything slower"),
+
+        APP_STRING(AS_MAGICK_EXEC, "Magick executable:"),
+        APP_STRING(AS_START_USING, "Start using!"),
+    },
+    {
+#define ADVANCED_SETTINGS_S "Расширенные настройки"
+#define ADVANCED_SETTINGS_Q "\"Расширенные настройки\""
+
+        // Buttons
+        APP_STRING(AS_BUTTON_CHANGE_UI_COLOR, "Поменять оформление"),
+        APP_STRING(AS_BUTTON_CHANGE_LANGUAGE, "Поменять язык"),
+        APP_STRING(AS_BUTTON_FILE, "Файл"),
+        APP_STRING(AS_BUTTON_OPEN_RESULT, "Открыть результат"),
+        APP_STRING(AS_BUTTON_RUN, "Собрать"),
+        APP_STRING(AS_BUTTON_SELECT_IMAGES, "Выбрать"),
+        APP_STRING(AS_BUTTON_STOP, "Стоп"),
+        APP_STRING(AS_BUTTON_SUPPORT, "Помогите"),
+
+        // Text
+        APP_STRING(AS_TEXT_TRANSPARENT_BG_WARNING, "Настройка \"Прозрачный фон\" выключает точную настройку цвета"),
+        APP_STRING(AS_TEXT_IGNORE_ASPECT, "Игнорировать изначальное соотношение сторон"),
+        APP_STRING(AS_TEXT_SHRINK_LARGER, "Сжимать большие"),
+        APP_STRING(AS_TEXT_ENLARGE_SMALLER, "Увеличивать меньшие"),
+        APP_STRING(AS_TEXT_FILL_AREA, "Заполнить площадь"),
+        APP_STRING(AS_TEXT_DIMENSIONS, "Разрешение:"),
+        APP_STRING(AS_TEXT_MARGIN, "Отступы:"),
+        APP_STRING(AS_TEXT_WELCOME, "Привет от Dicolmumag!"),
+        APP_STRING(AS_TEXT_SLOGAN, "Создавайте коллажи, потому что почему нет?"),
+        APP_STRING(AS_TEXT_BEST_FIT, "Прилипание к краям"),
+        APP_STRING(AS_TEXT_BEST_FIT_EXPL, "Эта настройка включает точное прилипание мозаики к краям коллажа"),
+        APP_STRING(AS_TEXT_TRANSPARENT_BG, "Прозрачный фон"),
+        APP_STRING(AS_TEXT_TRANSPARENT_BG_EXPL, "Делает фон прозрачным\nЭта настройка переопределяет настройки цвета во вкладке \"Расширенные настройки\""),
+        APP_STRING(AS_TEXT_OPEN_ON_DONE, "Открыть по завершении"),
+        APP_STRING(AS_TEXT_OPEN_ON_DONE_EXPL, "Включите, чтобы увидеть результат сразу как он готов!\n\nБольше ничего\nуж точно"),
+        APP_STRING(AS_TEXT_ENABLE_RESIZE, "Включить масштабирование"),
+        APP_STRING(AS_TEXT_ENABLE_RESIZE_EXPL, "Эта настройка включает масштабирование. Вы можете настроить как изменяется размер картинок в \"Расширенных настройках\""),
+        APP_STRING(AS_TEXT_SET_OUTPUT_RES, "Установить итоговое разрешение"),
+        APP_STRING(AS_TEXT_SET_OUTPUT_RES_EXPL, "С этой настройках можно установить разрешение для коллажа во вкладке \"Расширенные настройки\"\nЕсли эта настройка выключена, то разрешение для итогового коллажа (имя файла наверху) будет выбрано автоматически"),
+        APP_STRING(AS_TEXT_ADVANCED_SETTINGS_EXPL, "В этой вкладке расширенные настройки (сюрприз!)"),
+        APP_STRING(AS_TEXT_TEMP_FILES, "Расположение промежуточных файлов"),
+        APP_STRING(AS_TEXT_CURRENT, "Текущее:"),
+        APP_STRING(AS_TEXT_TEMP_DEFAULT, "по умолчанию"),
+
+        // Sections
+        APP_STRING(AS_SECTION_RESIZE, "Масштабирование: "),
+        APP_STRING(AS_SECTION_BACKGROUND_COLOR, "Цвет фона: "),
+        APP_STRING(AS_SECTION_GRAVITY, "Гравитация: "),
+        APP_STRING(AS_SECTION_RESIZE_EACH, "Масштабирование исходных картинок: "),
+
+        // Misc
+        APP_STRING(AS_ADVANCED_SETTINGS_S, "Расширенные настройки"),
+        APP_STRING(AS_TEXT_OUTPUT_RES, "Итоговое разрешение"),
+
+        APP_STRING(AS_SELECT_TEMP, "Поменять расположение"),
+        APP_STRING(AS_TEMP_FILES_EXPLANATION, "Когда изменено, будет использоваться место на диске вместо оперативной памяти. Позволяет обойти проблемы с нехваткой оперативной памяти, но значительно замедляет процесс сборки"),
+
+        APP_STRING(AS_MAGICK_EXEC, "Исполняемый файл ImageMagick:"),
+        APP_STRING(AS_START_USING, "Начнём!"),
+    },
+};
+
 // ID for elements
 #define ID_COLOR_SETTINGS "ColorSettings"
 #define ID_COLOR_SETTINGS_RGB "ColorSettingsRGB"
@@ -28,59 +200,8 @@
 #define ID_RESIZE_SETTINGS "ResizeSettings"
 #define ID_SIDEBAR "Sidebar"
 #define ID_WELCOME "MagickWelcome"
+#define ID_BUTTON_SELECT_MAGICK "MagickBinary"
 
-// Buttons
-#define BUTTON_CHANGE_UI_COLOR "Change colorscheme"
-#define BUTTON_FILE "File"
-#define BUTTON_OPEN_RESULT "Open result"
-#define BUTTON_RUN "Run"
-#define BUTTON_SELECT_IMAGES "Select Images"
-#define BUTTON_SELECT_MAGICK "MagickBinary"
-#define BUTTON_STOP "Stop"
-#define BUTTON_SUPPORT "Support"
-
-// Text
-#define TEXT_TRANSPARENT_BG_WARNING "Transparent background setting overrides this option"
-#define TEXT_IGNORE_ASPECT "Ignore aspect ratio"
-#define TEXT_SHRINK_LARGER "Only Shrink Larger"
-#define TEXT_ENLARGE_SMALLER "Only Enlarge Smaller"
-#define TEXT_FILL_AREA "Fill area"
-#define TEXT_DIMENSIONS "Dimentions:"
-#define TEXT_MARGIN "Margin:"
-#define TEXT_CURRENT "Current:"
-#define TEXT_WELCOME "Welcome to Dicolmumag"
-#define TEXT_SLOGAN "Create collages cuz why not"
-#define TEXT_BEST_FIT "Best fit"
-#define TEXT_BEST_FIT_EXPL "This ashlar option aligns images on both sides of the resulting image"
-#define TEXT_TRANSPARENT_BG "Transparent background"
-#define TEXT_TRANSPARENT_BG_EXPL "Makes the background transparent\nThis overrides background configuration in "ADVANCED_SETTINGS_Q" tab"
-#define TEXT_OPEN_ON_DONE "Open when done"
-#define TEXT_OPEN_ON_DONE_EXPL "Enable this to see the result right after it's done!\n\nNothing more\nsurely"
-#define TEXT_ENABLE_RESIZE "Enable Resize"
-#define TEXT_ENABLE_RESIZE_EXPL "This option enables resizes. You can configure how input images are resized in "ADVANCED_SETTINGS_Q
-#define TEXT_SET_OUTPUT_RES "Set output resolution"
-#define TEXT_SET_OUTPUT_RES_EXPL "With this option you can directly set the desired output resolution for the collage in "ADVANCED_SETTINGS_Q" tab\nIf this option is disabled, the resolution for the output image (filename at the top) will be chosen automatically"
-#define TEXT_ADVANCED_SETTINGS_EXPL "This tab contains advanced settings (surprise!)"
-#define TEXT_TEMP_FILES "Temporary files"
-#define TEXT_TEMP_DEFAULT "default"
-
-// Sections
-#define SECTION_RESIZE "Resize: "
-#define SECTION_BACKGROUND_COLOR "Background Color: "
-#define SECTION_GRAVITY "Gravity: "
-#define SECTION_RESIZE_EACH "Resize each image: "
-
-// Misc
-#define ADVANCED_SETTINGS_S "Advanced Settings"
-#define ADVANCED_SETTINGS_Q "\"Advanced Settings\""
-
-#define TEXT_OUTPUT_RES "Output resolution"
-
-#define SELECT_TEMP "Change location"
-#define TEMP_FILES_EXPLANATION "When changed, it uses available storage as memory. This option allows to work around memory issues but makes everything slower"
-
-#define MAGICK_EXEC "Magick executable:"
-#define START_USING "Start using!"
 
 typedef CLAY_PACKED_ENUM {
     MAGICK_ERROR_OK,
@@ -103,5 +224,6 @@ const char* errors[] = {
     "OS thinks stuff is VERY wrong",
 };
 
+// Internationalization
+#define i18n(TEXT_ID) strings[language][TEXT_ID]
 #endif // STRINGS_C
-

@@ -4,7 +4,7 @@
 
 int8_t colorscheme = 1;
 
-enum {
+CLAY_PACKED_ENUM {
     COLOR_ROSEWATER,
     COLOR_FLAMINGO,
     COLOR_PINK,
@@ -33,9 +33,9 @@ enum {
     COLOR_CRUST,
 };
 
-#define COLORSCHEMES 4
-#define COLORSCHEME_CAPACITY 26
-Clay_Color colors[COLORSCHEMES][COLORSCHEME_CAPACITY] = {
+#define APP_COLORSCHEMES 4
+#define APP_COLORSCHEME_CAPACITY 26
+Clay_Color colors[APP_COLORSCHEMES][APP_COLORSCHEME_CAPACITY] = {
 {   // Latte
     {220, 138, 120, 255},  // #dc8a78 - COLOR_ROSEWATER
     {221, 120, 120, 255},  // #dd7878 - COLOR_FLAMINGO
@@ -164,9 +164,7 @@ Clay_Color colors[COLORSCHEMES][COLORSCHEME_CAPACITY] = {
 #define TOGGLE_COLOR TERNARY_COLOR(Clay_Hovered(), OPACITY(colors[colorscheme][COLOR_GREEN],    ACTIVE_PERCENT), OPACITY(colors[colorscheme][COLOR_SURFACE1], 15))
 #define COLOR_ACTIVE OPACITY(colors[colorscheme][COLOR_OVERLAY0], ACTIVE_PERCENT)
 
-// colorization
-static inline Clay_Color c10n(uint8_t COLOR) {
-    return colors[colorscheme][COLOR];
-}
+// Colorization
+#define c10n(COLOR) colors[colorscheme][COLOR]
 
 #endif // COLORS_C
