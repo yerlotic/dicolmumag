@@ -283,12 +283,12 @@ static inline void RenderFlag(Clay_String text,
 
 AppData AppDataInit(void) {
     // Update DocumentArray
-    documents.documents[MAGICK_BEST_FIT_I] = (Document){ .title = CLAY_STRING(TEXT_BEST_FIT), .contents = CLAY_STRING(TEXT_BEST_FIT_EXPL) };
-    documents.documents[MAGICK_TRANSPARENT_BG_I] = (Document){ .title = CLAY_STRING(TEXT_TRANSPARENT_BG), .contents = CLAY_STRING(TEXT_TRANSPARENT_BG_EXPL) };
-    documents.documents[MAGICK_OPEN_ON_DONE_I] = (Document){ .title = CLAY_STRING(TEXT_OPEN_ON_DONE), .contents = CLAY_STRING(TEXT_OPEN_ON_DONE_EXPL) };
-    documents.documents[MAGICK_RESIZE_I] = (Document){ .title = CLAY_STRING(TEXT_ENABLE_RESIZE), .contents = CLAY_STRING(TEXT_ENABLE_RESIZE_EXPL) };
-    documents.documents[MAGICK_SET_RESOLUTION_I] = (Document){ .title = CLAY_STRING(TEXT_SET_OUTPUT_RES), .contents = CLAY_STRING(TEXT_SET_OUTPUT_RES_EXPL) };
-    documents.documents[MAGICK_ADVANCED_SETTINGS] = (Document){ .title = CLAY_STRING(ADVANCED_SETTINGS_S), .contents = CLAY_STRING(TEXT_ADVANCED_SETTINGS_EXPL) };
+    documents.documents[MAGICK_BEST_FIT_I] = (Document){ .title = i18n(AS_TEXT_BEST_FIT), .contents = i18n(AS_TEXT_BEST_FIT_EXPL) };
+    documents.documents[MAGICK_TRANSPARENT_BG_I] = (Document){ .title = i18n(AS_TEXT_TRANSPARENT_BG), .contents = i18n(AS_TEXT_TRANSPARENT_BG_EXPL) };
+    documents.documents[MAGICK_OPEN_ON_DONE_I] = (Document){ .title = i18n(AS_TEXT_OPEN_ON_DONE), .contents = i18n(AS_TEXT_OPEN_ON_DONE_EXPL) };
+    documents.documents[MAGICK_RESIZE_I] = (Document){ .title = i18n(AS_TEXT_ENABLE_RESIZE), .contents = i18n(AS_TEXT_ENABLE_RESIZE_EXPL) };
+    documents.documents[MAGICK_SET_RESOLUTION_I] = (Document){ .title = i18n(AS_TEXT_SET_OUTPUT_RES), .contents = i18n(AS_TEXT_SET_OUTPUT_RES_EXPL) };
+    documents.documents[MAGICK_ADVANCED_SETTINGS] = (Document){ .title = i18n(AS_ADVANCED_SETTINGS_S), .contents = i18n(AS_TEXT_ADVANCED_SETTINGS_EXPL) };
     documents.documents[MAGICK_WELCOME_PAGE_I] = (Document){0};
 
     AppData data = {
@@ -422,7 +422,7 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
                 .backgroundColor = BUTTON_COLOR,
                 .cornerRadius = BUTTON_RADIUS,
             }) {
-                CLAY_TEXT(CLAY_STRING(BUTTON_FILE), BUTTON_TEXT);
+                CLAY_TEXT(i18n(AS_BUTTON_FILE), BUTTON_TEXT);
 
                 bool fileMenuVisible =
                     Clay_PointerOver(Clay_GetElementId(CLAY_STRING(ID_FILE_BUTTON)))
@@ -453,8 +453,9 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
                             .cornerRadius = BUTTON_RADIUS,
                         }) {
                             // Render dropdown items here
-                            RenderDropdownMenuItem(CLAY_STRING(BUTTON_OPEN_RESULT));
-                            RenderDropdownMenuItem(CLAY_STRING(BUTTON_CHANGE_UI_COLOR));
+                            RenderDropdownMenuItem(i18n(AS_BUTTON_OPEN_RESULT));
+                            RenderDropdownMenuItem(i18n(AS_BUTTON_CHANGE_UI_COLOR));
+                            RenderDropdownMenuItem(i18n(AS_BUTTON_CHANGE_LANGUAGE));
                             Clay_String quit = CLAY_STRING(ID_QUIT);
                             CLAY({
                                 .backgroundColor = c10n(COLOR_SURFACE0),
@@ -475,11 +476,11 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
                     }
                 }
             }
-            RenderHeaderButton(CLAY_STRING(BUTTON_SELECT_IMAGES));
+            RenderHeaderButton(i18n(AS_BUTTON_SELECT_IMAGES));
             if (data->params.magickProc == NOB_INVALID_PROC)
-                RenderHeaderButton(CLAY_STRING(BUTTON_RUN));
+                RenderHeaderButton(i18n(AS_BUTTON_RUN));
             else
-                RenderHeaderButton(CLAY_STRING(BUTTON_STOP));
+                RenderHeaderButton(i18n(AS_BUTTON_STOP));
             HorizontalSeparator();
             if (errors[data->errorIndex][0] == '\0') {
                 CLAY({.id = CLAY_ID(ID_INPUT_FILE)}) {CLAY_TEXT(CLAY_SB_STRING(data->params.outputFile), DEFAULT_TEXT);}
@@ -495,10 +496,10 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
                 .id = CLAY_ID(ID_RESIZE_ALL),
                 .cornerRadius = BUTTON_RADIUS,
             }) {
-                CLAY_TEXT(CLAY_STRING(SECTION_RESIZE), BUTTON_TEXT);
+                CLAY_TEXT(i18n(AS_SECTION_RESIZE), BUTTON_TEXT);
                 CLAY_TEXT(CLAY_DYNAMIC_STRING(data->params.resizes[RESIZES_INPUT].str.w), BUTTON_TEXT);
             }
-            RenderHeaderButton(CLAY_STRING(BUTTON_SUPPORT));
+            RenderHeaderButton(i18n(AS_BUTTON_SUPPORT));
         }
 
         CLAY({
@@ -598,7 +599,7 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
                         },
                     }) {
                         CLAY({.layout = { .layoutDirection = CLAY_TOP_TO_BOTTOM }}) {
-                            StatedText(CLAY_STRING(SECTION_BACKGROUND_COLOR), !(data->params.state & MAGICK_TRANSPARENT_BG));
+                            StatedText(i18n(AS_SECTION_BACKGROUND_COLOR), !(data->params.state & MAGICK_TRANSPARENT_BG));
                             RenderMagickColor(&data->params.color, data->params.state);
                             Clay_OnHover(HandleActiveColor, (intptr_t)&data->params);
                         }
@@ -619,7 +620,7 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
                             RenderColorChannel(CLAY_STRING("a"), c10n(COLOR_TEXT),  data->params.color_str.a);
                         }
                         if (data->params.state & MAGICK_TRANSPARENT_BG)
-                            CLAY_TEXT(CLAY_STRING(TEXT_TRANSPARENT_BG_WARNING), DEFAULT_TEXT);
+                            CLAY_TEXT(i18n(AS_TEXT_TRANSPARENT_BG_WARNING), DEFAULT_TEXT);
                     }
                     CLAY({
                         .id = CLAY_ID(ID_GRAVITY_SETTINGS),
@@ -629,7 +630,7 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
                         }
                     }) {
                         CLAY({.layout = {.layoutDirection = CLAY_LEFT_TO_RIGHT, .childGap = S(8)}}) {
-                            CLAY_TEXT(CLAY_STRING(SECTION_GRAVITY), DEFAULT_TEXT);
+                            CLAY_TEXT(i18n(AS_SECTION_GRAVITY), DEFAULT_TEXT);
                             CLAY({
                                     .backgroundColor = BUTTON_COLOR,
                                     .id = CLAY_ID(ID_GRAVITY),
@@ -643,16 +644,16 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
                     }
                     CLAY({.id = CLAY_ID(ID_RESIZE_SETTINGS), .layout = {.layoutDirection = CLAY_TOP_TO_BOTTOM, .childGap = 8}}) {
                         CLAY({.layout = {.layoutDirection = CLAY_LEFT_TO_RIGHT, .childGap = S(8)}}) {
-                            StatedText(CLAY_STRING(SECTION_RESIZE_EACH), data->params.state & MAGICK_RESIZE);
+                            StatedText(i18n(AS_SECTION_RESIZE_EACH), data->params.state & MAGICK_RESIZE);
                             RenderResize(&data->params.resizes[RESIZES_INPUT], ID_RESIZE_INPUT);
                         }
-                        RenderFlag(CLAY_STRING(TEXT_IGNORE_ASPECT), &data->params.state, MAGICK_IGNORE_RATIO, MAGICK_IGNORE_RATIO, &data->frameArena);
+                        RenderFlag(i18n(AS_TEXT_IGNORE_ASPECT), &data->params.state, MAGICK_IGNORE_RATIO, MAGICK_IGNORE_RATIO, &data->frameArena);
                         // Well... this would only work for two
-                        RenderFlag(CLAY_STRING(TEXT_SHRINK_LARGER), &data->params.state,
+                        RenderFlag(i18n(AS_TEXT_SHRINK_LARGER), &data->params.state,
                                 (data->params.state & MAGICK_ENLARGE_SMALLER) ? MAGICK_ENLARGE_SMALLER | MAGICK_SHRINK_LARGER : MAGICK_SHRINK_LARGER, MAGICK_SHRINK_LARGER, &data->frameArena);
-                        RenderFlag(CLAY_STRING(TEXT_ENLARGE_SMALLER), &data->params.state,
+                        RenderFlag(i18n(AS_TEXT_ENLARGE_SMALLER), &data->params.state,
                                 (data->params.state & MAGICK_SHRINK_LARGER) ? MAGICK_SHRINK_LARGER | MAGICK_ENLARGE_SMALLER : MAGICK_ENLARGE_SMALLER, MAGICK_ENLARGE_SMALLER, &data->frameArena);
-                        RenderFlag(CLAY_STRING(TEXT_FILL_AREA), &data->params.state, MAGICK_FILL_AREA, MAGICK_FILL_AREA, &data->frameArena);
+                        RenderFlag(i18n(AS_TEXT_FILL_AREA), &data->params.state, MAGICK_FILL_AREA, MAGICK_FILL_AREA, &data->frameArena);
                     }
 
                     CLAY({
@@ -666,13 +667,13 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
                             },
                         }
                     }) {
-                        StatedText(CLAY_STRING(TEXT_OUTPUT_RES), data->params.state & MAGICK_SET_RESOLUTION);
+                        StatedText(i18n(AS_TEXT_OUTPUT_RES), data->params.state & MAGICK_SET_RESOLUTION);
                         CLAY({.layout = {.layoutDirection = CLAY_LEFT_TO_RIGHT, .childGap = S(8), .padding = S(8), .childAlignment = {.y = CLAY_ALIGN_Y_CENTER}}}) {
-                            CLAY_TEXT(CLAY_STRING(TEXT_DIMENSIONS), BUTTON_TEXT);
+                            CLAY_TEXT(i18n(AS_TEXT_DIMENSIONS), BUTTON_TEXT);
                             RenderResize(&data->params.resizes[RESIZES_OUTPUT_RES], ID_RESIZE_OUTPUT);
                         }
                         CLAY({.layout = {.layoutDirection = CLAY_LEFT_TO_RIGHT, .childGap = S(8), .padding = S(8), .childAlignment = {.y = CLAY_ALIGN_Y_CENTER}}}) {
-                            CLAY_TEXT(CLAY_STRING(TEXT_MARGIN), BUTTON_TEXT);
+                            CLAY_TEXT(i18n(AS_TEXT_MARGIN), BUTTON_TEXT);
                             RenderResize(&data->params.resizes[RESIZES_OUTPUT_MARGIN], ID_RESIZE_OUTPUT_MARGIN);
                         }
                     }
@@ -684,25 +685,25 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
                             .layoutDirection = CLAY_TOP_TO_BOTTOM,
                         }
                     }) {
-                        CLAY_TEXT(CLAY_STRING(TEXT_TEMP_FILES), DEFAULT_TEXT);
-                        CLAY({.layout = {.padding = {.left = S(8)}}}) {CLAY_TEXT(CLAY_STRING(TEMP_FILES_EXPLANATION), BUTTON_TEXT);}
+                        CLAY_TEXT(i18n(AS_TEXT_TEMP_FILES), DEFAULT_TEXT);
+                        CLAY({.layout = {.padding = {.left = S(8)}}}) {CLAY_TEXT(i18n(AS_TEMP_FILES_EXPLANATION), BUTTON_TEXT);}
                         CLAY({.layout = {.layoutDirection = CLAY_LEFT_TO_RIGHT, .childGap = S(8), .padding = {.left = S(8)}}}) {
-                            CLAY_TEXT(CLAY_STRING(TEXT_CURRENT), BUTTON_TEXT);
+                            CLAY_TEXT(i18n(AS_TEXT_CURRENT), BUTTON_TEXT);
                             if (data->params.tempDir.count == 0)
-                                CLAY_TEXT(CLAY_STRING(TEXT_TEMP_DEFAULT), CLAY_TEXT_CONFIG({ .fontId = FONT_ID_BUTTONS, .fontSize = S(button_font_size), .textColor = c10n(COLOR_OVERLAY0) }));
+                                CLAY_TEXT(i18n(AS_TEXT_TEMP_DEFAULT), CLAY_TEXT_CONFIG({ .fontId = FONT_ID_BUTTONS, .fontSize = S(button_font_size), .textColor = c10n(COLOR_OVERLAY0) }));
                             else
                                 CLAY_TEXT(CLAY_SB_STRING(data->params.tempDir), BUTTON_TEXT);
                         }
-                        RenderHeaderButton(CLAY_STRING(SELECT_TEMP));
+                        RenderHeaderButton(i18n(AS_SELECT_TEMP));
                     }
 
                     CLAY({
-                        .id = CLAY_ID(BUTTON_SELECT_MAGICK),
+                        .id = CLAY_ID(ID_BUTTON_SELECT_MAGICK),
                         .layout = {
                             .childGap = S(8),
                         }
                     }) {
-                        CLAY_TEXT(CLAY_STRING(MAGICK_EXEC), DEFAULT_TEXT);
+                        CLAY_TEXT(i18n(AS_MAGICK_EXEC), DEFAULT_TEXT);
                         RenderHeaderButton(CLAY_SB_STRING(data->params.magickBinary));
                     }
                 } else if (data->selectedDocumentIndex == MAGICK_WELCOME_PAGE_I) {
@@ -722,7 +723,7 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
                             }
                         }
                     }) {
-                        CLAY_TEXT(CLAY_STRING(TEXT_WELCOME),
+                        CLAY_TEXT(i18n(AS_TEXT_WELCOME),
                             CLAY_TEXT_CONFIG({
                                 .fontId = FONT_ID_WELCOME,
                                 .fontSize = S(welcome_font_size),
@@ -740,14 +741,14 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
                             .image = { .imageData = &data->params.logo }
 
                         }) {}
-                        CLAY_TEXT(CLAY_STRING(TEXT_SLOGAN), CLAY_TEXT_CONFIG({
+                        CLAY_TEXT(i18n(AS_TEXT_SLOGAN), CLAY_TEXT_CONFIG({
                             .fontId = FONT_ID_DOCUMNT,
                             .fontSize = S(document_font_size),
                             .textColor = c10n(COLOR_TEXT),
                             .textAlignment = CLAY_TEXT_ALIGN_CENTER,
                         }));
 
-                        Clay_String start = CLAY_STRING(START_USING);
+                        Clay_String start = i18n(AS_START_USING);
                         CLAY({
                             .layout = {
                                 .padding = defaultPadding,

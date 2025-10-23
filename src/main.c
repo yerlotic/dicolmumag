@@ -53,12 +53,15 @@ typedef struct AppState {
     int renderHeight;
 #ifndef NO_SCALING
     float scale;
+    uint8_t language;
 #endif // NO_SCALING
 } AppState;
 
 #define MIN(a,b) (((a) < (b)) ? (a) : (b))
 #define pressed(id)  (IsMouseButtonPressed(0)  && Clay_PointerOver(Clay_GetElementId(CLAY_STRING(id))))
 #define released(id) (IsMouseButtonReleased(0) && Clay_PointerOver(Clay_GetElementId(CLAY_STRING(id))))
+#define pressed_s(id)  (IsMouseButtonPressed(0)  && Clay_PointerOver(Clay_GetElementId((id))))
+#define released_s(id) (IsMouseButtonReleased(0) && Clay_PointerOver(Clay_GetElementId((id))))
 #define CLAY_DIMENSIONS (Clay_Dimensions) { .width = GetScreenWidth(), \
                                             .height = GetScreenHeight() }
 // #define CLAY_DIMENSIONS (Clay_Dimensions) { .width = GetRenderWidth(), .height = GetRenderHeight() }
@@ -566,6 +569,7 @@ AppState GetAppState() {
 #ifndef NO_SCALING
         .scale = scale,
 #endif // NO_SCALING
+        .language = language,
         // .renderHeight = GetScreenHeight(),
         // .renderWidth = GetScreenWidth(),
     };
@@ -586,6 +590,7 @@ bool StatesEqual(AppState *this, AppState *that) {
 #ifndef NO_SCALING
     if (this->scale != that->scale) return false;
 #endif // NO_SCALING
+    if (this->language != that->language) return false;
     return true;
 }
 
@@ -690,27 +695,27 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, AppData *data, AppSt
     if (released(ID_QUIT)) {
         data->shouldClose = true;
         printf("close\n");
-    } else if (released(BUTTON_SUPPORT )) {
+    } else if (released_s(i18n(AS_BUTTON_SUPPORT))) {
         nob_cmd_append(&cmd, LAUNCHER, SUPPORT_URL);
         nob_cmd_run_async_silent(cmd);
-    } else if (released(BUTTON_SELECT_IMAGES)) {
+    } else if (released_s(i18n(AS_BUTTON_SELECT_IMAGES))) {
         GetInputFiles(&data->params.inputFiles);
         nob_kill(&data->params.magickProc);
         RunMagickThreaded();
-    } else if (released(START_USING)) {
+    } else if (released_s(i18n(AS_START_USING))) {
         data->selectedDocumentIndex = MAGICK_ADVANCED_SETTINGS;
         GetInputFiles(&data->params.inputFiles);
         nob_kill(&data->params.magickProc);
         RunMagickThreaded();
-    } else if (released(SELECT_TEMP)) {
+    } else if (released_s(i18n(AS_SELECT_TEMP))) {
         SetTempDir(&data->params.tempDir);
-    } else if (released(BUTTON_RUN) || ((IsKeyPressed(KEY_R) && data->params.magickProc == NOB_INVALID_PROC))) {
+    } else if (released_s(i18n(AS_BUTTON_RUN)) || ((IsKeyPressed(KEY_R) && data->params.magickProc == NOB_INVALID_PROC))) {
         nob_kill(&data->params.magickProc);
         RunMagickThreaded();
-    } else if (released(BUTTON_STOP) || IsKeyPressed(KEY_R)) {
+    } else if (released_s(i18n(AS_BUTTON_STOP)) || IsKeyPressed(KEY_R)) {
         nob_kill(&data->params.magickProc);
         cthreads_thread_ensure_cancelled(data->magickThread, &data->params.threadRunning);
-    } else if (released(BUTTON_SELECT_MAGICK)) {
+    } else if (released(ID_BUTTON_SELECT_MAGICK)) {
         printf("bin befor: %s\n", data->params.magickBinary.items);
         data->errorIndex = ChangeMagickBinary(&data->params.magickBinary);
         printf("bin aftir: %d\n", data->errorIndex);
@@ -720,9 +725,11 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, AppData *data, AppSt
         printf("befor: %s\n", data->params.outputFile.items);
         ChangeOutputPath(&data->params.outputFile);
         printf("aftir: %s\n", data->params.outputFile.items);
-    } else if (released(BUTTON_CHANGE_UI_COLOR)) {
-        colorscheme = (colorscheme + 1) % COLORSCHEMES;
-    } else if (released(BUTTON_OPEN_RESULT)) {
+    } else if (released_s(i18n(AS_BUTTON_CHANGE_UI_COLOR))) {
+        colorscheme = (colorscheme + 1) % APP_COLORSCHEMES;
+    } else if (released_s(i18n(AS_BUTTON_CHANGE_LANGUAGE))) {
+        language = (language + 1) % APP_LANGUAGES;
+    } else if (released_s(i18n(AS_BUTTON_OPEN_RESULT))) {
         if (data->params.outputFile.items[0] != '\0') {
             nob_cmd_append(&cmd, LAUNCHER, data->params.outputFile.items);
             nob_cmd_run_async_silent(cmd);
@@ -770,8 +777,8 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, AppData *data, AppSt
     if (!scrolled) {
         // this should only be updated if no scroll was triggered
         Clay_UpdateScrollContainers(
-            true,
-            (Clay_Vector2) { scrollDelta.x, scrollDelta.y },
+            true, // drag scrolling
+            (Clay_Vector2) { scale * 2.0 * scrollDelta.x, 2.0 * scale * scrollDelta.y },
             GetFrameTime()
         );
     }
