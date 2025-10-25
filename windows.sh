@@ -1,7 +1,7 @@
 #!/usr/bin/bash
 
-set -euo pipefail  # safe mode
-export LC_ALL=C    # speed
+set -euo pipefail      # safe mode
+export LC_ALL=C.UTF-8  # speed
 
 source "$(dirname -- "${BASH_SOURCE[0]}")/resources/functions.sh"
 
@@ -42,7 +42,7 @@ x86_64-w64-mingw32-windres my.rc -O coff -o my.res
 
 args=(
     -O3
-    -Wall -Wextra -Wpedantic -fwrapv -Wno-missing-braces
+    -Wall -Wextra -fwrapv -Wno-missing-braces
     # -DNO_THREADING
     -DLAZY_RENDER
     # -Wformat

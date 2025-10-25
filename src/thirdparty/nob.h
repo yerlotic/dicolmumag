@@ -953,9 +953,10 @@ Nob_Proc nob_cmd_run_async_redirect(Nob_Cmd cmd, Nob_Cmd_Redirect redirect)
 #ifdef _WIN32
     // https://docs.microsoft.com/en-us/windows/win32/procthread/creating-a-child-process-with-redirected-input-and-output
 
-    STARTUPINFO siStartInfo;
+    const size_t cp = nob_temp_save();
+    STARTUPINFOW siStartInfo;
     ZeroMemory(&siStartInfo, sizeof(siStartInfo));
-    siStartInfo.cb = sizeof(STARTUPINFO);
+    siStartInfo.cb = sizeof(STARTUPINFOW);
     // NOTE: theoretically setting NULL to std handles should not be a problem
     // https://docs.microsoft.com/en-us/windows/console/getstdhandle?redirectedfrom=MSDN#attachdetach-behavior
     // TODO: check for errors in GetStdHandle
@@ -969,8 +970,34 @@ Nob_Proc nob_cmd_run_async_redirect(Nob_Cmd cmd, Nob_Cmd_Redirect redirect)
 
     nob__win32_cmd_quote(cmd, &sb);
     nob_sb_append_null(&sb);
+
+
+    ////////////////////////////// Taken from: https://github.com/KillerxDBr/nob.h/blob/f875c528a75e22188a458444cd310ae96a87c4b3/nob.h
+    WCHAR *wCmdLine;
+    // https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-createprocessw
+    // per MSDN ref of `lpCommandLine`, "The maximum length of this string is 32,767 characters"
+    int cchCmdLine = MultiByteToWideChar(CP_UTF8, 0, sb.items, -1, NULL, 0);
+    if (cchCmdLine == 0 || cchCmdLine > 0x7FFF) {
+        DWORD err = GetLastError();
+        nob_log(NOB_ERROR, "Could not convert Command Line to Wide String: %s", nob_win32_error_message(err ? err : ERROR_INSUFFICIENT_BUFFER));
+        nob_sb_free(sb);
+        return NOB_INVALID_PROC;
+    }
+    wCmdLine = nob_temp_alloc(cchCmdLine * sizeof(WCHAR));
+    NOB_ASSERT(wCmdLine != NULL && "Increase NOB_TEMP_CAPACITY");
+
+    if (MultiByteToWideChar(CP_UTF8, 0, sb.items, -1, wCmdLine, cchCmdLine) == 0) {
+        nob_log(NOB_ERROR, "Could not convert Command Line to Wide String: %s", nob_win32_error_message(GetLastError()));
+        nob_temp_rewind(cp);
+        nob_sb_free(sb);
+        return NOB_INVALID_PROC;
+    }
+
+    BOOL bSuccess = CreateProcessW(NULL, wCmdLine, NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &siStartInfo, &piProcInfo);
+    //////////////////////////////
     // BOOL bSuccess = CreateProcessA(NULL, sb.items, NULL, NULL, TRUE, 0, NULL, NULL, &siStartInfo, &piProcInfo);
-    BOOL bSuccess = CreateProcessA(NULL, sb.items, NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &siStartInfo, &piProcInfo);
+    // NOB_FREE(wCmdLine);
+    nob_temp_rewind(cp);
     nob_sb_free(sb);
 
     if (!bSuccess) {
@@ -1843,6 +1870,30 @@ bool nob_set_current_dir(const char *path)
     return true;
 #endif // _WIN32
 }
+
+#ifdef _WIN32
+// Taken from: https://gist.github.com/xebecnan/6d070c93fb69f40c3673
+char* toUTF8( const wchar_t* src,
+        size_t src_length,  /* = 0 */
+        size_t* out_length  /* = NULL */
+        )
+{
+    if(!src)
+        return NULL;
+
+    if(src_length == 0) { src_length = wcslen(src); }
+    int length = WideCharToMultiByte(CP_UTF8, 0, src, src_length,
+            0, 0, NULL, NULL);
+    char *output_buffer = (char*)malloc((length+1) * sizeof(char));
+    if(output_buffer) {
+        WideCharToMultiByte(CP_UTF8, 0, src, src_length,
+                output_buffer, length, NULL, NULL);
+        output_buffer[length] = '\0';
+    }
+    if(out_length) { *out_length = length; }
+    return output_buffer;
+}
+#endif // _WIN32
 
 // minirent.h SOURCE BEGIN ////////////////////////////////////////
 #ifdef _WIN32
