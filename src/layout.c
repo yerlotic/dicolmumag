@@ -135,6 +135,7 @@ typedef struct magick_params_t {
 typedef struct {
     uint8_t selectedDocumentIndex;
     MagickStatus errorIndex;
+    uint16_t tabWidth;
     float yOffset;
     AppArena frameArena;
     magick_params_t params;
@@ -281,7 +282,7 @@ static inline void RenderFlag(Clay_String text,
     }
 }
 
-AppData AppDataInit(void) {
+void DocumentsUpdate() {
     // Update DocumentArray
     documents.documents[MAGICK_BEST_FIT_I] = (Document){ .title = i18n(AS_TEXT_BEST_FIT), .contents = i18n(AS_TEXT_BEST_FIT_EXPL) };
     documents.documents[MAGICK_TRANSPARENT_BG_I] = (Document){ .title = i18n(AS_TEXT_TRANSPARENT_BG), .contents = i18n(AS_TEXT_TRANSPARENT_BG_EXPL) };
@@ -290,13 +291,17 @@ AppData AppDataInit(void) {
     documents.documents[MAGICK_SET_RESOLUTION_I] = (Document){ .title = i18n(AS_TEXT_SET_OUTPUT_RES), .contents = i18n(AS_TEXT_SET_OUTPUT_RES_EXPL) };
     documents.documents[MAGICK_ADVANCED_SETTINGS] = (Document){ .title = i18n(AS_ADVANCED_SETTINGS_S), .contents = i18n(AS_TEXT_ADVANCED_SETTINGS_EXPL) };
     documents.documents[MAGICK_WELCOME_PAGE_I] = (Document){0};
+}
 
+AppData AppDataInit(void) {
+    DocumentsUpdate();
     AppData data = {
         .frameArena = { .memory = (intptr_t)malloc(1024) },
         .shouldClose = false,
         // .selectedDocumentIndex = MAGICK_ADVANCED_SETTINGS,
         .selectedDocumentIndex = MAGICK_WELCOME_PAGE_I,
         .errorIndex = 0,
+        .tabWidth = 260,
         .params = {
             .state = MAGICK_BEST_FIT | MAGICK_OPEN_ON_DONE | MAGICK_RESIZE,
             .outputFile = {0},
@@ -456,18 +461,17 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
                             RenderDropdownMenuItem(i18n(AS_BUTTON_OPEN_RESULT));
                             RenderDropdownMenuItem(i18n(AS_BUTTON_CHANGE_UI_COLOR));
                             RenderDropdownMenuItem(i18n(AS_BUTTON_CHANGE_LANGUAGE));
-                            Clay_String quit = CLAY_STRING(ID_QUIT);
                             CLAY({
                                 .backgroundColor = c10n(COLOR_SURFACE0),
                                 .cornerRadius = BUTTON_RADIUS,
-                                .id = CLAY_SID(quit),
+                                .id = CLAY_ID(ID_QUIT),
                                 .layout = {
                                     .padding = CLAY_PADDING_ALL(S(16)),
                                 .sizing = {
                                     .width = CLAY_SIZING_GROW(0)
                                 },
                             }}) {
-                                CLAY_TEXT(quit, BUTTON_TEXT);
+                                CLAY_TEXT(i18n(AS_BUTTON_QUIT), BUTTON_TEXT);
                                 HorizontalSeparator();
                                 CLAY_TEXT(CLAY_STRING("Ctrl-Q"),
                                         CLAY_TEXT_CONFIG({ .fontId = FONT_ID_BUTTONS, .fontSize = S(button_font_size), .textColor = c10n(COLOR_OVERLAY0) }));
@@ -482,11 +486,11 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
             else
                 RenderHeaderButton(i18n(AS_BUTTON_STOP));
             HorizontalSeparator();
-            if (errors[data->errorIndex][0] == '\0') {
+            if (i18n(errors[data->errorIndex]).chars[0] == '\0') {
                 CLAY({.id = CLAY_ID(ID_INPUT_FILE)}) {CLAY_TEXT(CLAY_SB_STRING(data->params.outputFile), DEFAULT_TEXT);}
             } else {
                 CLAY({.id = CLAY_ID(ID_ERROR)}) {
-                    CLAY_TEXT(CLAY_DYNAMIC_STRING(errors[data->errorIndex]), CLAY_TEXT_CONFIG({ .fontId = FONT_ID_BODY_16, .fontSize = S(document_font_size), .textColor = c10n(COLOR_RED) }));
+                    CLAY_TEXT(i18n(errors[data->errorIndex]), CLAY_TEXT_CONFIG({ .fontId = FONT_ID_BODY_16, .fontSize = S(document_font_size), .textColor = c10n(COLOR_RED) }));
                 }
             }
             HorizontalSeparator();
@@ -516,7 +520,7 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
                     .padding = CLAY_PADDING_ALL(S(16)),
                     .childGap = S(8),
                     .sizing = {
-                        .width = CLAY_SIZING_FIXED(S(260)),
+                        .width = CLAY_SIZING_FIXED(S(data->tabWidth)),
                         .height = CLAY_SIZING_GROW(0)
                     },
                 },
