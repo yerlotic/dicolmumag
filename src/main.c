@@ -238,6 +238,7 @@ MagickStatus GetInputFiles(Nob_Cmd *inputFiles) {
         return MAGICK_ERROR_CANCELLED;
     }
 #ifdef _WIN32
+    char *utf8_text;
     wchar_t c;
 #define ZERO L'\0'
 #else
@@ -261,7 +262,13 @@ MagickStatus GetInputFiles(Nob_Cmd *inputFiles) {
             nob_cmd_append(&to_free, pointer);
             buf.count = 0;
         } else {
+            #ifdef _WIN32
+            int utf8Size = 0;
+            utf8_text = CodepointToUTF8(c, &utf8Size);
+            nob_sb_append_buf(&buf, utf8_text, utf8Size);
+            #else // POSIX
             nob_sb_append_buf(&buf, &c, 1);
+            #endif // _WIN32
         }
         if (c == ZERO) break;
     }
@@ -453,8 +460,15 @@ MagickStatus ChangeMagickBinary(Nob_String_Builder *magickBin) {
 }
 
 void ChangeOutputPath(Nob_String_Builder *outputFile) {
+    #ifdef _WIN32
+    const wchar_t *filter_params[] = {L"*.png", L"*.avif", L"*.jpg", L"*"};
+    // TODO: internationalization
+    wchar_t *path = tinyfd_saveFileDialogW(L"Path to output image", NULL, sizeof(filter_params) / sizeof(filter_params[0]), filter_params, L"Image files");
+    char *output_path = toUTF8(path, 0, NULL);
+    #else // POSIX
     const char *filter_params[] = {"*.png", "*.avif", "*.jpg", "*"};
     char *output_path = tinyfd_saveFileDialog("Path to output image", NULL, sizeof(filter_params) / sizeof(filter_params[0]), filter_params, "Image files");
+    #endif // _WIN32
     if (!output_path) {
         fprintf(stderr, "Too bad, no output files\n");
         return;

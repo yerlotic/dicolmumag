@@ -1894,7 +1894,7 @@ wchar_t * tinyfd_openFileDialogW(
             for (j = i; j >= 0; j--)
             {
                 p -= lLengths[j];
-                if (tinyfd_verbose) fprintf(stderr, "Tinyfd got file: %ls\n", lPointers[j]);
+                if (tinyfd_verbose) wprintf(L"Tinyfd got file: %ls\n", lPointers[j]);
                 memmove(p, lPointers[j], lLengths[j] * sizeof(wchar_t));
                 p--;
                 *p = L'\\';
