@@ -53,8 +53,9 @@ typedef struct AppState {
     int renderHeight;
 #ifndef NO_SCALING
     float scale;
-    uint8_t language;
 #endif // NO_SCALING
+    uint8_t language;
+    uint16_t tabWidth;
 } AppState;
 
 #define MIN(a,b) (((a) < (b)) ? (a) : (b))
@@ -574,7 +575,7 @@ int8_t scrollDirection(Vector2 scrollDelta) {
     return 0;
 }
 
-AppState GetAppState() {
+AppState GetAppState(AppData *data) {
     AppState state = {
         .mousePosition = GetMousePosition(),
         .scrollDelta = GetMouseWheelMoveV(),
@@ -584,6 +585,7 @@ AppState GetAppState() {
         .scale = scale,
 #endif // NO_SCALING
         .language = language,
+        .tabWidth = data->tabWidth,
         // .renderHeight = GetScreenHeight(),
         // .renderWidth = GetScreenWidth(),
     };
@@ -605,6 +607,7 @@ bool StatesEqual(AppState *this, AppState *that) {
     if (this->scale != that->scale) return false;
 #endif // NO_SCALING
     if (this->language != that->language) return false;
+    if (this->tabWidth != that->tabWidth) return false;
     return true;
 }
 
@@ -942,8 +945,8 @@ int main() {
 #ifdef LAZY_RENDER
         old_state = state;
 #endif // LAZY_RENDER
-        state = GetAppState();
         Clay_RenderCommandArray renderCommands = CreateLayout(clayContext, &data, state);
+        state = GetAppState(&data);
         BeginDrawing();
 #ifndef NO_SCALING
         if (IsKeyDown(KEY_LEFT_SHIFT) && IsKeyPressed(KEY_EQUAL)) {
@@ -984,7 +987,7 @@ int main() {
 
                 // Don't sleep, just exit
                 if ((data.shouldClose = WindowShouldClose())) break;
-                state = GetAppState();
+                state = GetAppState(&data);
                 if (!(are_equal = StatesEqual(&state, &old_state))) break;
                 old_state = state;
 #ifdef DEBUG

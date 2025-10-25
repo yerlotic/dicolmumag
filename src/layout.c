@@ -290,7 +290,6 @@ void DocumentsUpdate() {
     documents.documents[MAGICK_RESIZE_I] = (Document){ .title = i18n(AS_TEXT_ENABLE_RESIZE), .contents = i18n(AS_TEXT_ENABLE_RESIZE_EXPL) };
     documents.documents[MAGICK_SET_RESOLUTION_I] = (Document){ .title = i18n(AS_TEXT_SET_OUTPUT_RES), .contents = i18n(AS_TEXT_SET_OUTPUT_RES_EXPL) };
     documents.documents[MAGICK_ADVANCED_SETTINGS] = (Document){ .title = i18n(AS_ADVANCED_SETTINGS_S), .contents = i18n(AS_TEXT_ADVANCED_SETTINGS_EXPL) };
-    documents.documents[MAGICK_WELCOME_PAGE_I] = (Document){0};
 }
 
 AppData AppDataInit(void) {
