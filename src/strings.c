@@ -12,10 +12,11 @@ uint8_t language = 0;
 // Prefix: AS - AppString
 CLAY_PACKED_ENUM {
     // Buttons
+    AS_BUTTON_FILE = 0,
+    AS_BUTTON_OPEN_RESULT,
     AS_BUTTON_CHANGE_UI_COLOR,
     AS_BUTTON_CHANGE_LANGUAGE,
-    AS_BUTTON_FILE,
-    AS_BUTTON_OPEN_RESULT,
+    AS_BUTTON_QUIT,
     AS_BUTTON_RUN,
     AS_BUTTON_SELECT_IMAGES,
     AS_BUTTON_STOP,
@@ -52,6 +53,16 @@ CLAY_PACKED_ENUM {
     AS_SECTION_GRAVITY,
     AS_SECTION_RESIZE_EACH,
 
+    // Errors
+    AS_MAGICK_ERROR_OK,
+    AS_MAGICK_ERROR_CANCELLED,
+    AS_MAGICK_ERROR_NOT_WORK,
+    AS_MAGICK_ERROR_INVALID_BINARY_SELECTED,
+    AS_MAGICK_ERROR_NO_FILES,
+    AS_MAGICK_ERROR_PROCESS_CRASHED,
+    AS_MAGICK_ERROR_PROCESS_TERMINATED,
+    AS_MAGICK_ERROR_OS_BULLSHIT,
+
     // Misc
     AS_ADVANCED_SETTINGS_S,
     AS_TEXT_OUTPUT_RES,
@@ -70,10 +81,11 @@ static const Clay_String strings[APP_LANGUAGES][APP_STRINGS] = {
 #define ADVANCED_SETTINGS_Q "\"Advanced Settings\""
 
         // Buttons
-        APP_STRING(AS_BUTTON_CHANGE_UI_COLOR, "Change colorscheme"),
-        APP_STRING(AS_BUTTON_CHANGE_LANGUAGE, "Change language"),
         APP_STRING(AS_BUTTON_FILE, "File"),
         APP_STRING(AS_BUTTON_OPEN_RESULT, "Open result"),
+        APP_STRING(AS_BUTTON_CHANGE_UI_COLOR, "Change colorscheme"),
+        APP_STRING(AS_BUTTON_CHANGE_LANGUAGE, "Change language"),
+        APP_STRING(AS_BUTTON_QUIT, "Quit"),
         APP_STRING(AS_BUTTON_RUN, "Run"),
         APP_STRING(AS_BUTTON_SELECT_IMAGES, "Select Images"),
         APP_STRING(AS_BUTTON_STOP, "Stop"),
@@ -110,7 +122,18 @@ static const Clay_String strings[APP_LANGUAGES][APP_STRINGS] = {
         APP_STRING(AS_SECTION_GRAVITY, "Gravity: "),
         APP_STRING(AS_SECTION_RESIZE_EACH, "Resize each image: "),
 
+        // Errors
+        APP_STRING(AS_MAGICK_ERROR_OK, ""),
+        APP_STRING(AS_MAGICK_ERROR_CANCELLED, ""),
+        APP_STRING(AS_MAGICK_ERROR_NOT_WORK, "Magick binary does not work"),
+        APP_STRING(AS_MAGICK_ERROR_INVALID_BINARY_SELECTED, "Invalid binary selected"),
+        APP_STRING(AS_MAGICK_ERROR_NO_FILES, "Select some images"),
+        APP_STRING(AS_MAGICK_ERROR_PROCESS_CRASHED, "Magick crashed!"),
+        APP_STRING(AS_MAGICK_ERROR_PROCESS_TERMINATED, "Magick was terminated"),
+        APP_STRING(AS_MAGICK_ERROR_OS_BULLSHIT, "OS thinks stuff is VERY wrong"),
+
         // Misc
+        APP_STRING(AS_ADVANCED_SETTINGS_S, ADVANCED_SETTINGS_S),
         APP_STRING(AS_TEXT_OUTPUT_RES, "Output resolution"),
 
         APP_STRING(AS_SELECT_TEMP, "Change location"),
@@ -120,14 +143,17 @@ static const Clay_String strings[APP_LANGUAGES][APP_STRINGS] = {
         APP_STRING(AS_START_USING, "Start using!"),
     },
     {
+#undef ADVANCED_SETTINGS_S
 #define ADVANCED_SETTINGS_S "Расширенные настройки"
+#undef ADVANCED_SETTINGS_Q
 #define ADVANCED_SETTINGS_Q "\"Расширенные настройки\""
 
         // Buttons
-        APP_STRING(AS_BUTTON_CHANGE_UI_COLOR, "Поменять оформление"),
-        APP_STRING(AS_BUTTON_CHANGE_LANGUAGE, "Поменять язык"),
         APP_STRING(AS_BUTTON_FILE, "Файл"),
         APP_STRING(AS_BUTTON_OPEN_RESULT, "Открыть результат"),
+        APP_STRING(AS_BUTTON_CHANGE_UI_COLOR, "Поменять оформление"),
+        APP_STRING(AS_BUTTON_CHANGE_LANGUAGE, "Поменять язык"),
+        APP_STRING(AS_BUTTON_QUIT, "Выйти"),
         APP_STRING(AS_BUTTON_RUN, "Собрать"),
         APP_STRING(AS_BUTTON_SELECT_IMAGES, "Выбрать"),
         APP_STRING(AS_BUTTON_STOP, "Стоп"),
@@ -138,7 +164,7 @@ static const Clay_String strings[APP_LANGUAGES][APP_STRINGS] = {
         APP_STRING(AS_TEXT_IGNORE_ASPECT, "Игнорировать изначальное соотношение сторон"),
         APP_STRING(AS_TEXT_SHRINK_LARGER, "Сжимать большие"),
         APP_STRING(AS_TEXT_ENLARGE_SMALLER, "Увеличивать меньшие"),
-        APP_STRING(AS_TEXT_FILL_AREA, "Заполнить площадь"),
+        APP_STRING(AS_TEXT_FILL_AREA, "Заполнять площадь"),
         APP_STRING(AS_TEXT_DIMENSIONS, "Разрешение:"),
         APP_STRING(AS_TEXT_MARGIN, "Отступы:"),
         APP_STRING(AS_TEXT_WELCOME, "Привет от Dicolmumag!"),
@@ -146,13 +172,13 @@ static const Clay_String strings[APP_LANGUAGES][APP_STRINGS] = {
         APP_STRING(AS_TEXT_BEST_FIT, "Прилипание к краям"),
         APP_STRING(AS_TEXT_BEST_FIT_EXPL, "Эта настройка включает точное прилипание мозаики к краям коллажа"),
         APP_STRING(AS_TEXT_TRANSPARENT_BG, "Прозрачный фон"),
-        APP_STRING(AS_TEXT_TRANSPARENT_BG_EXPL, "Делает фон прозрачным\nЭта настройка переопределяет настройки цвета во вкладке \"Расширенные настройки\""),
+        APP_STRING(AS_TEXT_TRANSPARENT_BG_EXPL, "Делает фон прозрачным\nЭта настройка переопределяет настройки цвета во вкладке "ADVANCED_SETTINGS_Q),
         APP_STRING(AS_TEXT_OPEN_ON_DONE, "Открыть по завершении"),
         APP_STRING(AS_TEXT_OPEN_ON_DONE_EXPL, "Включите, чтобы увидеть результат сразу как он готов!\n\nБольше ничего\nуж точно"),
         APP_STRING(AS_TEXT_ENABLE_RESIZE, "Включить масштабирование"),
         APP_STRING(AS_TEXT_ENABLE_RESIZE_EXPL, "Эта настройка включает масштабирование. Вы можете настроить как изменяется размер картинок в \"Расширенных настройках\""),
         APP_STRING(AS_TEXT_SET_OUTPUT_RES, "Установить итоговое разрешение"),
-        APP_STRING(AS_TEXT_SET_OUTPUT_RES_EXPL, "С этой настройках можно установить разрешение для коллажа во вкладке \"Расширенные настройки\"\nЕсли эта настройка выключена, то разрешение для итогового коллажа (имя файла наверху) будет выбрано автоматически"),
+        APP_STRING(AS_TEXT_SET_OUTPUT_RES_EXPL, "С этой настройках можно установить разрешение для коллажа во вкладке "ADVANCED_SETTINGS_Q"\nЕсли эта настройка выключена, то разрешение для итогового коллажа (имя файла наверху) будет выбрано автоматически"),
         APP_STRING(AS_TEXT_ADVANCED_SETTINGS_EXPL, "В этой вкладке расширенные настройки (сюрприз!)"),
         APP_STRING(AS_TEXT_TEMP_FILES, "Расположение промежуточных файлов"),
         APP_STRING(AS_TEXT_CURRENT, "Текущее:"),
@@ -164,8 +190,17 @@ static const Clay_String strings[APP_LANGUAGES][APP_STRINGS] = {
         APP_STRING(AS_SECTION_GRAVITY, "Гравитация: "),
         APP_STRING(AS_SECTION_RESIZE_EACH, "Масштабирование исходных картинок: "),
 
+        // Errors
+        APP_STRING(AS_MAGICK_ERROR_OK, ""),
+        APP_STRING(AS_MAGICK_ERROR_CANCELLED, ""),
+        APP_STRING(AS_MAGICK_ERROR_NOT_WORK, "Исполняемый файл Magick не работает"),
+        APP_STRING(AS_MAGICK_ERROR_INVALID_BINARY_SELECTED, "Выбран неправильный исполняемый файл"),
+        APP_STRING(AS_MAGICK_ERROR_NO_FILES, "Выберите изображения"),
+        APP_STRING(AS_MAGICK_ERROR_PROCESS_CRASHED, "Ошибка выполнения!"),
+        APP_STRING(AS_MAGICK_ERROR_PROCESS_TERMINATED, "Magick был остановлен"),
+        APP_STRING(AS_MAGICK_ERROR_OS_BULLSHIT, "ОС думает, что что-то ОЧЕНЬ сильно сломалось"),
         // Misc
-        APP_STRING(AS_ADVANCED_SETTINGS_S, "Расширенные настройки"),
+        APP_STRING(AS_ADVANCED_SETTINGS_S, ADVANCED_SETTINGS_S),
         APP_STRING(AS_TEXT_OUTPUT_RES, "Итоговое разрешение"),
 
         APP_STRING(AS_SELECT_TEMP, "Поменять расположение"),
@@ -204,24 +239,25 @@ static const Clay_String strings[APP_LANGUAGES][APP_STRINGS] = {
 
 
 typedef CLAY_PACKED_ENUM {
-    MAGICK_ERROR_OK,
+    MAGICK_ERROR_OK = 0,
     MAGICK_ERROR_CANCELLED,
     MAGICK_ERROR_NOT_WORK,
     MAGICK_ERROR_INVALID_BINARY_SELECTED,
     MAGICK_ERROR_NO_FILES,
     MAGICK_ERROR_PROCESS_CRASHED,
     MAGICK_ERROR_PROCESS_TERMINATED,
+    MAGICK_ERROR_OS_BULLSHIT,
 } MagickStatus;
 
-const char* errors[] = {
-    "",
-    "",
-    "Magick binary does not work",
-    "Invalid binary selected",
-    "Select some images",
-    "Magick crashed!",
-    "Magick was terminated",
-    "OS thinks stuff is VERY wrong",
+int errors[] = {
+    [MAGICK_ERROR_OK] = AS_MAGICK_ERROR_OK,
+    [MAGICK_ERROR_CANCELLED] = AS_MAGICK_ERROR_CANCELLED,
+    [MAGICK_ERROR_NOT_WORK] = AS_MAGICK_ERROR_NOT_WORK,
+    [MAGICK_ERROR_INVALID_BINARY_SELECTED] = AS_MAGICK_ERROR_INVALID_BINARY_SELECTED,
+    [MAGICK_ERROR_NO_FILES] = AS_MAGICK_ERROR_NO_FILES,
+    [MAGICK_ERROR_PROCESS_CRASHED] = AS_MAGICK_ERROR_PROCESS_CRASHED,
+    [MAGICK_ERROR_PROCESS_TERMINATED] = AS_MAGICK_ERROR_PROCESS_TERMINATED,
+    [MAGICK_ERROR_OS_BULLSHIT] = AS_MAGICK_ERROR_OS_BULLSHIT,
 };
 
 // Internationalization

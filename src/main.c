@@ -685,12 +685,15 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, AppData *data, AppSt
             data->errorIndex = MAGICK_ERROR_PROCESS_CRASHED;
         } else if (status == PROCESS_WAS_TERMINATED) {
             data->errorIndex = MAGICK_ERROR_PROCESS_TERMINATED;
+        } else if (status == PROCESS_OS_BULLSHIT) {
+            data->errorIndex = MAGICK_ERROR_OS_BULLSHIT;
         }
 
         if (status != PROCESS_RUNNING)
             data->params.magickProc = NOB_INVALID_PROC;
     }
 
+    // TODO: remove i18n from this handler
     int8_t scroll = scrollDirection(scrollDelta);
     if (released(ID_QUIT)) {
         data->shouldClose = true;
@@ -729,6 +732,7 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, AppData *data, AppSt
         colorscheme = (colorscheme + 1) % APP_COLORSCHEMES;
     } else if (released_s(i18n(AS_BUTTON_CHANGE_LANGUAGE))) {
         language = (language + 1) % APP_LANGUAGES;
+        DocumentsUpdate();
     } else if (released_s(i18n(AS_BUTTON_OPEN_RESULT))) {
         if (data->params.outputFile.items[0] != '\0') {
             nob_cmd_append(&cmd, LAUNCHER, data->params.outputFile.items);
@@ -737,6 +741,12 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, AppData *data, AppSt
         } else {
             fprintf(stderr, "No file was made\n");
         }
+    } else if (IsKeyDown(KEY_L)) {
+        data->tabWidth += 1;
+        fprintf(stderr, "MORE: %d\n", data->tabWidth);
+    } else if (IsKeyDown(KEY_H)) {
+        fprintf(stderr, "LESS: %d\n", data->tabWidth);
+        data->tabWidth -= 1;
     }
 
     // Update only on interaction
@@ -829,7 +839,7 @@ static inline Image LoadAppIcon() {
 #endif // _WIN32
 }
 
-void SetAppFPS() {
+int SetAppFPS() {
     int target_fps = GetMonitorRefreshRate(GetCurrentMonitor());
     // Something is wrong
     if (target_fps <= 0) {
@@ -839,6 +849,7 @@ void SetAppFPS() {
         target_fps = FALLBACK_FPS;
     }
     SetTargetFPS(target_fps);
+    return target_fps;
 }
 
 static inline void SetAppIcon() {
@@ -895,7 +906,7 @@ int main() {
     }
 
     SetAppIcon();
-    SetAppFPS();
+    int fps = SetAppFPS();
 
     // Disable ESC to exit
     SetExitKey(KEY_NULL);
@@ -905,6 +916,7 @@ int main() {
 #ifdef LAZY_RENDER
     AppState old_state = {0};
     int prevtime = SLEEP_THRESHOLD;
+    double sleep_fps = 1.f/fps;
     bool are_equal = false;
 #endif // LAZY_RENDER
     AppState state = {0};
@@ -964,7 +976,7 @@ int main() {
 #ifdef DEBUG
                 fprintf(stderr, "Not rendering: %d\n", time);
 #endif // DEBUG
-                WaitTime(1);
+                WaitTime(5*sleep_fps);
             } while (true);
             // Look! it moved!
             prevtime = time + SLEEP_THRESHOLD;
