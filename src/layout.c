@@ -457,9 +457,9 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
                             .cornerRadius = BUTTON_RADIUS,
                         }) {
                             // Render dropdown items here
-                            RenderDropdownMenuItem(i18n(AS_BUTTON_OPEN_RESULT));
-                            RenderDropdownMenuItem(i18n(AS_BUTTON_CHANGE_UI_COLOR));
-                            RenderDropdownMenuItem(i18n(AS_BUTTON_CHANGE_LANGUAGE));
+                            RenderDropdownMenuItem(i18n(AS_BUTTON_OPEN_RESULT), "O");
+                            RenderDropdownMenuItem(i18n(AS_BUTTON_CHANGE_UI_COLOR), "C");
+                            RenderDropdownMenuItem(i18n(AS_BUTTON_CHANGE_LANGUAGE), "I");
                             CLAY({
                                 .backgroundColor = c10n(COLOR_SURFACE0),
                                 .cornerRadius = BUTTON_RADIUS,

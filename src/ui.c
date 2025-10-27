@@ -37,6 +37,10 @@ const uint8_t welcome_font_size = 80;
 
 Clay_Padding defaultPadding;
 
+static inline void HorizontalSeparator(void) {
+    CLAY({ .layout = { .sizing = { .width = CLAY_SIZING_GROW(0) }}}) {}
+}
+
 static inline void RenderHeaderButton(Clay_String text) {
     CLAY({
         .layout = {
@@ -60,20 +64,32 @@ static inline void RenderHeaderButton(Clay_String text) {
     }
 }
 
-static inline void RenderDropdownMenuItem(Clay_String text) {
-    CLAY({
-        .backgroundColor = colors[colorscheme][COLOR_SURFACE0],
-        .cornerRadius = BUTTON_RADIUS,
-        .id = CLAY_SID(text),
-        .layout = {
-            .padding = CLAY_PADDING_ALL(S(16)),
-            .sizing = {
-                .width = CLAY_SIZING_GROW(0)
-            },
-    }}) {
-        CLAY_TEXT(text, BUTTON_TEXT);
-    }
-}
+#define RenderDropdownMenuItem(text, shortcut)                                 \
+  do {                                                                         \
+    CLAY({.backgroundColor = colors[colorscheme][COLOR_SURFACE0],              \
+          .cornerRadius = BUTTON_RADIUS,                                       \
+          .id = CLAY_SID(text),                                                \
+          .layout = {                                                          \
+              .padding = CLAY_PADDING_ALL(S(16)),                              \
+              .sizing = {.width = CLAY_SIZING_GROW(0),                         \
+                         .height = CLAY_SIZING_GROW(0)},                       \
+              .childGap = S(4),                                                \
+              .childAlignment =                                                \
+                  {                                                            \
+                      .x = CLAY_ALIGN_X_LEFT,                                  \
+                      .y = CLAY_ALIGN_Y_CENTER,                                \
+                  },                                                           \
+          }}) {                                                                \
+      CLAY_TEXT(text, BUTTON_TEXT);                                            \
+      HorizontalSeparator();                                                   \
+      if (shortcut[0] != '\0') {                                               \
+        CLAY_TEXT(CLAY_STRING(shortcut),                                       \
+                  CLAY_TEXT_CONFIG({.fontId = FONT_ID_BUTTONS,                 \
+                                    .fontSize = S(button_font_size),           \
+                                    .textColor = c10n(COLOR_OVERLAY0)}));      \
+      }                                                                        \
+    }                                                                          \
+  } while (0)
 
 static inline void RenderNumberPicker(char* value) {
     CLAY({
@@ -130,10 +146,6 @@ static inline void StatedText(Clay_String text, bool enabled) {
         CLAY_TEXT(text, DEFAULT_TEXT);
     else
         CLAY_TEXT(text, DISABLED_TEXT);
-}
-
-static inline void HorizontalSeparator(void) {
-    CLAY({ .layout = { .sizing = { .width = CLAY_SIZING_GROW(0) }}}) {}
 }
 
 #endif // UI_C
