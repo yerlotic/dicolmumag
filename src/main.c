@@ -787,12 +787,12 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, AppData *data, AppSt
         printf("befor: %s\n", data->params.outputFile.items);
         ChangeOutputPath(&data->params.outputFile);
         printf("aftir: %s\n", data->params.outputFile.items);
-    } else if (released_s(i18n(AS_BUTTON_CHANGE_UI_COLOR))) {
+    } else if (released_s(i18n(AS_BUTTON_CHANGE_UI_COLOR)) || IsKeyPressed(KEY_C)) {
         colorscheme = (colorscheme + 1) % APP_COLORSCHEMES;
-    } else if (released_s(i18n(AS_BUTTON_CHANGE_LANGUAGE))) {
+    } else if (released_s(i18n(AS_BUTTON_CHANGE_LANGUAGE)) || IsKeyPressed(KEY_I)) {
         language = (language + 1) % APP_LANGUAGES;
         DocumentsUpdate();
-    } else if (released_s(i18n(AS_BUTTON_OPEN_RESULT))) {
+    } else if (released_s(i18n(AS_BUTTON_OPEN_RESULT)) || IsKeyPressed(KEY_O)) {
         if (data->params.outputFile.items[0] != '\0') {
             nob_cmd_append(&cmd, LAUNCHER, data->params.outputFile.items);
             nob_cmd_run_async_silent(cmd);
