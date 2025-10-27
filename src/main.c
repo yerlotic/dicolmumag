@@ -34,6 +34,14 @@
 #define ASHLAR_PREFIX "ashlar:"
 #define SLEEP_THRESHOLD 5 //seconds of activity before not rendering that many frames
 
+#ifdef _WIN32
+    #define OS_CHAR wchar_t
+    #define P L""
+#else
+    #define OS_CHAR char
+    #define P
+#endif // _WIN32
+
 typedef struct {
     char **items;
     size_t count;
@@ -211,26 +219,27 @@ void cthreads_thread_ensure_cancelled(struct cthreads_thread thread, ProcStatus 
 
 MagickStatus GetInputFiles(Nob_Cmd *inputFiles) {
     int allow_multiple_selects = true;
-    // int allow_multiple_selects = false;
 
-    // TODO: wrap this into a macro
+    OS_CHAR const *filter_params[] = {P"*.png", P"*.svg", P"*.jpg", P"*.jpeg"};
 #ifdef _WIN32
-    wchar_t const *filter_params[] = {L"*.png", L"*.svg", L"*.jpg", L"*.jpeg"};
+    wchar_t *title = fromUTF8(i18n(AS_TEXT_INPUT_IMAGES).chars, i18n(AS_TEXT_INPUT_IMAGES).length, NULL);
+    wchar_t *descr = fromUTF8(i18n(AS_TEXT_IMAGE_FILES).chars, i18n(AS_TEXT_IMAGE_FILES).length, NULL);
     wchar_t *input_path = tinyfd_openFileDialogW(
-        L"Path to images",
-        L"./",
+        title,
+        NULL,
         sizeof(filter_params) / sizeof(filter_params[0]),
         filter_params,
-        L"Image file",
+        descr,
         allow_multiple_selects);
+    free(title);
+    free(descr);
 #else
-    char const *filter_params[] = {"*.png", "*.svg", "*.jpg", "*.jpeg"};
     char *input_path = tinyfd_openFileDialog(
-        "Path to images",
-        "./",
+        i18n(AS_TEXT_INPUT_IMAGES).chars,
+        NULL,
         sizeof(filter_params) / sizeof(filter_params[0]),
         filter_params,
-        "Image file",
+        i18n(AS_TEXT_IMAGE_FILES).chars,
         allow_multiple_selects);
 #endif // _WIN32
 
@@ -246,7 +255,6 @@ MagickStatus GetInputFiles(Nob_Cmd *inputFiles) {
     char c;
 #define ZERO '\0'
 #endif // _WIN32
-    Nob_Cmd to_free = {0};
     Nob_String_Builder buf = {0};
     nob_free_all(inputFiles);
     inputFiles->count = 0;
@@ -260,12 +268,11 @@ MagickStatus GetInputFiles(Nob_Cmd *inputFiles) {
             char *pointer = strdup(buf.items);
             fprintf(stderr, "File: %s\n", pointer);
             nob_cmd_append(inputFiles, pointer);
-            nob_cmd_append(&to_free, pointer);
             buf.count = 0;
         } else {
             #ifdef _WIN32
             int utf8Size = 0;
-            utf8_text = CodepointToUTF8(c, &utf8Size);
+            utf8_text = (char *) CodepointToUTF8(c, &utf8Size);
             nob_sb_append_buf(&buf, utf8_text, utf8Size);
             #else // POSIX
             nob_sb_append_buf(&buf, &c, 1);
@@ -434,14 +441,23 @@ void *RunMagickThread(void *arg) {
 
 MagickStatus ChangeMagickBinary(Nob_String_Builder *magickBin) {
 #ifdef _WIN32
-    const char *filter_params[] = {"*.exe", "*.msi", "*"};
+    const wchar_t *filter_params[] = {L"*.exe", L"*.msi"};
 #else
     const char *filter_params[] = {"*"};
 #endif // _WIN32
 
     fprintf(stderr, "runnin\n");
-    char *new_magick = tinyfd_openFileDialog("Path to magick executable", NULL, sizeof(filter_params) / sizeof(filter_params[0]), filter_params, "Executable files", false);
 
+#ifdef _WIN32
+    wchar_t *title = fromUTF8(i18n(AS_TEXT_MAGICK_PATH).chars, i18n(AS_TEXT_MAGICK_PATH).length, NULL);
+    wchar_t *descr = fromUTF8(i18n(AS_TEXT_EXE_FILES).chars, i18n(AS_TEXT_EXE_FILES).length, NULL);
+    wchar_t *path = tinyfd_openFileDialogW(title, NULL, sizeof(filter_params) / sizeof(filter_params[0]), filter_params, descr, false);
+    free(title);
+    free(descr);
+    char *new_magick = toUTF8(path, 0, NULL);
+#else // POSIX
+    char *new_magick = tinyfd_openFileDialog(i18n(AS_TEXT_MAGICK_PATH).chars, NULL, sizeof(filter_params) / sizeof(filter_params[0]), filter_params, i18n(AS_TEXT_EXE_FILES).chars, false);
+#endif // _WIN32
     if (!new_magick) {
         fprintf(stderr, "Too bad, no another magick binary\n");
         return MAGICK_ERROR_CANCELLED;
@@ -449,6 +465,10 @@ MagickStatus ChangeMagickBinary(Nob_String_Builder *magickBin) {
 
     if (!testMagick(new_magick)) {
         fprintf(stderr, "Too bad, no another magick binary (\"%s\") cuz testing was too bad\n", new_magick);
+#ifdef _WIN32
+        // toUTF8 mallocs memory
+        free(new_magick);
+#endif // _WIN32
         return MAGICK_ERROR_INVALID_BINARY_SELECTED;
     }
 
@@ -456,20 +476,26 @@ MagickStatus ChangeMagickBinary(Nob_String_Builder *magickBin) {
     magickBin->count = 0;
     nob_sb_append_cstr(magickBin, new_magick);
     nob_sb_append_null(magickBin);
+#ifdef _WIN32
+    // toUTF8 mallocs memory
+    free(new_magick);
+#endif // _WIN32
 
     return MAGICK_ERROR_OK;
 }
 
 void ChangeOutputPath(Nob_String_Builder *outputFile) {
-    #ifdef _WIN32
-    const wchar_t *filter_params[] = {L"*.png", L"*.avif", L"*.jpg", L"*"};
-    // TODO: internationalization
-    wchar_t *path = tinyfd_saveFileDialogW(L"Path to output image", NULL, sizeof(filter_params) / sizeof(filter_params[0]), filter_params, L"Image files");
+    const OS_CHAR *filter_params[] = {P"*.png", P"*.avif", P"*.jpg", P"*"};
+#ifdef _WIN32
+    wchar_t *title = fromUTF8(i18n(AS_TEXT_OUTPUT_PATH).chars, i18n(AS_TEXT_OUTPUT_PATH).length, NULL);
+    wchar_t *descr = fromUTF8(i18n(AS_TEXT_IMAGE_FILES).chars, i18n(AS_TEXT_IMAGE_FILES).length, NULL);
+    wchar_t *path = tinyfd_saveFileDialogW(title, NULL, sizeof(filter_params) / sizeof(filter_params[0]), filter_params, descr);
+    free(title);
+    free(descr);
     char *output_path = toUTF8(path, 0, NULL);
-    #else // POSIX
-    const char *filter_params[] = {"*.png", "*.avif", "*.jpg", "*"};
-    char *output_path = tinyfd_saveFileDialog("Path to output image", NULL, sizeof(filter_params) / sizeof(filter_params[0]), filter_params, "Image files");
-    #endif // _WIN32
+#else // POSIX
+    char *output_path = tinyfd_saveFileDialog(i18n(AS_TEXT_OUTPUT_PATH).chars, NULL, sizeof(filter_params) / sizeof(filter_params[0]), filter_params, i18n(AS_TEXT_IMAGE_FILES).chars);
+#endif // _WIN32
     if (!output_path) {
         fprintf(stderr, "Too bad, no output files\n");
         return;
@@ -479,11 +505,22 @@ void ChangeOutputPath(Nob_String_Builder *outputFile) {
         outputFile->count = 0;
         nob_sb_append_cstr(outputFile, output_path);
         nob_sb_append_null(outputFile);
+        #ifdef _WIN32
+        // toUTF8 mallocs memory
+        free(output_path);
+        #endif // _WIN32
     }
 }
 
 void SetTempDir(Nob_String_Builder *sb) {
-    char *output_path = tinyfd_selectFolderDialog("Path to a location for temporary files", "./");
+#ifdef _WIN32
+    wchar_t *title = fromUTF8(i18n(AS_TEXT_TEMP_FILES).chars, i18n(AS_TEXT_TEMP_FILES).length, NULL);
+    wchar_t *path = tinyfd_selectFolderDialogW(title, NULL);
+    free(title);
+    char *output_path = toUTF8(path, 0, NULL);
+#else // POSIX
+    char *output_path = tinyfd_selectFolderDialog(i18n(AS_TEXT_TEMP_FILES).chars, NULL);
+#endif // _WIN32
     if (!output_path) {
         fprintf(stderr, "Too bad, no output tempdir\n");
         return;
@@ -493,6 +530,10 @@ void SetTempDir(Nob_String_Builder *sb) {
         sb->count = 0;
         nob_sb_append_cstr(sb, output_path);
         nob_sb_append_null(sb);
+        #ifdef _WIN32
+        // toUTF8 mallocs memory
+        free(output_path);
+        #endif // _WIN32
         fprintf(stderr, "Set tmp dir: %s\n", sb->items);
     }
 }
@@ -513,7 +554,6 @@ int defaultFont(char** res) {
 
     if (!pat) {
         fprintf(stderr, "Pattern is empty\n");
-
         return -1;
     }
 
@@ -540,6 +580,7 @@ int defaultFont(char** res) {
         return -1;
     }
 
+    FcConfigDestroy(conf);
     FcFontSetSortDestroy(font_patterns);
     FcPatternDestroy(pat);
 
@@ -697,6 +738,7 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, AppData *data, AppSt
             data->errorIndex = MAGICK_ERROR_OK;
             nob_cmd_append(&cmd, LAUNCHER, data->params.outputFile.items);
             nob_cmd_run_async_silent(cmd);
+            nob_cmd_free(cmd);
             cmd.count = 0;
         } else if (status == PROCESS_CRASHED) {
             data->errorIndex = MAGICK_ERROR_PROCESS_CRASHED;
@@ -827,14 +869,18 @@ bool testMagick(char* magickBin) {
     return res;
 }
 
+void unloadFonts(Font *fonts) {
+    UnloadFont(fonts[FONT_ID_BODY_16]);
+    UnloadFont(fonts[FONT_ID_SIDEBAR]);
+    UnloadFont(fonts[FONT_ID_BUTTONS]);
+    UnloadFont(fonts[FONT_ID_DOCUMNT]);
+    UnloadFont(fonts[FONT_ID_WELCOME]);
+}
+
 static inline void reloadFonts(Font *fonts, char *fontpath, int codepoints[512]) {
     static bool ever_loaded = false;
     if (ever_loaded) {
-        UnloadFont(fonts[FONT_ID_BODY_16]);
-        UnloadFont(fonts[FONT_ID_SIDEBAR]);
-        UnloadFont(fonts[FONT_ID_BUTTONS]);
-        UnloadFont(fonts[FONT_ID_DOCUMNT]);
-        UnloadFont(fonts[FONT_ID_WELCOME]);
+        unloadFonts(fonts);
     }
     fonts[FONT_ID_BODY_16] = LoadFontEx(fontpath, FONT_LOAD_SIZE * scale,    codepoints, 512);
     fonts[FONT_ID_SIDEBAR] = LoadFontEx(fontpath, sidebar_font_size * scale, codepoints, 512);
@@ -844,7 +890,7 @@ static inline void reloadFonts(Font *fonts, char *fontpath, int codepoints[512])
     ever_loaded = true;
 }
 
-static inline Image LoadAppIcon() {
+static inline Image LoadAppIcon(void) {
 #ifdef _WIN32
     return LoadImage("icon.png");
 #else
@@ -856,7 +902,7 @@ static inline Image LoadAppIcon() {
 #endif // _WIN32
 }
 
-int SetAppFPS() {
+int SetAppFPS(void) {
     int target_fps = GetMonitorRefreshRate(GetCurrentMonitor());
     // Something is wrong
     if (target_fps <= 0) {
@@ -869,7 +915,7 @@ int SetAppFPS() {
     return target_fps;
 }
 
-static inline void SetAppIcon() {
+static inline void SetAppIcon(void) {
     Image icon = LoadAppIcon();
 #ifdef _WIN32
     ImageFormat(&icon, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
@@ -878,7 +924,7 @@ static inline void SetAppIcon() {
     UnloadImage(icon);
 }
 
-int main() {
+int main(void) {
     char* title = "Dicolmumag — create collages with ease of creation, proceed to easily collide with creativity and proceedings";
     // vsync makes resizes slower, we don't want this
     // but antialiasing is nice
@@ -1008,4 +1054,16 @@ int main() {
     }
 
     Clay_Raylib_Close();
+    // Freeing memory
+    unloadFonts(fonts);
+#ifndef _WIN32 // it is constant on windows
+    free(fontpath);
+#endif // _WIN32
+
+    free(clayMemory.memory);
+    free((void *) data.frameArena.memory);
+    nob_free_all(&data.params.inputFiles);
+    nob_cmd_free(data.params.inputFiles);
+    nob_cmd_free(data.params.outputFile);
+    nob_cmd_free(data.params.magickBinary);
 }

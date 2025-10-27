@@ -1893,6 +1893,26 @@ char* toUTF8( const wchar_t* src,
     if(out_length) { *out_length = length; }
     return output_buffer;
 }
+
+wchar_t* fromUTF8(
+    const char* src,
+    size_t src_length,  /* = 0 */
+    size_t* out_length  /* = NULL */
+    )
+{
+	if(!src)
+		{ return NULL; }
+
+	if(src_length == 0) { src_length = strlen(src); }
+	int length = MultiByteToWideChar(CP_UTF8, 0, src, src_length, 0, 0);
+	wchar_t *output_buffer = (wchar_t*)malloc((length+1) * sizeof(wchar_t));
+	if(output_buffer) {
+		MultiByteToWideChar(CP_UTF8, 0, src, src_length, output_buffer, length);
+		output_buffer[length] = L'\0';
+	}
+    if(out_length) { *out_length = length; }
+	return output_buffer;
+}
 #endif // _WIN32
 
 // minirent.h SOURCE BEGIN ////////////////////////////////////////

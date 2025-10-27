@@ -4,9 +4,6 @@
 #include <stdint.h>
 #include "thirdparty/clay.h"
 
-#define APP_LANGUAGES 2
-#define APP_STRINGS 66
-
 uint8_t language = 0;
 
 // Prefix: AS - AppString
@@ -45,7 +42,13 @@ CLAY_PACKED_ENUM {
     AS_TEXT_SET_OUTPUT_RES_EXPL,
     AS_TEXT_ADVANCED_SETTINGS_EXPL,
     AS_TEXT_TEMP_FILES,
+    AS_TEXT_TEMP_FILES_LOCATION,
     AS_TEXT_TEMP_DEFAULT,
+    AS_TEXT_OUTPUT_PATH,
+    AS_TEXT_INPUT_IMAGES,
+    AS_TEXT_IMAGE_FILES,
+    AS_TEXT_MAGICK_PATH,
+    AS_TEXT_EXE_FILES,
 
     // Sections
     AS_SECTION_RESIZE,
@@ -70,7 +73,12 @@ CLAY_PACKED_ENUM {
     AS_TEMP_FILES_EXPLANATION,
     AS_MAGICK_EXEC,
     AS_START_USING,
+
+    AS_END
 };
+
+#define APP_LANGUAGES 2
+#define APP_STRINGS AS_END + 1
 
 #define APP_STRING(AS_INDEX, STRING) [AS_INDEX] = CLAY_STRING(STRING)
 
@@ -115,6 +123,11 @@ static const Clay_String strings[APP_LANGUAGES][APP_STRINGS] = {
         APP_STRING(AS_TEXT_ADVANCED_SETTINGS_EXPL, "This tab contains advanced settings (surprise!)"),
         APP_STRING(AS_TEXT_TEMP_FILES, "Temporary files"),
         APP_STRING(AS_TEXT_TEMP_DEFAULT, "default"),
+        APP_STRING(AS_TEXT_OUTPUT_PATH, "Path to output image"),
+        APP_STRING(AS_TEXT_INPUT_IMAGES, "Source images"),
+        APP_STRING(AS_TEXT_IMAGE_FILES, "Image files"),
+        APP_STRING(AS_TEXT_MAGICK_PATH, "Path to magick executable"),
+        APP_STRING(AS_TEXT_EXE_FILES, "Executable files"),
 
         // Sections
         APP_STRING(AS_SECTION_RESIZE, "Resize: "),
@@ -183,6 +196,11 @@ static const Clay_String strings[APP_LANGUAGES][APP_STRINGS] = {
         APP_STRING(AS_TEXT_TEMP_FILES, "Расположение промежуточных файлов"),
         APP_STRING(AS_TEXT_CURRENT, "Текущее:"),
         APP_STRING(AS_TEXT_TEMP_DEFAULT, "по умолчанию"),
+        APP_STRING(AS_TEXT_OUTPUT_PATH, "Путь для сохранения коллажа"),
+        APP_STRING(AS_TEXT_INPUT_IMAGES, "Исходные изображения"),
+        APP_STRING(AS_TEXT_IMAGE_FILES, "Изображения"),
+        APP_STRING(AS_TEXT_MAGICK_PATH, "Исполняемый файл magick"),
+        APP_STRING(AS_TEXT_EXE_FILES, "Исполняемые файлы"),
 
         // Sections
         APP_STRING(AS_SECTION_RESIZE, "Масштабирование: "),

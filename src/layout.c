@@ -198,7 +198,7 @@ static inline void HandleActiveColor(
         fprintf(stderr, "You pressed color, nice!\n");
         unsigned char aoResultRGB[3] = {color->r, color->g, color->b};
         fprintf(stderr, "old rgb: {%d, %d, %d}\n", color->r, color->g, color->b);
-        if (tinyfd_colorChooser("Choose a background color", NULL, aoResultRGB, aoResultRGB) == NULL)
+        if (tinyfd_colorChooser(NULL, NULL, aoResultRGB, aoResultRGB) == NULL)
             return;
         color->r = aoResultRGB[0]; sprintf(color_str->r, "%d", color->r);
         color->g = aoResultRGB[1]; sprintf(color_str->g, "%d", color->g);

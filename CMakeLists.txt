@@ -33,8 +33,8 @@ target_include_directories(dicolmumag PUBLIC .)
 target_link_libraries(dicolmumag PUBLIC raylib fontconfig m SDL3)
 
 # set(CMAKE_C_FLAGS "-Werror -Wall -Wextra -Wpedantic -fwrapv -fanalyzer")
-set(CMAKE_C_FLAGS "-Wall -Wextra -Wpedantic -fwrapv -Wno-missing-braces")
-# set(USE_EXTERNAL_GLFW ON)
+set(CMAKE_C_FLAGS "-Wall -Wextra -fwrapv -Wno-missing-braces")
+set(USE_EXTERNAL_GLFW ON)
 
 # set(PLATFORM PLATFORM_DESKTOP)
 # set(GRAPHICS GRAPHICS_API_SDL)
@@ -85,7 +85,18 @@ if(UI_TESTING)
     add_definitions(-DUI_TESTING=1)
 endif()
 
-# set(CMAKE_C_FLAGS_DEBUG "-Werror -Wall -Wextra -Wpedantic -fwrapv -fanalyzer -Wformat=2 -Wformat-overflow=2 -Wformat-truncation=2 -Wformat-security -Wnull-dereference -Wstack-protector -Wtrampolines -Walloca -Wvla -Warray-bounds=2 -Wimplicit-fallthrough=3 -Wtraditional-conversion -Wshift-overflow=2 -Wcast-qual -Wstringop-overflow=4 -Wconversion -Warith-conversion -Wlogical-op -Wduplicated-cond -Wduplicated-branches -Wformat-signedness -Wshadow -Wstrict-overflow=4 -Wundef -Wstrict-prototypes -Wswitch-default -Wswitch-enum -Wstack-usage=1000000 -Wcast-align=strict -fstack-protector-strong -fstack-clash-protection -fPIE -fsanitize=bounds -fsanitize-undefined-trap-on-error -Wl,-z,relro -Wl,-z,now -Wl,-z,noexecstack -Wl,-z,separate-code")
+# set(CMAKE_C_FLAGS_DEBUG "-Werror -Wall -Wextra -Wpedantic -fwrapv -fanalyzer
+# -Wformat=2 -Wformat-overflow=2 -Wformat-truncation=2 -Wformat-security
+# -Wnull-dereference -Wstack-protector -Wtrampolines -Walloca -Wvla
+# -Warray-bounds=2 -Wimplicit-fallthrough=3 -Wtraditional-conversion
+# -Wshift-overflow=2 -Wcast-qual -Wstringop-overflow=4 -Wconversion
+# -Warith-conversion -Wlogical-op -Wduplicated-cond -Wduplicated-branches
+# -Wformat-signedness -Wshadow -Wstrict-overflow=4 -Wundef -Wstrict-prototypes
+# -Wswitch-default -Wswitch-enum -Wstack-usage=1000000 -Wcast-align=strict
+# -fstack-protector-strong -fstack-clash-protection -fPIE -fsanitize=bounds
+# -fsanitize-undefined-trap-on-error -Wl,-z,relro -Wl,-z,now -Wl,-z,noexecstack
+# -Wl,-z,separate-code")
+# set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O3 -fsanitize=address,undefined,bounds")
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}")
 set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}")
 
