@@ -242,7 +242,7 @@ static inline void HandleFlagInteraction(
     (void) elementId;
     FlagClickData *clickData = (FlagClickData *)userData;
     // If this button was clicked
-    if (pointerData.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME) {
+    if (pointerData.state == CLAY_POINTER_DATA_RELEASED_THIS_FRAME) {
         *clickData->state ^= clickData->flag;
     }
 }
