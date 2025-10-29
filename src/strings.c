@@ -66,6 +66,9 @@ CLAY_PACKED_ENUM {
     AS_MAGICK_ERROR_PROCESS_TERMINATED,
     AS_MAGICK_ERROR_OS_BULLSHIT,
 
+    // Tips
+    AS_MAGICK_TIP_SCROLL,
+
     // Misc
     AS_ADVANCED_SETTINGS_S,
     AS_TEXT_OUTPUT_RES,
@@ -145,6 +148,9 @@ static const Clay_String strings[APP_LANGUAGES][APP_STRINGS] = {
         APP_STRING(AS_MAGICK_ERROR_PROCESS_TERMINATED, "Magick was terminated"),
         APP_STRING(AS_MAGICK_ERROR_OS_BULLSHIT, "OS thinks stuff is VERY wrong"),
 
+        // Tips
+        APP_STRING(AS_MAGICK_TIP_SCROLL, "Scroll resize on \"x\" to change both values!"),
+
         // Misc
         APP_STRING(AS_ADVANCED_SETTINGS_S, ADVANCED_SETTINGS_S),
         APP_STRING(AS_TEXT_OUTPUT_RES, "Output resolution"),
@@ -217,6 +223,10 @@ static const Clay_String strings[APP_LANGUAGES][APP_STRINGS] = {
         APP_STRING(AS_MAGICK_ERROR_PROCESS_CRASHED, "Ошибка выполнения!"),
         APP_STRING(AS_MAGICK_ERROR_PROCESS_TERMINATED, "Magick был остановлен"),
         APP_STRING(AS_MAGICK_ERROR_OS_BULLSHIT, "ОС думает, что что-то ОЧЕНЬ сильно сломалось"),
+
+        // Tips
+        APP_STRING(AS_MAGICK_TIP_SCROLL, "Если скроллить на \"x\", то оба значения будут меняться"),
+
         // Misc
         APP_STRING(AS_ADVANCED_SETTINGS_S, ADVANCED_SETTINGS_S),
         APP_STRING(AS_TEXT_OUTPUT_RES, "Итоговое разрешение"),
@@ -255,7 +265,6 @@ static const Clay_String strings[APP_LANGUAGES][APP_STRINGS] = {
 #define ID_WELCOME "MagickWelcome"
 #define ID_BUTTON_SELECT_MAGICK "MagickBinary"
 
-
 typedef CLAY_PACKED_ENUM {
     MAGICK_ERROR_OK = 0,
     MAGICK_ERROR_CANCELLED,
@@ -276,6 +285,18 @@ int errors[] = {
     [MAGICK_ERROR_PROCESS_CRASHED] = AS_MAGICK_ERROR_PROCESS_CRASHED,
     [MAGICK_ERROR_PROCESS_TERMINATED] = AS_MAGICK_ERROR_PROCESS_TERMINATED,
     [MAGICK_ERROR_OS_BULLSHIT] = AS_MAGICK_ERROR_OS_BULLSHIT,
+};
+
+typedef CLAY_PACKED_ENUM {
+    MAGICK_TIP_SCROLL = 0,
+    MAGICK_TIP_YRMOM,
+    MAGICK_TIP_END
+} MagickTips;
+#define APP_TIPS MAGICK_TIP_END + 1
+
+int tips[APP_TIPS] = {
+    [MAGICK_TIP_SCROLL] = AS_MAGICK_TIP_SCROLL,
+    [MAGICK_TIP_YRMOM] = AS_MAGICK_ERROR_OS_BULLSHIT,
 };
 
 // Internationalization

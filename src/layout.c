@@ -114,6 +114,7 @@ typedef CLAY_PACKED_ENUM ProcStatus {
 #define resizes_len 3
 typedef struct magick_params_t {
     uint16_t state;
+    uint8_t tip;
     Nob_Cmd inputFiles;
     Nob_String_Builder outputFile;
     Nob_String_Builder tempDir;
@@ -303,6 +304,7 @@ AppData AppDataInit(void) {
         .tabWidth = 260,
         .params = {
             .state = MAGICK_BEST_FIT | MAGICK_OPEN_ON_DONE | MAGICK_RESIZE,
+            .tip = rand() % (APP_TIPS - 1),
             .outputFile = {0},
             .tempDir = {0},
             .magickBinary = {0},
@@ -745,6 +747,12 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
 
                         }) {}
                         CLAY_TEXT(i18n(AS_TEXT_SLOGAN), CLAY_TEXT_CONFIG({
+                            .fontId = FONT_ID_DOCUMNT,
+                            .fontSize = S(document_font_size),
+                            .textColor = c10n(COLOR_TEXT),
+                            .textAlignment = CLAY_TEXT_ALIGN_CENTER,
+                        }));
+                        CLAY_TEXT(i18n(tips[data->params.tip]), CLAY_TEXT_CONFIG({
                             .fontId = FONT_ID_DOCUMNT,
                             .fontSize = S(document_font_size),
                             .textColor = c10n(COLOR_TEXT),
