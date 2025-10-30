@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <assert.h>
+#include <time.h>
 #define SUPPORT_URL "https://youtu.be/dQw4w9WgXcQ"
 #ifdef _WIN32
 #include "thirdparty/raylib/fix_win32_compatibility.h"
