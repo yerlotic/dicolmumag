@@ -257,6 +257,7 @@ static inline void RenderFlag(Clay_String text,
     if (*state & displayFlag)
         background = OPACITY(c10n(COLOR_GREEN), 35);
     CLAY({
+        .clip = {.horizontal = true},
         .layout = {
             .padding = defaultPadding,
             .childAlignment = {
