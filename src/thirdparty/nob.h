@@ -665,7 +665,7 @@ Nob_String_View nob_sv_from_parts(const char *data, size_t count);
 #else // _WIN32
 
 #define WIN32_LEAN_AND_MEAN
-#include "windows.h"
+#include <windows.h>
 
 struct dirent
 {

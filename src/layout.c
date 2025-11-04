@@ -208,7 +208,7 @@ static inline void HandleActiveColor(
     }
 }
 
-static inline void RenderMagickColor(rgba *color, uint16_t state) {
+static inline void RenderMagickColor(const rgba *color, const uint16_t state) {
     if (state & MAGICK_TRANSPARENT_BG) {
         RenderColor((Clay_Color) { .r = 0, .g = 0, .b = 0, .a = 0 });
     } else {
@@ -248,7 +248,7 @@ static inline void HandleFlagInteraction(
     }
 }
 
-static inline void RenderFlag(Clay_String text,
+void RenderFlag(Clay_String text,
                 uint16_t *state,
                 uint16_t triggerFlag,
                 uint16_t displayFlag,
@@ -737,16 +737,15 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
                                 .textAlignment = CLAY_TEXT_ALIGN_CENTER,
                             }));
                         CLAY({
-                            .aspectRatio = {.aspectRatio = (float) data->params.logo.width / data->params.logo.height},
                             .layout = {
                                 .sizing = {
                                     .width = CLAY_SIZING_FIT(S(500)),
                                     .height = CLAY_SIZING_FIT(S(500)),
                                 }
                             },
-                            .image = { .imageData = &data->params.logo }
-
-                        }) {}
+                            .image = { .imageData = &data->params.logo },
+                            .aspectRatio = (float) data->params.logo.width / data->params.logo.height,
+                        });
                         CLAY_TEXT(i18n(AS_TEXT_SLOGAN), CLAY_TEXT_CONFIG({
                             .fontId = FONT_ID_DOCUMNT,
                             .fontSize = S(document_font_size),

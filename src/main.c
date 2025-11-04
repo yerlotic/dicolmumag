@@ -104,7 +104,7 @@ void HandleClayErrors(Clay_ErrorData errorData) {
 } while (0)
 
 // Declarations
-bool testMagick(char* magickBin);
+bool testMagick(char *magickBin);
 
 void nob_kill(Nob_Proc *proc) {
     fprintf(stderr, "nob_kill\n");
@@ -200,7 +200,7 @@ ProcStatus nob_proc_running(Nob_Proc proc) {
 }
 
 void cthreads_thread_ensure_cancelled(struct cthreads_thread thread, ProcStatus *running) {
-    if (running == PROCESS_RUNNING) {
+    if (*running == PROCESS_RUNNING) {
         cthreads_thread_cancel(thread);
         *running = PROCESS_WAS_TERMINATED;
     }
@@ -225,7 +225,7 @@ MagickStatus GetInputFiles(Nob_Cmd *inputFiles) {
 #ifdef _WIN32
     wchar_t *title = fromUTF8(i18n(AS_TEXT_INPUT_IMAGES).chars, i18n(AS_TEXT_INPUT_IMAGES).length, NULL);
     wchar_t *descr = fromUTF8(i18n(AS_TEXT_IMAGE_FILES).chars, i18n(AS_TEXT_IMAGE_FILES).length, NULL);
-    wchar_t *input_path = tinyfd_openFileDialogW(
+    const wchar_t *input_path = tinyfd_openFileDialogW(
         title,
         NULL,
         sizeof(filter_params) / sizeof(filter_params[0]),
@@ -235,7 +235,7 @@ MagickStatus GetInputFiles(Nob_Cmd *inputFiles) {
     free(title);
     free(descr);
 #else
-    char *input_path = tinyfd_openFileDialog(
+    const char *input_path = tinyfd_openFileDialog(
         i18n(AS_TEXT_INPUT_IMAGES).chars,
         NULL,
         sizeof(filter_params) / sizeof(filter_params[0]),
@@ -249,7 +249,7 @@ MagickStatus GetInputFiles(Nob_Cmd *inputFiles) {
         return MAGICK_ERROR_CANCELLED;
     }
 #ifdef _WIN32
-    char *utf8_text;
+    const char *utf8_text;
     wchar_t c;
 #define ZERO L'\0'
 #else
@@ -273,7 +273,7 @@ MagickStatus GetInputFiles(Nob_Cmd *inputFiles) {
         } else {
             #ifdef _WIN32
             int utf8Size = 0;
-            utf8_text = (char *) CodepointToUTF8(c, &utf8Size);
+            utf8_text = (const char *) CodepointToUTF8(c, &utf8Size);
             nob_sb_append_buf(&buf, utf8_text, utf8Size);
             #else // POSIX
             nob_sb_append_buf(&buf, &c, 1);
@@ -368,7 +368,7 @@ MagickStatus RunMagick(magick_params_t *params) {
         nob_sb_append_cstr(&buf, ")");
         nob_sb_append_null(&buf);
 
-        char* pointer = strdup(buf.items);
+        char *pointer = strdup(buf.items);
         nob_cmd_append(&to_free, pointer);
         nob_cmd_append(&cmd, "-background", pointer);
         free_buf = true;
@@ -381,7 +381,7 @@ MagickStatus RunMagick(magick_params_t *params) {
         nob_sb_append_cstr(&buf, "registry:temporary-path=");
         nob_sb_append_buf(&buf, params->tempDir.items, params->tempDir.count);
         nob_sb_append_null(&buf);
-        char* temp_path = strdup(buf.items);
+        char *temp_path = strdup(buf.items);
         nob_cmd_append(&to_free, temp_path);
         nob_cmd_append(&cmd, temp_path);
         free_buf = true;
@@ -452,7 +452,7 @@ MagickStatus ChangeMagickBinary(Nob_String_Builder *magickBin) {
 #ifdef _WIN32
     wchar_t *title = fromUTF8(i18n(AS_TEXT_MAGICK_PATH).chars, i18n(AS_TEXT_MAGICK_PATH).length, NULL);
     wchar_t *descr = fromUTF8(i18n(AS_TEXT_EXE_FILES).chars, i18n(AS_TEXT_EXE_FILES).length, NULL);
-    wchar_t *path = tinyfd_openFileDialogW(title, NULL, sizeof(filter_params) / sizeof(filter_params[0]), filter_params, descr, false);
+    const wchar_t *path = tinyfd_openFileDialogW(title, NULL, sizeof(filter_params) / sizeof(filter_params[0]), filter_params, descr, false);
     free(title);
     free(descr);
     char *new_magick = toUTF8(path, 0, NULL);
@@ -490,7 +490,7 @@ void ChangeOutputPath(Nob_String_Builder *outputFile) {
 #ifdef _WIN32
     wchar_t *title = fromUTF8(i18n(AS_TEXT_OUTPUT_PATH).chars, i18n(AS_TEXT_OUTPUT_PATH).length, NULL);
     wchar_t *descr = fromUTF8(i18n(AS_TEXT_IMAGE_FILES).chars, i18n(AS_TEXT_IMAGE_FILES).length, NULL);
-    wchar_t *path = tinyfd_saveFileDialogW(title, NULL, sizeof(filter_params) / sizeof(filter_params[0]), filter_params, descr);
+    const wchar_t *path = tinyfd_saveFileDialogW(title, NULL, sizeof(filter_params) / sizeof(filter_params[0]), filter_params, descr);
     free(title);
     free(descr);
     char *output_path = toUTF8(path, 0, NULL);
@@ -516,7 +516,7 @@ void ChangeOutputPath(Nob_String_Builder *outputFile) {
 void SetTempDir(Nob_String_Builder *sb) {
 #ifdef _WIN32
     wchar_t *title = fromUTF8(i18n(AS_TEXT_TEMP_FILES).chars, i18n(AS_TEXT_TEMP_FILES).length, NULL);
-    wchar_t *path = tinyfd_selectFolderDialogW(title, NULL);
+    const wchar_t *path = tinyfd_selectFolderDialogW(title, NULL);
     free(title);
     char *output_path = toUTF8(path, 0, NULL);
 #else // POSIX
@@ -539,11 +539,9 @@ void SetTempDir(Nob_String_Builder *sb) {
     }
 }
 
+#ifndef _WIN32
 // https://gitlab.com/camconn/fontconfig-example
-int defaultFont(char** res) {
-#ifdef _WIN32
-    *res = ".\\font.ttf";
-#else
+int defaultFont(char **res) {
     FcConfig*       conf;
     FcFontSet*      fs;
     FcObjectSet*    os = 0;
@@ -593,7 +591,7 @@ int defaultFont(char** res) {
             font = FcPatternFilter(fs->fonts[0], os);
 
             FcPatternGet(font, FC_FILE, 0, &v);
-            char* filepath = (char*)v.u.f;
+            const char *filepath = (char*)v.u.f;
             *res = strdup(filepath);
             FcPatternDestroy(font);
         }
@@ -604,10 +602,10 @@ int defaultFont(char** res) {
 
     if (os)
         FcObjectSetDestroy(os);
-#endif // _WIN32
 
     return 0;
 }
+#endif // _WIN32
 
 int8_t scrollDirection(Vector2 scrollDelta) {
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) || scrollDelta.y > 0 || IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_UP))
@@ -617,14 +615,14 @@ int8_t scrollDirection(Vector2 scrollDelta) {
     return 0;
 }
 
-AppState GetAppState(AppData *data) {
+AppState GetAppState(const AppData *data) {
     AppState state = {
         .mousePosition = GetMousePosition(),
         .scrollDelta = GetMouseWheelMoveV(),
         .renderHeight = GetRenderHeight(),
         .renderWidth = GetRenderWidth(),
 #ifndef NO_SCALING
-        .scale = scale,
+        .scale = app_scale,
 #endif // NO_SCALING
         .language = language,
         .tabWidth = data->tabWidth,
@@ -634,13 +632,14 @@ AppState GetAppState(AppData *data) {
     return state;
 }
 
-bool VectorsEqual(Vector2 *this, Vector2 *that) {
+#ifdef LAZY_RENDER
+bool VectorsEqual(const Vector2 *this, const Vector2 *that) {
     if (this->x != that->x) return false;
     if (this->y != that->y) return false;
     return true;
 }
 
-bool StatesEqual(AppState *this, AppState *that) {
+bool StatesEqual(const AppState *this, const AppState *that) {
     if (!VectorsEqual(&this->mousePosition, &that->mousePosition)) return false;
     if (!VectorsEqual(&this->scrollDelta, &that->scrollDelta)) return false;
     if (this->renderWidth != that->renderWidth) return false;
@@ -652,6 +651,7 @@ bool StatesEqual(AppState *this, AppState *that) {
     if (this->tabWidth != that->tabWidth) return false;
     return true;
 }
+#endif // LAZY_RENDER
 
 bool UpdateResizes(resize_element_t *resizes, int8_t scroll) {
     bool scrolled = false;
@@ -789,7 +789,7 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, AppData *data, AppSt
         ChangeOutputPath(&data->params.outputFile);
         printf("aftir: %s\n", data->params.outputFile.items);
     } else if (released_s(i18n(AS_BUTTON_CHANGE_UI_COLOR)) || IsKeyPressed(KEY_C)) {
-        colorscheme = (colorscheme + 1) % APP_COLORSCHEMES;
+        app_colorscheme = (app_colorscheme + 1) % APP_COLORSCHEMES;
     } else if (released_s(i18n(AS_BUTTON_CHANGE_LANGUAGE)) || IsKeyPressed(KEY_I)) {
         language = (language + 1) % APP_LANGUAGES;
         DocumentsUpdate();
@@ -848,7 +848,7 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, AppData *data, AppSt
         // this should only be updated if no scroll was triggered
         Clay_UpdateScrollContainers(
             true, // drag scrolling
-            (Clay_Vector2) { scale * 2.0 * scrollDelta.x, 2.0 * scale * scrollDelta.y },
+            (Clay_Vector2) { app_scale * 2.0 * scrollDelta.x, 2.0 * app_scale * scrollDelta.y },
             GetFrameTime()
         );
     }
@@ -856,7 +856,7 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, AppData *data, AppSt
     return AppCreateLayout(data);
 }
 
-bool testMagick(char* magickBin) {
+bool testMagick(char *magickBin) {
     Nob_Cmd cmd = {0};
     bool res = true;
 
@@ -870,7 +870,7 @@ bool testMagick(char* magickBin) {
     return res;
 }
 
-void unloadFonts(Font *fonts) {
+void unloadFonts(const Font *fonts) {
     UnloadFont(fonts[FONT_ID_BODY_16]);
     UnloadFont(fonts[FONT_ID_SIDEBAR]);
     UnloadFont(fonts[FONT_ID_BUTTONS]);
@@ -878,28 +878,24 @@ void unloadFonts(Font *fonts) {
     UnloadFont(fonts[FONT_ID_WELCOME]);
 }
 
-static inline void reloadFonts(Font *fonts, char *fontpath, int codepoints[512]) {
+static inline void reloadFonts(Font *fonts, const char *fontpath, int codepoints[512]) {
     static bool ever_loaded = false;
     if (ever_loaded) {
         unloadFonts(fonts);
     }
-    fonts[FONT_ID_BODY_16] = LoadFontEx(fontpath, FONT_LOAD_SIZE * scale,    codepoints, 512);
-    fonts[FONT_ID_SIDEBAR] = LoadFontEx(fontpath, sidebar_font_size * scale, codepoints, 512);
-    fonts[FONT_ID_BUTTONS] = LoadFontEx(fontpath, button_font_size * scale,  codepoints, 512);
-    fonts[FONT_ID_DOCUMNT] = LoadFontEx(fontpath, document_font_size * scale,codepoints, 512);
-    fonts[FONT_ID_WELCOME] = LoadFontEx(fontpath, welcome_font_size * scale, codepoints, 512);
+    fonts[FONT_ID_BODY_16] = LoadFontEx(fontpath, FONT_LOAD_SIZE * app_scale,    codepoints, 512);
+    fonts[FONT_ID_SIDEBAR] = LoadFontEx(fontpath, sidebar_font_size * app_scale, codepoints, 512);
+    fonts[FONT_ID_BUTTONS] = LoadFontEx(fontpath, button_font_size * app_scale,  codepoints, 512);
+    fonts[FONT_ID_DOCUMNT] = LoadFontEx(fontpath, document_font_size * app_scale,codepoints, 512);
+    fonts[FONT_ID_WELCOME] = LoadFontEx(fontpath, welcome_font_size * app_scale, codepoints, 512);
     ever_loaded = true;
 }
 
 static inline Image LoadAppIcon(void) {
-#ifdef _WIN32
+#ifndef INSTALLED
     return LoadImage("icon.png");
 #else
-  #ifdef INSTALLED
     return LoadImage("/usr/share/dicolmumag/icon.png");
-  #else
-    return LoadImage("../resources/icon.png");
-  #endif // RELEASE
 #endif // _WIN32
 }
 
@@ -918,16 +914,14 @@ int SetAppFPS(void) {
 
 static inline void SetAppIcon(void) {
     Image icon = LoadAppIcon();
-#ifdef _WIN32
     ImageFormat(&icon, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
-#endif // _WIN32
     SetWindowIcon(icon);
     UnloadImage(icon);
 }
 
 int main(void) {
     srand(time(0)); // initialize random seed
-    char* title = "Dicolmumag — create collages with ease of creation, proceed to easily collide with creativity and proceedings";
+    const char *title = "Dicolmumag — create collages with ease of creation, proceed to easily collide with creativity and proceedings";
     // vsync makes resizes slower, we don't want this
     // but antialiasing is nice
     //
@@ -940,17 +934,21 @@ int main(void) {
     // Clay_Raylib_Initialize(1024, 768, title, FLAG_WINDOW_RESIZABLE | FLAG_MSAA_4X_HINT | FLAG_WINDOW_HIGHDPI);
 
     Font fonts[FONTS_IDS];
+#ifdef _WIN32
+    const char *fontpath = ".\\font.ttf";
+#else // POSIX
     char *fontpath = {0};
     if (defaultFont(&fontpath) == -1) {
         return -1;
     }
+#endif // _WIN32
     // https://stackoverflow.com/questions/73248125/raylibs-drawtextex-doesnt-display-unicode-characters
     int codepoints[512] = {0};
     for (int i = 0; i < 95; i++) codepoints[i] = 32 + i;
     for (int i = 0; i < 255; i++) codepoints[96 + i] = 0x400 + i;
 #ifndef NO_SCALING
-    scale = GetWindowScaleDPI().x;
-    fprintf(stderr, "new scale: %f\n", scale);
+    app_scale = GetWindowScaleDPI().x;
+    fprintf(stderr, "new scale: %f\n", app_scale);
 #endif // NO_SCALING
     reloadFonts(fonts, fontpath, codepoints);
     SetTextureFilter(fonts[FONT_ID_BODY_16].texture, TEXTURE_FILTER_BILINEAR);
@@ -971,7 +969,11 @@ int main(void) {
     }
 
     SetAppIcon();
+#ifdef LAZY_RENDER
     int fps = SetAppFPS();
+#else
+    SetAppFPS();
+#endif // LAZY_RENDER
 
     // Disable ESC to exit
     SetExitKey(KEY_NULL);
@@ -998,22 +1000,22 @@ int main(void) {
         BeginDrawing();
 #ifndef NO_SCALING
         if (IsKeyDown(KEY_LEFT_SHIFT) && IsKeyPressed(KEY_EQUAL)) {
-            scale += 0.1;
+            app_scale += 0.1;
             reloadFonts(fonts, fontpath, codepoints);
-            fprintf(stderr, "%f\n", scale);
+            fprintf(stderr, "%f\n", app_scale);
         } else if (IsKeyPressed(KEY_MINUS)) {
-            scale -= 0.1;
+            app_scale -= 0.1;
             reloadFonts(fonts, fontpath, codepoints);
-            fprintf(stderr, "%f\n", scale);
+            fprintf(stderr, "%f\n", app_scale);
         } else if (IsKeyPressed(KEY_EQUAL)) {
-            scale = 1;
+            app_scale = 1;
             reloadFonts(fonts, fontpath, codepoints);
-            fprintf(stderr, "%f\n", scale);
+            fprintf(stderr, "%f\n", app_scale);
         }
-        if (scale < 0.5) {
-            scale = 0.5;
-        } else if (scale > 10) {
-            scale = 10;
+        if (app_scale < 0.5) {
+            app_scale = 0.5;
+        } else if (app_scale > 10) {
+            app_scale = 10;
         }
 #endif // NO_SCALING
         // ClearBackground(BLACK);
