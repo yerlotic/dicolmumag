@@ -8,8 +8,8 @@
 const float scale = 1.0;
 #define S(x) (x)
 #else
-float scale = 1.0;
-#define S(x) ((int) (x) * scale)
+float app_scale = 1.0;
+#define S(x) ((int) (x) * app_scale)
 #endif // NO_SCALING
 
 const uint8_t FONT_ID_BODY_16 = 0;
@@ -41,7 +41,7 @@ static inline void HorizontalSeparator(void) {
     CLAY({ .layout = { .sizing = { .width = CLAY_SIZING_GROW(0) }}}) {}
 }
 
-static inline void RenderHeaderButton(Clay_String text) {
+void RenderHeaderButton(Clay_String text) {
     CLAY({
         .layout = {
             .padding = defaultPadding,
@@ -57,7 +57,7 @@ static inline void RenderHeaderButton(Clay_String text) {
         CLAY_TEXT(text, CLAY_TEXT_CONFIG({
             .fontId = FONT_ID_BUTTONS,
             .fontSize = S(button_font_size),
-            .textColor = colors[colorscheme][COLOR_TEXT],
+            .textColor = c10n(COLOR_TEXT),
             .textAlignment = CLAY_TEXT_ALIGN_CENTER,
             .wrapMode = CLAY_TEXT_WRAP_NONE,
         }));
@@ -66,7 +66,7 @@ static inline void RenderHeaderButton(Clay_String text) {
 
 #define RenderDropdownMenuItem(text, shortcut)                                 \
   do {                                                                         \
-    CLAY({.backgroundColor = colors[colorscheme][COLOR_SURFACE0],              \
+    CLAY({.backgroundColor = c10n(COLOR_SURFACE0),              \
           .cornerRadius = BUTTON_RADIUS,                                       \
           .id = CLAY_SID(text),                                                \
           .layout = {                                                          \
@@ -129,7 +129,7 @@ static inline void RenderColor(Clay_Color color) {
         .cornerRadius = CLAY_CORNER_RADIUS(S(radius)),
         .backgroundColor = color,
         .border = {
-            .color = TERNARY_COLOR(Clay_Hovered(), colors[colorscheme][COLOR_SURFACE1], colors[colorscheme][COLOR_SURFACE0]),
+            .color = TERNARY_COLOR(Clay_Hovered(), c10n(COLOR_SURFACE1), c10n(COLOR_SURFACE0)),
             .width = CLAY_BORDER_OUTSIDE(S(border_width))
         },
         .layout = {

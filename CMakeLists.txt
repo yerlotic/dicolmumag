@@ -101,4 +101,7 @@ set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}")
 set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}")
 
 message(CMAKE_C_FLAGS_RELEASE="${CMAKE_C_FLAGS_RELEASE}")
-message(CMAKE_C_FLAGS_DEBUG="${CMAKE_C_FLAGS_DEBUG}")
+message(CMAKE_C_FLAGS_DEBUG="${CMAKE_C_FLAGS_DEBUG} -ggdb")
+
+
+# execute_process("magick" "../resources/icon.png" "-resize" "128x128" "./icon.png")

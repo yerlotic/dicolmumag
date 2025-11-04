@@ -2,7 +2,7 @@
 #define COLORS_C
 #include "thirdparty/clay.h"
 
-int8_t colorscheme = 1;
+int8_t app_colorscheme = 1;
 
 CLAY_PACKED_ENUM {
     COLOR_ROSEWATER,
@@ -160,11 +160,11 @@ Clay_Color colors[APP_COLORSCHEMES][APP_COLORSCHEME_CAPACITY] = {
 
 #define ACTIVE_PERCENT 20
 
-#define BUTTON_COLOR TERNARY_COLOR(Clay_Hovered(), OPACITY(colors[colorscheme][COLOR_SURFACE1], ACTIVE_PERCENT), OPACITY(colors[colorscheme][COLOR_SURFACE1], 15))
-#define TOGGLE_COLOR TERNARY_COLOR(Clay_Hovered(), OPACITY(colors[colorscheme][COLOR_GREEN],    ACTIVE_PERCENT), OPACITY(colors[colorscheme][COLOR_SURFACE1], 15))
-#define COLOR_ACTIVE OPACITY(colors[colorscheme][COLOR_OVERLAY0], ACTIVE_PERCENT)
+#define BUTTON_COLOR TERNARY_COLOR(Clay_Hovered(), OPACITY(colors[app_colorscheme][COLOR_SURFACE1], ACTIVE_PERCENT), OPACITY(colors[app_colorscheme][COLOR_SURFACE1], 15))
+#define TOGGLE_COLOR TERNARY_COLOR(Clay_Hovered(), OPACITY(colors[app_colorscheme][COLOR_GREEN],    ACTIVE_PERCENT), OPACITY(colors[app_colorscheme][COLOR_SURFACE1], 15))
+#define COLOR_ACTIVE OPACITY(colors[app_colorscheme][COLOR_OVERLAY0], ACTIVE_PERCENT)
 
 // Colorization
-#define c10n(COLOR) colors[colorscheme][COLOR]
+#define c10n(COLOR) colors[app_colorscheme][COLOR]
 
 #endif // COLORS_C

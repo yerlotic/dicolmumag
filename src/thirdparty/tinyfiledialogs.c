@@ -628,14 +628,19 @@ wchar_t* tinyfd_mbcsTo16(char const* aMbcsString)
     int lSize;
 
     free(lMbcsString);
-    if (!aMbcsString) { lMbcsString = NULL; return NULL; }
-    lSize = sizeUtf16FromMbcs(aMbcsString);
-    if (lSize)
-    {
-    lMbcsString = (wchar_t*) malloc(lSize * sizeof(wchar_t));
-    lSize = MultiByteToWideChar(CP_ACP, 0, aMbcsString, -1, lMbcsString, lSize);
+    if (!aMbcsString) {
+      lMbcsString = NULL;
+      return NULL;
     }
-    else wcscpy(lMbcsString, L"");
+    lSize = sizeUtf16FromMbcs(aMbcsString);
+    if (lSize) {
+      lMbcsString = (wchar_t *)malloc(lSize * sizeof(wchar_t));
+      lSize =
+          MultiByteToWideChar(CP_ACP, 0, aMbcsString, -1, lMbcsString, lSize);
+    } else {
+        lMbcsString = (wchar_t *)malloc(sizeof(wchar_t));
+        wcscpy(lMbcsString, L"");
+    }
     return lMbcsString;
 }
 
@@ -1433,7 +1438,7 @@ wchar_t * tinyfd_inputBoxW(
         if (aTitle) wcscat(lDialogString, aTitle);
         wcscat(lDialogString, L"\",\"");
 
-        if (aDefaultInput && wcslen(aDefaultInput))
+        if (wcslen(aDefaultInput))
         {
                     wcscpy(lBuff, aDefaultInput);
                     replaceWchar(lBuff, L'\n', L' ');
@@ -1879,7 +1884,7 @@ wchar_t * tinyfd_openFileDialogW(
             lLengths[i] = wcslen(lPointers[i]);
             lPointers[i + 1] = lPointers[i] + lLengths[i] + 1;
             i++;
-        } while (lPointers[i][0] != L'\0' && i < MAX_MULTIPLE_FILES );
+        } while (i < MAX_MULTIPLE_FILES && lPointers[i][0] != L'\0');
 
         if (i > MAX_MULTIPLE_FILES)
         {

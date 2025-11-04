@@ -480,8 +480,14 @@ size_t cthreads_error_string(int error_code, char *buf, size_t length) {
                                 NULL, error_code, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&error_str, 0, NULL) - 1 - 1;
   #else
     const char *error_str = strerror(error_code);
-    const size_t error_str_len = strlen(error_str);
   #endif
+  if (error_str == NULL) {
+    buf[0] = '\0';
+    return 0;
+  }
+#ifndef _WIN32
+  const size_t error_str_len = strlen(error_str);
+#endif // _WIN32
 
   size_t final_len = length > error_str_len ? error_str_len : length - 1;
   strncpy(buf, (char *)error_str, final_len);
