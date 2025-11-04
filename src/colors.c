@@ -33,7 +33,7 @@ CLAY_PACKED_ENUM {
     COLOR_CRUST,
 };
 
-#define APP_COLORSCHEMES 4
+#define APP_COLORSCHEMES 5
 #define APP_COLORSCHEME_CAPACITY 26
 Clay_Color colors[APP_COLORSCHEMES][APP_COLORSCHEME_CAPACITY] = {
 {   // Latte
@@ -148,6 +148,34 @@ Clay_Color colors[APP_COLORSCHEMES][APP_COLORSCHEME_CAPACITY] = {
     {24,  24,  37,  255},  // #181825 - COLOR_MANTLE
     {17,  17,  27,  255},  // #11111b - COLOR_CRUST
 },
+{   // Breeze Light
+    {220, 138, 120, 255},  // #?????? - COLOR_ROSEWATER
+    {221, 120, 120, 255},  // #?????? - COLOR_FLAMINGO
+    {234, 118, 203, 255},  // #?????? - COLOR_PINK
+    {155, 89,  182, 255},  // #9b59b6 - COLOR_MAUVE
+    {218, 68,  83,  255},  // #da4453 - COLOR_RED
+    {230, 69,  83,  255},  // #?????? - COLOR_MAROON
+    {246, 116, 0,   255},  // #f67400 - COLOR_PEACH
+    {223, 142, 29,  255},  // #?????? - COLOR_YELLOW
+    {39,  174, 96,  255},  // #27ae60 - COLOR_GREEN
+    {23,  146, 153, 255},  // #?????? - COLOR_TEAL
+    {61,  174, 233, 255},  // #3daee9 - COLOR_SKY
+    {32,  159, 181, 255},  // #?????? - COLOR_SAPPHIRE
+    {41,  128, 185, 255},  // #2980b9 - COLOR_BLUE
+    {114, 135, 253, 255},  // #?????? - COLOR_LAVENDER
+    {0,   0,   0,   255},  // #000000 - COLOR_TEXT
+    {92,  95,  119, 255},  // #?????? - COLOR_SUBTEXT1
+    {108, 111, 133, 255},  // #?????? - COLOR_SUBTEXT0
+    {124, 127, 147, 255},  // #?????? - COLOR_OVERLAY2
+    {140, 143, 161, 255},  // #?????? - COLOR_OVERLAY1
+    {156, 160, 176, 255},  // #?????? - COLOR_OVERLAY0
+    {172, 176, 190, 255},  // #?????? - COLOR_SURFACE2
+    {188, 192, 204, 255},  // #?????? - COLOR_SURFACE1
+    {204, 208, 218, 255},  // #eff0f1 - COLOR_SURFACE0
+    {255, 255, 255, 255},  // #ffffff - COLOR_BASE
+    {230, 233, 239, 255},  // #?????? - COLOR_MANTLE
+    {220, 224, 232, 255},  // #?????? - COLOR_CRUST
+},
 };
 
 #define TERNARY_COLOR(condition, first, second) {\
@@ -160,11 +188,11 @@ Clay_Color colors[APP_COLORSCHEMES][APP_COLORSCHEME_CAPACITY] = {
 
 #define ACTIVE_PERCENT 20
 
-#define BUTTON_COLOR TERNARY_COLOR(Clay_Hovered(), OPACITY(colors[app_colorscheme][COLOR_SURFACE1], ACTIVE_PERCENT), OPACITY(colors[app_colorscheme][COLOR_SURFACE1], 15))
-#define TOGGLE_COLOR TERNARY_COLOR(Clay_Hovered(), OPACITY(colors[app_colorscheme][COLOR_GREEN],    ACTIVE_PERCENT), OPACITY(colors[app_colorscheme][COLOR_SURFACE1], 15))
-#define COLOR_ACTIVE OPACITY(colors[app_colorscheme][COLOR_OVERLAY0], ACTIVE_PERCENT)
-
 // Colorization
 #define c10n(COLOR) colors[app_colorscheme][COLOR]
+
+#define BUTTON_COLOR TERNARY_COLOR(Clay_Hovered(), OPACITY(c10n(COLOR_SURFACE1), ACTIVE_PERCENT), OPACITY(c10n(COLOR_SURFACE1), 15))
+#define TOGGLE_COLOR TERNARY_COLOR(Clay_Hovered(), OPACITY(c10n(COLOR_GREEN),    ACTIVE_PERCENT), OPACITY(c10n(COLOR_SURFACE1), 15))
+#define COLOR_ACTIVE OPACITY(c10n(COLOR_OVERLAY0), ACTIVE_PERCENT)
 
 #endif // COLORS_C
