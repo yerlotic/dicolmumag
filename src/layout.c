@@ -305,7 +305,7 @@ AppData AppDataInit(void) {
         .tabWidth = 260,
         .params = {
             .state = MAGICK_BEST_FIT | MAGICK_OPEN_ON_DONE | MAGICK_RESIZE,
-            .tip = rand() % (APP_TIPS - 1),
+            .tip = rand() % APP_TIPS,
             .outputFile = {0},
             .tempDir = {0},
             .magickBinary = {0},

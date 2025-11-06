@@ -68,6 +68,7 @@ CLAY_PACKED_ENUM {
 
     // Tips
     AS_MAGICK_TIP_SCROLL,
+    AS_MAGICK_TIP_COLOR_PICKER,
 
     // Misc
     AS_ADVANCED_SETTINGS_S,
@@ -150,6 +151,7 @@ static const Clay_String strings[APP_LANGUAGES][APP_STRINGS] = {
 
         // Tips
         APP_STRING(AS_MAGICK_TIP_SCROLL, "Scroll resize on \"x\" to change both values!"),
+        APP_STRING(AS_MAGICK_TIP_COLOR_PICKER, "Click on the color in "ADVANCED_SETTINGS_S" to launch the color picker"),
 
         // Misc
         APP_STRING(AS_ADVANCED_SETTINGS_S, ADVANCED_SETTINGS_S),
@@ -226,7 +228,9 @@ static const Clay_String strings[APP_LANGUAGES][APP_STRINGS] = {
 
         // Tips
         APP_STRING(AS_MAGICK_TIP_SCROLL, "Если скроллить на \"x\", то оба значения будут меняться"),
+        APP_STRING(AS_MAGICK_TIP_COLOR_PICKER, "Нажмите на цвет в Расширенных настройках, чтобы открыть выбор цвета"),
 
+        // Misc
         // Misc
         APP_STRING(AS_ADVANCED_SETTINGS_S, ADVANCED_SETTINGS_S),
         APP_STRING(AS_TEXT_OUTPUT_RES, "Итоговое разрешение"),
@@ -289,14 +293,14 @@ int errors[] = {
 
 typedef CLAY_PACKED_ENUM {
     MAGICK_TIP_SCROLL = 0,
-    MAGICK_TIP_YRMOM,
+    MAGICK_TIP_COLOR_PICKER,
     MAGICK_TIP_END
 } MagickTips;
-#define APP_TIPS MAGICK_TIP_END + 1
+#define APP_TIPS MAGICK_TIP_END
 
 int tips[APP_TIPS] = {
     [MAGICK_TIP_SCROLL] = AS_MAGICK_TIP_SCROLL,
-    [MAGICK_TIP_YRMOM] = AS_MAGICK_ERROR_OS_BULLSHIT,
+    [MAGICK_TIP_COLOR_PICKER] = AS_MAGICK_TIP_COLOR_PICKER,
 };
 
 // Internationalization
