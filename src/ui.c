@@ -8,8 +8,10 @@
 const float scale = 1.0;
 #define S(x) (x)
 #else
-float app_scale = 1.0;
-#define S(x) ((int) (x) * app_scale)
+// idk why, but fonts look bad at exact 1.5 scale
+#define APP_DEFAULT_SCALE 1.001
+float app_scale = 1.001;
+#define S(x) (int) ((x) * app_scale)
 #endif // NO_SCALING
 
 CLAY_PACKED_ENUM {
@@ -34,7 +36,7 @@ const uint8_t welcome_font_size = 80;
 #define SANE_TEXT_CONFIG(font_size, font_id) JUST_TEXT_CONFIG((font_size), (font_id), c10n(COLOR_TEXT))
 #define DEFAULT_TEXT  SANE_TEXT_CONFIG(document_font_size, FONT_ID_DOCUMENT)
 #define DISABLED_TEXT JUST_TEXT_CONFIG(document_font_size, FONT_ID_DOCUMENT, c10n(COLOR_OVERLAY0))
-#define BUTTON_TEXT   SANE_TEXT_CONFIG(buttons_font_size,   FONT_ID_BUTTONS)
+#define BUTTON_TEXT   SANE_TEXT_CONFIG(buttons_font_size,  FONT_ID_BUTTONS)
 
 Clay_Padding defaultPadding;
 
@@ -139,7 +141,7 @@ static inline void RenderColor(Clay_Color color) {
     }) {
         CLAY({
             .backgroundColor = color,
-            .cornerRadius = S(radius),
+            .cornerRadius = CLAY_CORNER_RADIUS(S(radius)),
             .layout = {
                 .sizing = {
                     .height = CLAY_SIZING_GROW(0),
