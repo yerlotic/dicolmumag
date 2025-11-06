@@ -802,11 +802,13 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, AppData *data, AppSt
             fprintf(stderr, "No file was made\n");
         }
     } else if (IsKeyDown(KEY_L)) {
-        data->tabWidth += 1;
+        if (data->tabWidth < appstate.renderWidth/2)
+            data->tabWidth += 1;
         fprintf(stderr, "MORE: %d\n", data->tabWidth);
     } else if (IsKeyDown(KEY_H)) {
         fprintf(stderr, "LESS: %d\n", data->tabWidth);
-        data->tabWidth -= 1;
+        if (data->tabWidth > 100)
+            data->tabWidth -= 1;
     }
 
     // Update only on interaction
@@ -871,11 +873,9 @@ bool testMagick(char *magickBin) {
 }
 
 void unloadFonts(const Font *fonts) {
-    UnloadFont(fonts[FONT_ID_BODY_16]);
-    UnloadFont(fonts[FONT_ID_SIDEBAR]);
-    UnloadFont(fonts[FONT_ID_BUTTONS]);
-    UnloadFont(fonts[FONT_ID_DOCUMNT]);
-    UnloadFont(fonts[FONT_ID_WELCOME]);
+    for (int font_id = 0; font_id < FONTS_IDS; font_id++) {
+        UnloadFont(fonts[font_id]);
+    }
 }
 
 static inline void reloadFonts(Font *fonts, const char *fontpath, int codepoints[512]) {
@@ -883,11 +883,11 @@ static inline void reloadFonts(Font *fonts, const char *fontpath, int codepoints
     if (ever_loaded) {
         unloadFonts(fonts);
     }
-    fonts[FONT_ID_BODY_16] = LoadFontEx(fontpath, FONT_LOAD_SIZE * app_scale,    codepoints, 512);
-    fonts[FONT_ID_SIDEBAR] = LoadFontEx(fontpath, sidebar_font_size * app_scale, codepoints, 512);
-    fonts[FONT_ID_BUTTONS] = LoadFontEx(fontpath, button_font_size * app_scale,  codepoints, 512);
-    fonts[FONT_ID_DOCUMNT] = LoadFontEx(fontpath, document_font_size * app_scale,codepoints, 512);
-    fonts[FONT_ID_WELCOME] = LoadFontEx(fontpath, welcome_font_size * app_scale, codepoints, 512);
+    fonts[FONT_ID_TITLE]    = LoadFontEx(fontpath, S(title_font_size),   codepoints, 512);
+    fonts[FONT_ID_BUTTONS]  = LoadFontEx(fontpath, S(buttons_font_size), codepoints, 512);
+    fonts[FONT_ID_SIDEBAR]  = LoadFontEx(fontpath, S(sidebar_font_size), codepoints, 512);
+    fonts[FONT_ID_DOCUMENT] = LoadFontEx(fontpath, S(document_font_size),codepoints, 512);
+    fonts[FONT_ID_WELCOME]  = LoadFontEx(fontpath, S(welcome_font_size), codepoints, 512);
     ever_loaded = true;
 }
 
@@ -909,6 +909,7 @@ int SetAppFPS(void) {
         target_fps = FALLBACK_FPS;
     }
     SetTargetFPS(target_fps);
+    fprintf(stderr, "Setting target fps to %d\n", target_fps);
     return target_fps;
 }
 
@@ -951,10 +952,9 @@ int main(void) {
     fprintf(stderr, "new scale: %f\n", app_scale);
 #endif // NO_SCALING
     reloadFonts(fonts, fontpath, codepoints);
-    SetTextureFilter(fonts[FONT_ID_BODY_16].texture, TEXTURE_FILTER_BILINEAR);
-    SetTextureFilter(fonts[FONT_ID_SIDEBAR].texture, TEXTURE_FILTER_BILINEAR);
-    SetTextureFilter(fonts[FONT_ID_BUTTONS].texture, TEXTURE_FILTER_BILINEAR);
-    SetTextureFilter(fonts[FONT_ID_DOCUMNT].texture, TEXTURE_FILTER_BILINEAR);
+    for (int font_id = 0; font_id < FONTS_IDS; font_id++) {
+        SetTextureFilter(fonts[font_id].texture, TEXTURE_FILTER_POINT);
+    }
 
     uint64_t clayRequiredMemory = Clay_MinMemorySize();
     Clay_Arena clayMemory = Clay_CreateArenaWithCapacityAndMemory(clayRequiredMemory, malloc(clayRequiredMemory));

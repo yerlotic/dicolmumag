@@ -276,7 +276,7 @@ void RenderFlag(Clay_String text,
 
         CLAY_TEXT(text, CLAY_TEXT_CONFIG({
             .fontId = FONT_ID_BUTTONS,
-            .fontSize = S(button_font_size),
+            .fontSize = S(buttons_font_size),
             .textColor = c10n(COLOR_TEXT),
             .textAlignment = CLAY_TEXT_ALIGN_CENTER,
             .wrapMode = CLAY_TEXT_WRAP_NONE,
@@ -476,7 +476,7 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
                                 CLAY_TEXT(i18n(AS_BUTTON_QUIT), BUTTON_TEXT);
                                 HorizontalSeparator();
                                 CLAY_TEXT(CLAY_STRING("Ctrl-Q"),
-                                        CLAY_TEXT_CONFIG({ .fontId = FONT_ID_BUTTONS, .fontSize = S(button_font_size), .textColor = c10n(COLOR_OVERLAY0) }));
+                                        CLAY_TEXT_CONFIG({ .fontId = FONT_ID_BUTTONS, .fontSize = S(buttons_font_size), .textColor = c10n(COLOR_OVERLAY0) }));
                             }
                         }
                     }
@@ -492,7 +492,7 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
                 CLAY({.id = CLAY_ID(ID_INPUT_FILE)}) {CLAY_TEXT(CLAY_SB_STRING(data->params.outputFile), DEFAULT_TEXT);}
             } else {
                 CLAY({.id = CLAY_ID(ID_ERROR)}) {
-                    CLAY_TEXT(i18n(errors[data->errorIndex]), CLAY_TEXT_CONFIG({ .fontId = FONT_ID_BODY_16, .fontSize = S(document_font_size), .textColor = c10n(COLOR_RED) }));
+                    CLAY_TEXT(i18n(errors[data->errorIndex]), CLAY_TEXT_CONFIG({ .fontId = FONT_ID_DOCUMENT, .fontSize = S(document_font_size), .textColor = c10n(COLOR_RED) }));
                 }
             }
             HorizontalSeparator();
@@ -589,7 +589,7 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
                 if (data->selectedDocumentIndex != MAGICK_WELCOME_PAGE_I) {
                     Document selectedDocument = documents.documents[data->selectedDocumentIndex];
                     CLAY_TEXT(selectedDocument.title, CLAY_TEXT_CONFIG({
-                        .fontId = FONT_ID_BODY_16,
+                        .fontId = FONT_ID_TITLE,
                         .fontSize = S(title_font_size),
                         .textColor = c10n(COLOR_TEXT)
                     }));
@@ -696,7 +696,7 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
                         CLAY({.layout = {.layoutDirection = CLAY_LEFT_TO_RIGHT, .childGap = S(8), .padding = {.left = S(8)}}}) {
                             CLAY_TEXT(i18n(AS_TEXT_CURRENT), BUTTON_TEXT);
                             if (data->params.tempDir.count == 0)
-                                CLAY_TEXT(i18n(AS_TEXT_TEMP_DEFAULT), CLAY_TEXT_CONFIG({ .fontId = FONT_ID_BUTTONS, .fontSize = S(button_font_size), .textColor = c10n(COLOR_OVERLAY0) }));
+                                CLAY_TEXT(i18n(AS_TEXT_TEMP_DEFAULT), CLAY_TEXT_CONFIG({ .fontId = FONT_ID_BUTTONS, .fontSize = S(buttons_font_size), .textColor = c10n(COLOR_OVERLAY0) }));
                             else
                                 CLAY_TEXT(CLAY_SB_STRING(data->params.tempDir), BUTTON_TEXT);
                         }
@@ -747,13 +747,13 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
                             .aspectRatio = (float) data->params.logo.width / data->params.logo.height,
                         });
                         CLAY_TEXT(i18n(AS_TEXT_SLOGAN), CLAY_TEXT_CONFIG({
-                            .fontId = FONT_ID_DOCUMNT,
+                            .fontId = FONT_ID_DOCUMENT,
                             .fontSize = S(document_font_size),
                             .textColor = c10n(COLOR_TEXT),
                             .textAlignment = CLAY_TEXT_ALIGN_CENTER,
                         }));
                         CLAY_TEXT(i18n(tips[data->params.tip]), CLAY_TEXT_CONFIG({
-                            .fontId = FONT_ID_DOCUMNT,
+                            .fontId = FONT_ID_DOCUMENT,
                             .fontSize = S(document_font_size),
                             .textColor = c10n(COLOR_TEXT),
                             .textAlignment = CLAY_TEXT_ALIGN_CENTER,
@@ -773,7 +773,7 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
                             .cornerRadius = BUTTON_RADIUS,
                         }) {
                             CLAY_TEXT(start, CLAY_TEXT_CONFIG({
-                                .fontId = FONT_ID_DOCUMNT,
+                                .fontId = FONT_ID_DOCUMENT,
                                 .fontSize = S(document_font_size),
                                 .textColor = c10n(COLOR_TEXT),
                                 .textAlignment = CLAY_TEXT_ALIGN_CENTER,

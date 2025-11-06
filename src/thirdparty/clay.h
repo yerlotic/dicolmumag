@@ -2901,6 +2901,7 @@ void Clay__CalculateFinalLayout(void) {
                                 }
                                 if (textElementConfig->textAlignment == CLAY_TEXT_ALIGN_CENTER) {
                                     offset /= 2;
+                                    offset = (int) offset;
                                 }
                                 Clay__AddRenderCommand(CLAY__INIT(Clay_RenderCommand) {
                                     .boundingBox = { currentElementBoundingBox.x + offset, currentElementBoundingBox.y + yPosition, wrappedLine->dimensions.width, wrappedLine->dimensions.height },
