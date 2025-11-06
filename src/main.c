@@ -948,7 +948,7 @@ int main(void) {
     for (int i = 0; i < 95; i++) codepoints[i] = 32 + i;
     for (int i = 0; i < 255; i++) codepoints[96 + i] = 0x400 + i;
 #ifndef NO_SCALING
-    app_scale = GetWindowScaleDPI().x;
+    app_scale = GetWindowScaleDPI().x + 0.001;
     fprintf(stderr, "new scale: %f\n", app_scale);
 #endif // NO_SCALING
     reloadFonts(fonts, fontpath, codepoints);
@@ -1008,7 +1008,7 @@ int main(void) {
             reloadFonts(fonts, fontpath, codepoints);
             fprintf(stderr, "%f\n", app_scale);
         } else if (IsKeyPressed(KEY_EQUAL)) {
-            app_scale = 1;
+            app_scale = APP_DEFAULT_SCALE;
             reloadFonts(fonts, fontpath, codepoints);
             fprintf(stderr, "%f\n", app_scale);
         }

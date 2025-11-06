@@ -511,7 +511,6 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
         CLAY({
             .id = CLAY_ID(ID_LOWER_CONTENT),
             .layout = { .sizing = layoutExpand, .childGap = S(16) },
-
         }) {
             CLAY({
                 .id = CLAY_ID(ID_SIDEBAR),
