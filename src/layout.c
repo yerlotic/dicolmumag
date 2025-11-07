@@ -409,7 +409,6 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
     defaultPadding = (Clay_Padding) { S(16), S(16), S(8), S(8) };
     // Build UI here
     CLAY({
-        .id = CLAY_ID(ID_OUTER),
         .backgroundColor = c10n(COLOR_MANTLE),
         .layout = {
             .layoutDirection = CLAY_TOP_TO_BOTTOM,
@@ -419,7 +418,7 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
         }
     }) {
         // Child elements go inside braces
-        CLAY({ .id = CLAY_ID(ID_HEADER),
+        CLAY({
             .layout = {
                 .sizing = {
                     .height = CLAY_SIZING_FIXED(S(60)),
@@ -512,7 +511,6 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
             CLAY({
                 .layout = { .padding = defaultPadding},
                 .backgroundColor = BUTTON_COLOR,
-                .id = CLAY_ID(ID_RESIZE_ALL),
                 .cornerRadius = BUTTON_RADIUS,
             }) {
                 CLAY_TEXT(i18n(AS_SECTION_RESIZE), BUTTON_TEXT);
@@ -522,11 +520,9 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
         }
 
         CLAY({
-            .id = CLAY_ID(ID_LOWER_CONTENT),
             .layout = { .sizing = layoutExpand, .childGap = S(16) },
         }) {
             CLAY({
-                .id = CLAY_ID(ID_SIDEBAR),
                 .backgroundColor = contentBackgroundColor,
                 .clip = { .vertical = true, .childOffset = Clay_GetScrollOffset() },
                 .layout = {
@@ -583,7 +579,7 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
                 }
             }
 
-            CLAY({ .id = CLAY_ID(ID_MAIN),
+            CLAY({
                 .backgroundColor = contentBackgroundColor,
                 .clip = { .vertical = true, /*.horizontal = true,*/ .childOffset = Clay_GetScrollOffset() },
                 .layout = {
@@ -611,7 +607,6 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
 
                 if (data->selectedDocumentIndex == MAGICK_ADVANCED_SETTINGS) {
                     CLAY({
-                        .id = CLAY_ID(ID_COLOR_SETTINGS),
                         .layout = {
                             .layoutDirection = CLAY_LEFT_TO_RIGHT,
                         },
@@ -622,7 +617,6 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
                             Clay_OnHover(HandleActiveColor, (intptr_t)&data->params);
                         }
                         CLAY({
-                            .id = CLAY_ID(ID_COLOR_SETTINGS_RGB),
                             .layout = {
                                 .layoutDirection = CLAY_TOP_TO_BOTTOM,
                                 .sizing = {
@@ -641,7 +635,6 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
                             CLAY_TEXT(i18n(AS_TEXT_TRANSPARENT_BG_WARNING), DEFAULT_TEXT);
                     }
                     CLAY({
-                        .id = CLAY_ID(ID_GRAVITY_SETTINGS),
                         .layout = {
                             .childGap = S(8),
                             .layoutDirection = CLAY_TOP_TO_BOTTOM,
@@ -650,10 +643,9 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
                         CLAY({.layout = {.layoutDirection = CLAY_LEFT_TO_RIGHT, .childGap = S(8)}}) {
                             CLAY_TEXT(i18n(AS_SECTION_GRAVITY), DEFAULT_TEXT);
                             CLAY({
-                                    .backgroundColor = BUTTON_COLOR,
-                                    .id = CLAY_ID(ID_GRAVITY),
-                                    .cornerRadius = BUTTON_RADIUS,
-                                    }) {
+                                .backgroundColor = BUTTON_COLOR,
+                                .cornerRadius = BUTTON_RADIUS,
+                            }) {
                                 CLAY({ .id = CLAY_ID(ID_GRAVITY_SELECTION), .layout = { .padding = defaultPadding } }) {
                                     CLAY_TEXT(CLAY_DYNAMIC_STRING(data->params.gravity.values[data->params.gravity.selected]), BUTTON_TEXT);
                                 }
@@ -661,7 +653,7 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
                         }
                     }
 
-                    CLAY({.id = CLAY_ID(ID_RESIZE_SETTINGS), .layout = {.layoutDirection = CLAY_TOP_TO_BOTTOM, .childGap = 8}}) {
+                    CLAY({.layout = {.layoutDirection = CLAY_TOP_TO_BOTTOM, .childGap = 8}}) {
                         CLAY({.layout = {.layoutDirection = CLAY_LEFT_TO_RIGHT, .childGap = S(8)}}) {
                             StatedText(i18n(AS_SECTION_RESIZE_EACH), data->params.state & MAGICK_RESIZE);
                             RenderResize(&data->params.resizes[RESIZES_INPUT], ID_RESIZE_INPUT);
@@ -677,7 +669,6 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
                     }
 
                     CLAY({
-                        .id = CLAY_ID(ID_OUTPUT_SETTINGS),
                         .layout = {
                             .childGap = S(8),
                             .layoutDirection = CLAY_TOP_TO_BOTTOM,
@@ -702,7 +693,6 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
                     }
 
                     CLAY({
-                        .id = CLAY_ID(ID_LOCATION_SETTINGS),
                         .layout = {
                             .childGap = S(8),
                             .layoutDirection = CLAY_TOP_TO_BOTTOM,
@@ -731,7 +721,6 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
                     }
                 } else if (data->selectedDocumentIndex == MAGICK_WELCOME_PAGE_I) {
                     CLAY({
-                        .id = CLAY_ID(ID_WELCOME),
                         .layout = {
                             .childGap = S(20),
                             .padding = CLAY_PADDING_ALL(S(20)),

@@ -100,6 +100,7 @@ bool testMagick(char *magickBin);
 
 void cthreads_thread_ensure_cancelled(struct cthreads_thread thread, Nob_ProcStatus *running) {
     if (*running == PROCESS_RUNNING) {
+        fprintf(stderr, "thread: %ld\n", thread);
         cthreads_thread_cancel(thread);
         *running = PROCESS_WAS_TERMINATED;
     }
@@ -707,6 +708,7 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, AppData *data, AppSt
         if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("r")))) {
             data->params.color.r += scroll;
             sprintf(data->params.color_str.r, "%d", data->params.color.r);
+            scrolled = true;
         } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("g")))) {
             data->params.color.g += scroll;
             sprintf(data->params.color_str.g, "%d", data->params.color.g);
@@ -723,7 +725,7 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, AppData *data, AppSt
             if (data->params.color.a > 100) data->params.color.a = 0;  // wrap
             sprintf(data->params.color_str.a, "%d", data->params.color.a);
             scrolled = true;
-        } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("GravitySelection")))) {
+        } else if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING(ID_GRAVITY_SELECTION)))) {
             data->params.gravity.selected -= scroll;
             // guess what
             // we dont have a tool for that called %

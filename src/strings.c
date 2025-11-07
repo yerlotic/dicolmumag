@@ -244,29 +244,15 @@ static const Clay_String strings[APP_LANGUAGES][APP_STRINGS] = {
 };
 
 // ID for elements
-#define ID_COLOR_SETTINGS "ColorSettings"
-#define ID_COLOR_SETTINGS_RGB "ColorSettingsRGB"
 #define ID_ERROR "error"
 #define ID_FILE_BUTTON "FileButton"
 #define ID_FILE_MENU "FileMenu"
-#define ID_GRAVITY "Gravity"
-#define ID_GRAVITY_SELECTION "GravitySelection"
-#define ID_GRAVITY_SETTINGS "GravitySettings"
-#define ID_HEADER "HeaderBar"
 #define ID_INPUT_FILE "file"
-#define ID_LOCATION_SETTINGS "LocationSettings"
-#define ID_LOWER_CONTENT "LowerContent"
-#define ID_MAIN "MainContent"
-#define ID_OUTER "OuterContainer"
-#define ID_OUTPUT_SETTINGS "OutputSettings"
 #define ID_QUIT "Quit"
-#define ID_RESIZE_ALL "ResizeAll"
+#define ID_GRAVITY_SELECTION "GravitySelection"
 #define ID_RESIZE_INPUT "Resize"
 #define ID_RESIZE_OUTPUT "OutputDimentions"
 #define ID_RESIZE_OUTPUT_MARGIN "OutputMargin"
-#define ID_RESIZE_SETTINGS "ResizeSettings"
-#define ID_SIDEBAR "Sidebar"
-#define ID_WELCOME "MagickWelcome"
 #define ID_BUTTON_SELECT_MAGICK "MagickBinary"
 
 typedef CLAY_PACKED_ENUM {
