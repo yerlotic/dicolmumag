@@ -277,8 +277,8 @@ MagickStatus RunMagick(magick_params_t *params) {
     nob_cmd_append(&cmd, "-gravity", params->gravity.values[params->gravity.selected]);
     nob_cmd_append(&cmd, ashlar_path.items);
 
-    MagickStatus res = MAGICK_ERROR_OK;
     fprintf(stderr, "Staring magick\n");
+    MagickStatus res = MAGICK_ERROR_RUNNING;
 #ifdef NO_THREADING
     if (!nob_cmd_run_sync(cmd)) {
         res = MAGICK_ERROR_PROCESS_CRASHED;
