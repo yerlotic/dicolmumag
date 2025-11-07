@@ -42,10 +42,10 @@ App for creating collages with [ImageMagick](https://imagemagick.org)
 - [x] Specify output resolution and margins
 - [x] Tell the user that output resolution is disabled or not
 - [x] Toggle sections in settings directly
+- [x] Indicate that Magick is running
+- [x] Tips
 - [ ] Specify maximum images per output
 - [ ] Add labels to images
-- [ ] Indicate that Magick is running
-- [x] Tips
 
 ## Requirements
 

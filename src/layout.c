@@ -502,9 +502,17 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
             HorizontalSeparator();
             if (i18n(errors[data->errorIndex]).chars[0] == '\0') {
                 CLAY({.id = CLAY_ID(ID_INPUT_FILE)}) {CLAY_TEXT(CLAY_SB_STRING(data->params.outputFile), DEFAULT_TEXT);}
+            } else if (data->errorIndex == MAGICK_ERROR_RUNNING) {
+                CLAY({.id = CLAY_ID(ID_ERROR)}) {
+                  CLAY_TEXT(i18n(errors[data->errorIndex]),
+                      JUST_TEXT_CONFIG(S(document_font_size), FONT_ID_DOCUMENT, c10n(COLOR_BLUE))
+                  );
+                }
             } else {
                 CLAY({.id = CLAY_ID(ID_ERROR)}) {
-                    CLAY_TEXT(i18n(errors[data->errorIndex]), CLAY_TEXT_CONFIG({ .fontId = FONT_ID_DOCUMENT, .fontSize = S(document_font_size), .textColor = c10n(COLOR_RED) }));
+                  CLAY_TEXT(i18n(errors[data->errorIndex]),
+                      JUST_TEXT_CONFIG(S(document_font_size), FONT_ID_DOCUMENT, c10n(COLOR_RED))
+                  );
                 }
             }
             HorizontalSeparator();
