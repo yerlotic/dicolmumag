@@ -1871,6 +1871,131 @@ bool nob_set_current_dir(const char *path)
 #endif // _WIN32
 }
 
+
+/////////////// Dicolmumag additions ///////
+
+#ifdef _WIN32
+#define NOB_BLACKHOLE "nul"
+#define NOB_LAUNCHER "explorer.exe"
+#else
+#define NOB_BLACKHOLE "/dev/null"
+#define NOB_LAUNCHER  "xdg-open"
+#endif // _WIN32
+
+typedef enum __attribute__((__packed__)) Nob_ProcStatus {
+    PROCESS_RUNNING,
+    PROCESS_EXITED_OK,
+    PROCESS_CRASHED,
+    PROCESS_WAS_TERMINATED,
+    PROCESS_OS_BULLSHIT, // OS tells that something went bad
+} Nob_ProcStatus;
+
+// Don't forget to free the thing itself if u need to
+#define nob_free_all(to_free) do {                                  \
+    for (size_t i = 0; i < (to_free)->count; i++) {                \
+        fprintf(stderr, "Freeing: \"%s\"\n", (to_free)->items[i]); \
+        free((void *) (to_free)->items[i]);                        \
+    }                                                            \
+} while (0)
+
+#define nob_cmd_run_async_silent(cmd) do { \
+    Nob_Fd blackhole = nob_fd_open_for_write(NOB_BLACKHOLE); \
+    nob_cmd_run_async_redirect(cmd, (Nob_Cmd_Redirect) {.fdout = &blackhole, .fderr = &blackhole}); \
+} while(0)
+
+void nob_kill(Nob_Proc *proc) {
+    fprintf(stderr, "nob_kill\n");
+    if (*proc == NOB_INVALID_PROC) return;
+    fprintf(stderr, "\033[31mkilling\033[0m\n");
+#ifdef _WIN32
+    TerminateProcess(*proc, 69);
+    WaitForSingleObject(*proc, INFINITE);
+#else
+    kill(*proc, SIGKILL);
+#endif // _WIN32
+    // *proc = NOB_INVALID_PROC;
+    // Dont do that ^ cuz status should be collected
+    // so processes don't become zombies
+}
+
+Nob_ProcStatus nob_proc_running(Nob_Proc proc) {
+    if (proc == NOB_INVALID_PROC) {
+        fprintf(stderr, "Got invalid proc\n");
+        return PROCESS_EXITED_OK;
+    }
+#ifdef _WIN32
+    // LPDWORD exit_code = 0;
+    // BOOL success = GetExitCodeProcess(proc, exit_code);
+    // if (!success) {
+    //     fprintf(stderr, "Could not get exit code of a process: %s\n", nob_win32_error_message(GetLastError()));
+    //     CloseHandle(proc);
+    //     return PROCESS_OS_BULLSHIT;
+    // }
+    // fprintf(stderr, "Code: %p\n", exit_code);
+    // if (exit_code == NULL) {
+    //     return PROCESS_RUNNING;
+    // }
+    //
+    // fprintf(stderr, "Returning STILL_ACTIVE\n");
+    // if (*exit_code == STILL_ACTIVE)
+    //     return PROCESS_RUNNING;
+    // fprintf(stderr, "Returning PROCESS_CRASHED\n");
+    // CloseHandle(proc);
+    // return PROCESS_CRASHED;
+
+    if (WaitForSingleObject(proc, 0) == WAIT_TIMEOUT)
+        return PROCESS_RUNNING;
+
+    DWORD exit_status;
+    if (GetExitCodeProcess(proc, &exit_status) == 0) {
+        fprintf(stderr, "Could not get process exit code. System Error Code: %s\n", nob_win32_error_message(GetLastError()));
+        CloseHandle(proc);
+        return PROCESS_OS_BULLSHIT;
+    }
+
+    if (exit_status != 0) {
+        fprintf(stderr, "Command exited with exit code %lu\n", exit_status);
+        CloseHandle(proc);
+        if (exit_status == 69)
+            return PROCESS_WAS_TERMINATED;
+        return PROCESS_CRASHED;
+    }
+
+    CloseHandle(proc);
+    return PROCESS_EXITED_OK;
+
+#else
+
+    int status;
+    pid_t return_pid = waitpid(proc, &status, WNOHANG);
+    if (return_pid == -1) {
+        fprintf(stderr, "whoa! a crash in waitpid or sth\n");
+        return PROCESS_CRASHED;
+    } else if (return_pid == 0) {
+        /* child is still running */
+        return PROCESS_RUNNING;
+    } else if (return_pid == proc) {
+        // child stopped running
+        if (WIFEXITED(status)) {
+            int exit_status = WEXITSTATUS(status);
+            if (exit_status == 0) {
+                return PROCESS_EXITED_OK;
+            } else {
+                fprintf(stderr, "command exited with exit code %d:", exit_status);
+                return PROCESS_CRASHED;
+            }
+        }
+
+        if (WIFSIGNALED(status)) {
+            fprintf(stderr, "command process was terminated by signal %d", WTERMSIG(status));
+            return PROCESS_WAS_TERMINATED;
+        }
+    }
+#endif // _WIN32
+    fprintf(stderr, "Reached the end of nob_proc_running\n");
+    return PROCESS_CRASHED;
+}
+
 #ifdef _WIN32
 // Taken from: https://gist.github.com/xebecnan/6d070c93fb69f40c3673
 char* toUTF8( const wchar_t* src,
@@ -1914,6 +2039,7 @@ wchar_t* fromUTF8(
 	return output_buffer;
 }
 #endif // _WIN32
+/////////////// Dicolmumag additions end ///////
 
 // minirent.h SOURCE BEGIN ////////////////////////////////////////
 #ifdef _WIN32
