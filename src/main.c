@@ -95,128 +95,15 @@ void HandleClayErrors(Clay_ErrorData errorData) {
     printf("[CLAY] [ERROR] %s\n", errorData.errorText.chars);
 }
 
-// Don't forget to free the thing itself if u need to
-#define nob_free_all(to_free) do {                                  \
-    for (size_t i = 0; i < (to_free)->count; i++) {                \
-        fprintf(stderr, "Freeing: \"%s\"\n", (to_free)->items[i]); \
-        free((void *) (to_free)->items[i]);                        \
-    }                                                            \
-} while (0)
-
 // Declarations
 bool testMagick(char *magickBin);
 
-void nob_kill(Nob_Proc *proc) {
-    fprintf(stderr, "nob_kill\n");
-    if (*proc == NOB_INVALID_PROC) return;
-    fprintf(stderr, "\033[31mkilling\033[0m\n");
-#ifdef _WIN32
-    TerminateProcess(*proc, 69);
-    WaitForSingleObject(*proc, INFINITE);
-#else
-    kill(*proc, SIGKILL);
-#endif // _WIN32
-    // *proc = NOB_INVALID_PROC;
-    // Dont do that ^ cuz status should be collected
-    // so processes don't become zombies
-}
-
-ProcStatus nob_proc_running(Nob_Proc proc) {
-    if (proc == NOB_INVALID_PROC) {
-        fprintf(stderr, "Got invalid proc\n");
-        return PROCESS_EXITED_OK;
-    }
-#ifdef _WIN32
-    // LPDWORD exit_code = 0;
-    // BOOL success = GetExitCodeProcess(proc, exit_code);
-    // if (!success) {
-    //     fprintf(stderr, "Could not get exit code of a process: %s\n", nob_win32_error_message(GetLastError()));
-    //     CloseHandle(proc);
-    //     return PROCESS_OS_BULLSHIT;
-    // }
-    // fprintf(stderr, "Code: %p\n", exit_code);
-    // if (exit_code == NULL) {
-    //     return PROCESS_RUNNING;
-    // }
-    //
-    // fprintf(stderr, "Returning STILL_ACTIVE\n");
-    // if (*exit_code == STILL_ACTIVE)
-    //     return PROCESS_RUNNING;
-    // fprintf(stderr, "Returning PROCESS_CRASHED\n");
-    // CloseHandle(proc);
-    // return PROCESS_CRASHED;
-
-    if (WaitForSingleObject(proc, 0) == WAIT_TIMEOUT)
-        return PROCESS_RUNNING;
-
-    DWORD exit_status;
-    if (GetExitCodeProcess(proc, &exit_status) == 0) {
-        fprintf(stderr, "Could not get process exit code. System Error Code: %s\n", nob_win32_error_message(GetLastError()));
-        CloseHandle(proc);
-        return PROCESS_OS_BULLSHIT;
-    }
-
-    if (exit_status != 0) {
-        fprintf(stderr, "Command exited with exit code %lu\n", exit_status);
-        CloseHandle(proc);
-        if (exit_status == 69)
-            return PROCESS_WAS_TERMINATED;
-        return PROCESS_CRASHED;
-    }
-
-    CloseHandle(proc);
-    return PROCESS_EXITED_OK;
-
-#else
-
-    int status;
-    pid_t return_pid = waitpid(proc, &status, WNOHANG);
-    if (return_pid == -1) {
-        fprintf(stderr, "whoa! a crash in waitpid or sth\n");
-        return PROCESS_CRASHED;
-    } else if (return_pid == 0) {
-        /* child is still running */
-        return PROCESS_RUNNING;
-    } else if (return_pid == proc) {
-        // child stopped running
-        if (WIFEXITED(status)) {
-            int exit_status = WEXITSTATUS(status);
-            if (exit_status == 0) {
-                return PROCESS_EXITED_OK;
-            } else {
-                fprintf(stderr, "command exited with exit code %d:", exit_status);
-                return PROCESS_CRASHED;
-            }
-        }
-
-        if (WIFSIGNALED(status)) {
-            fprintf(stderr, "command process was terminated by signal %d", WTERMSIG(status));
-            return PROCESS_WAS_TERMINATED;
-        }
-    }
-#endif // _WIN32
-    fprintf(stderr, "Reached the end of nob_proc_running\n");
-    return PROCESS_CRASHED;
-}
-
-void cthreads_thread_ensure_cancelled(struct cthreads_thread thread, ProcStatus *running) {
+void cthreads_thread_ensure_cancelled(struct cthreads_thread thread, Nob_ProcStatus *running) {
     if (*running == PROCESS_RUNNING) {
         cthreads_thread_cancel(thread);
         *running = PROCESS_WAS_TERMINATED;
     }
 }
-
-#ifdef _WIN32
-#define BLACKHOLE "nul"
-#define LAUNCHER "explorer.exe"
-#else
-#define BLACKHOLE "/dev/null"
-#define LAUNCHER  "xdg-open"
-#endif // _WIN32
-#define nob_cmd_run_async_silent(cmd) do { \
-    Nob_Fd blackhole = nob_fd_open_for_write(BLACKHOLE); \
-    nob_cmd_run_async_redirect(cmd, (Nob_Cmd_Redirect) {.fdout = &blackhole, .fderr = &blackhole}); \
-} while(0)
 
 MagickStatus GetInputFiles(Nob_Cmd *inputFiles) {
     int allow_multiple_selects = true;
@@ -734,10 +621,10 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, AppData *data, AppSt
     Nob_Cmd cmd = {0};
 
     if (data->params.state & MAGICK_OPEN_ON_DONE && data->params.magickProc != NOB_INVALID_PROC) {
-        ProcStatus status = nob_proc_running(data->params.magickProc);
+        Nob_ProcStatus status = nob_proc_running(data->params.magickProc);
         if (status == PROCESS_EXITED_OK) {
             data->errorIndex = MAGICK_ERROR_OK;
-            nob_cmd_append(&cmd, LAUNCHER, data->params.outputFile.items);
+            nob_cmd_append(&cmd, NOB_LAUNCHER, data->params.outputFile.items);
             nob_cmd_run_async_silent(cmd);
             nob_cmd_free(cmd);
             cmd.count = 0;
@@ -759,7 +646,7 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, AppData *data, AppSt
         data->shouldClose = true;
         printf("close\n");
     } else if (released_s(i18n(AS_BUTTON_SUPPORT))) {
-        nob_cmd_append(&cmd, LAUNCHER, SUPPORT_URL);
+        nob_cmd_append(&cmd, NOB_LAUNCHER, SUPPORT_URL);
         nob_cmd_run_async_silent(cmd);
     } else if (released_s(i18n(AS_BUTTON_SELECT_IMAGES))) {
         GetInputFiles(&data->params.inputFiles);
@@ -795,7 +682,7 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, AppData *data, AppSt
         DocumentsUpdate();
     } else if (released_s(i18n(AS_BUTTON_OPEN_RESULT)) || IsKeyPressed(KEY_O)) {
         if (data->params.outputFile.items[0] != '\0') {
-            nob_cmd_append(&cmd, LAUNCHER, data->params.outputFile.items);
+            nob_cmd_append(&cmd, NOB_LAUNCHER, data->params.outputFile.items);
             nob_cmd_run_async_silent(cmd);
             nob_cmd_free(cmd);
         } else {

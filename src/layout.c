@@ -103,14 +103,6 @@ typedef struct gravity_t {
     uint8_t selected;
 } gravity_t;
 
-typedef CLAY_PACKED_ENUM ProcStatus {
-    PROCESS_RUNNING,
-    PROCESS_EXITED_OK,
-    PROCESS_CRASHED,
-    PROCESS_WAS_TERMINATED,
-    PROCESS_OS_BULLSHIT, // OS tells that something went bad
-} ProcStatus;
-
 #define resizes_len 3
 typedef struct magick_params_t {
     uint16_t state;
@@ -130,7 +122,7 @@ typedef struct magick_params_t {
 
     Nob_String_Builder magickBinary;
     Nob_Proc magickProc;
-    ProcStatus threadRunning;
+    Nob_ProcStatus threadRunning;
 } magick_params_t;
 
 typedef struct {
