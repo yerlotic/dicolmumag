@@ -183,7 +183,6 @@ static inline void HandleActiveColor(
     intptr_t userData
 ) {
     (void) elementId;
-    (void) userData;
     magick_params_t *params = (magick_params_t*)userData;
     rgba *color = &params->color;
     rgba_str *color_str = &params->color_str;
@@ -198,6 +197,28 @@ static inline void HandleActiveColor(
         color->b = aoResultRGB[2]; sprintf(color_str->b, "%d", color->b);
         fprintf(stderr, "new rgb: {%d, %d, %d}\n", color->r, color->g, color->b);
     }
+}
+
+static inline void HandleOutputRes(
+    Clay_ElementId elementId,
+    Clay_PointerData pointerData,
+    intptr_t userData
+) {
+    (void) elementId;
+    uint16_t *state = (uint16_t*)userData;
+    if (pointerData.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME)
+        *state ^= MAGICK_SET_RESOLUTION;
+}
+
+static inline void HandleResizes(
+    Clay_ElementId elementId,
+    Clay_PointerData pointerData,
+    intptr_t userData
+) {
+    (void) elementId;
+    uint16_t *state = (uint16_t*)userData;
+    if (pointerData.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME)
+        *state ^= MAGICK_RESIZE;
 }
 
 static inline void RenderMagickColor(const rgba *color, const uint16_t state) {
@@ -639,10 +660,12 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
                             }
                         }
                     }
+
                     CLAY({.id = CLAY_ID(ID_RESIZE_SETTINGS), .layout = {.layoutDirection = CLAY_TOP_TO_BOTTOM, .childGap = 8}}) {
                         CLAY({.layout = {.layoutDirection = CLAY_LEFT_TO_RIGHT, .childGap = S(8)}}) {
                             StatedText(i18n(AS_SECTION_RESIZE_EACH), data->params.state & MAGICK_RESIZE);
                             RenderResize(&data->params.resizes[RESIZES_INPUT], ID_RESIZE_INPUT);
+                            Clay_OnHover(HandleResizes, (intptr_t) &data->params.state);
                         }
                         RenderFlag(i18n(AS_TEXT_IGNORE_ASPECT), &data->params.state, MAGICK_IGNORE_RATIO, MAGICK_IGNORE_RATIO, &data->frameArena);
                         // Well... this would only work for two
@@ -664,7 +687,10 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
                             },
                         }
                     }) {
-                        StatedText(i18n(AS_TEXT_OUTPUT_RES), data->params.state & MAGICK_SET_RESOLUTION);
+                        CLAY() {
+                            StatedText(i18n(AS_TEXT_OUTPUT_RES), data->params.state & MAGICK_SET_RESOLUTION);
+                            Clay_OnHover(HandleOutputRes, (intptr_t) &data->params.state);
+                        }
                         CLAY({.layout = {.layoutDirection = CLAY_LEFT_TO_RIGHT, .childGap = S(8), .padding = S(8), .childAlignment = {.y = CLAY_ALIGN_Y_CENTER}}}) {
                             CLAY_TEXT(i18n(AS_TEXT_DIMENSIONS), BUTTON_TEXT);
                             RenderResize(&data->params.resizes[RESIZES_OUTPUT_RES], ID_RESIZE_OUTPUT);

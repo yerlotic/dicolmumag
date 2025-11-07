@@ -41,9 +41,9 @@ App for creating collages with [ImageMagick](https://imagemagick.org)
 - [x] Change location for temporary files
 - [x] Specify output resolution and margins
 - [x] Tell the user that output resolution is disabled or not
+- [x] Toggle sections in settings directly
 - [ ] Specify maximum images per output
 - [ ] Add labels to images
-- [ ] Toggle sections in settings directly
 - [ ] Indicate that Magick is running
 - [x] Tips
 
