@@ -98,9 +98,9 @@ void HandleClayErrors(Clay_ErrorData errorData) {
 // Declarations
 bool testMagick(char *magickBin);
 
+// TODO: this does nothing
 void cthreads_thread_ensure_cancelled(struct cthreads_thread thread, Nob_ProcStatus *running) {
-    if (*running == PROCESS_RUNNING) {
-        fprintf(stderr, "thread: %ld\n", thread);
+    if (running == PROCESS_RUNNING) {
         cthreads_thread_cancel(thread);
         *running = PROCESS_WAS_TERMINATED;
     }
