@@ -13,6 +13,7 @@ CLAY_PACKED_ENUM {
     AS_BUTTON_OPEN_RESULT,
     AS_BUTTON_CHANGE_UI_COLOR,
     AS_BUTTON_CHANGE_LANGUAGE,
+    AS_BUTTON_SETTINGS,
     AS_BUTTON_QUIT,
     AS_BUTTON_RUN,
     AS_BUTTON_SELECT_IMAGES,
@@ -79,6 +80,10 @@ CLAY_PACKED_ENUM {
     AS_MAGICK_EXEC,
     AS_START_USING,
 
+    // Settings
+    AS_SETTINGS,
+    AS_SCALE,
+
     AS_END
 };
 
@@ -98,6 +103,7 @@ static const Clay_String strings[APP_LANGUAGES][APP_STRINGS] = {
         APP_STRING(AS_BUTTON_OPEN_RESULT, "Open result"),
         APP_STRING(AS_BUTTON_CHANGE_UI_COLOR, "Change colorscheme"),
         APP_STRING(AS_BUTTON_CHANGE_LANGUAGE, "Change language"),
+        APP_STRING(AS_BUTTON_SETTINGS, "Settings"),
         APP_STRING(AS_BUTTON_QUIT, "Quit"),
         APP_STRING(AS_BUTTON_RUN, "Run"),
         APP_STRING(AS_BUTTON_SELECT_IMAGES, "Select Images"),
@@ -164,6 +170,9 @@ static const Clay_String strings[APP_LANGUAGES][APP_STRINGS] = {
 
         APP_STRING(AS_MAGICK_EXEC, "Magick executable:"),
         APP_STRING(AS_START_USING, "Start using!"),
+
+        APP_STRING(AS_SETTINGS, "Settings"),
+        APP_STRING(AS_SCALE, "Scaling"),
     },
     {
 #undef ADVANCED_SETTINGS_S
@@ -176,6 +185,7 @@ static const Clay_String strings[APP_LANGUAGES][APP_STRINGS] = {
         APP_STRING(AS_BUTTON_OPEN_RESULT, "Открыть результат"),
         APP_STRING(AS_BUTTON_CHANGE_UI_COLOR, "Поменять оформление"),
         APP_STRING(AS_BUTTON_CHANGE_LANGUAGE, "Поменять язык"),
+        APP_STRING(AS_BUTTON_SETTINGS, "Настройки"),
         APP_STRING(AS_BUTTON_QUIT, "Выйти"),
         APP_STRING(AS_BUTTON_RUN, "Собрать"),
         APP_STRING(AS_BUTTON_SELECT_IMAGES, "Выбрать"),
@@ -234,7 +244,6 @@ static const Clay_String strings[APP_LANGUAGES][APP_STRINGS] = {
         APP_STRING(AS_MAGICK_TIP_COLOR_PICKER, "Нажмите на цвет в Расширенных настройках, чтобы открыть выбор цвета"),
 
         // Misc
-        // Misc
         APP_STRING(AS_ADVANCED_SETTINGS_S, ADVANCED_SETTINGS_S),
         APP_STRING(AS_TEXT_OUTPUT_RES, "Итоговое разрешение"),
 
@@ -243,6 +252,9 @@ static const Clay_String strings[APP_LANGUAGES][APP_STRINGS] = {
 
         APP_STRING(AS_MAGICK_EXEC, "Исполняемый файл ImageMagick:"),
         APP_STRING(AS_START_USING, "Начнём!"),
+
+        APP_STRING(AS_SETTINGS, "Настройки"),
+        APP_STRING(AS_SCALE, "Масштабирование"),
     },
 };
 
@@ -285,9 +297,8 @@ int errors[] = {
 typedef CLAY_PACKED_ENUM {
     MAGICK_TIP_SCROLL = 0,
     MAGICK_TIP_COLOR_PICKER,
-    MAGICK_TIP_END
+    APP_TIPS
 } MagickTips;
-#define APP_TIPS MAGICK_TIP_END
 
 int tips[APP_TIPS] = {
     [MAGICK_TIP_SCROLL] = AS_MAGICK_TIP_SCROLL,

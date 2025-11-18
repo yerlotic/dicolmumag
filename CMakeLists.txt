@@ -98,7 +98,7 @@ endif()
 # -Wl,-z,separate-code")
 # set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O3 -fsanitize=address,undefined,bounds")
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}")
-set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}")
+set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3")
 
 message(CMAKE_C_FLAGS_RELEASE="${CMAKE_C_FLAGS_RELEASE}")
 message(CMAKE_C_FLAGS_DEBUG="${CMAKE_C_FLAGS_DEBUG} -ggdb")

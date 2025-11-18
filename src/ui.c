@@ -69,7 +69,7 @@ void RenderHeaderButton(Clay_String text) {
 
 #define RenderDropdownMenuItem(text, shortcut)                                 \
   do {                                                                         \
-    CLAY({.backgroundColor = c10n(COLOR_SURFACE0),              \
+    CLAY({.backgroundColor = c10n(COLOR_SURFACE0),                             \
           .cornerRadius = BUTTON_RADIUS,                                       \
           .id = CLAY_SID(text),                                                \
           .layout = {                                                          \
@@ -88,7 +88,7 @@ void RenderHeaderButton(Clay_String text) {
       if (shortcut[0] != '\0') {                                               \
         CLAY_TEXT(CLAY_STRING(shortcut),                                       \
                   CLAY_TEXT_CONFIG({.fontId = FONT_ID_BUTTONS,                 \
-                                    .fontSize = S(buttons_font_size),           \
+                                    .fontSize = S(buttons_font_size),          \
                                     .textColor = c10n(COLOR_OVERLAY0)}));      \
       }                                                                        \
     }                                                                          \
