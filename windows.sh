@@ -41,7 +41,7 @@ fi
 x86_64-w64-mingw32-windres my.rc -O coff -o my.res
 
 args=(
-    -O3
+    -Ofast
     -Wall -Wextra -fwrapv -Wno-missing-braces
     # -DNO_THREADING
     -DLAZY_RENDER

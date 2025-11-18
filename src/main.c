@@ -81,7 +81,7 @@ typedef struct AppState {
     RunMagick(&data->params)
 #else
   #define RunMagickThreaded() \
-    data->selectedDocumentIndex = MAGICK_ADVANCED_SETTINGS; \
+    data->selectedDocumentIndex = MAGICK_ADVANCED_SETTINGS_I; \
     fprintf(stderr, "Cancelling thread\n"); \
     nob_kill(&data->params.magickProc); \
     cthreads_thread_ensure_cancelled(data->magickThread, &data->params.threadRunning); \
@@ -654,7 +654,7 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, AppData *data, AppSt
         nob_kill(&data->params.magickProc);
         RunMagickThreaded();
     } else if (released_s(i18n(AS_START_USING))) {
-        data->selectedDocumentIndex = MAGICK_ADVANCED_SETTINGS;
+        data->selectedDocumentIndex = MAGICK_ADVANCED_SETTINGS_I;
         GetInputFiles(&data->params.inputFiles);
         nob_kill(&data->params.magickProc);
         RunMagickThreaded();
@@ -681,6 +681,8 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, AppData *data, AppSt
     } else if (released_s(i18n(AS_BUTTON_CHANGE_LANGUAGE)) || IsKeyPressed(KEY_I)) {
         language = (language + 1) % APP_LANGUAGES;
         DocumentsUpdate();
+    } else if (released_s(i18n(AS_BUTTON_SETTINGS)) || IsKeyPressed(KEY_S)) {
+        data->selectedDocumentIndex = MAGICK_SETTINGS_I;
     } else if (released_s(i18n(AS_BUTTON_OPEN_RESULT)) || IsKeyPressed(KEY_O)) {
         if (data->params.outputFile.items[0] != '\0') {
             nob_cmd_append(&cmd, NOB_LAUNCHER, data->params.outputFile.items);

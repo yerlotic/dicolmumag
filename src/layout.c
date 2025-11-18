@@ -55,15 +55,19 @@ typedef CLAY_PACKED_ENUM {
     MAGICK_SET_RESOLUTION  = 1 << 10,
 } MagickState;
 
-// Indexes for `documents` array
 CLAY_PACKED_ENUM {
-    MAGICK_BEST_FIT_I,
+    // Indexes for `documents` array
+    MAGICK_BEST_FIT_I = 0,
     MAGICK_TRANSPARENT_BG_I,
     MAGICK_OPEN_ON_DONE_I,
     MAGICK_RESIZE_I,
     MAGICK_SET_RESOLUTION_I,
-    MAGICK_ADVANCED_SETTINGS,
+    MAGICK_ADVANCED_SETTINGS_I,
+
+    // Not in `documents` array
+    // These should only be placed here to not confuse comparison
     MAGICK_WELCOME_PAGE_I,
+    MAGICK_SETTINGS_I,
 };
 
 typedef struct rgba {
@@ -129,7 +133,6 @@ typedef struct {
     uint8_t selectedDocumentIndex;
     MagickStatus errorIndex;
     uint16_t tabWidth;
-    float yOffset;
     AppArena frameArena;
     magick_params_t params;
     // These should be stored on the heap to prevent
@@ -278,8 +281,8 @@ void RenderFlag(Clay_String text,
                 .y = CLAY_ALIGN_Y_CENTER,
             },
         },
-        .backgroundColor = background,
         .id = CLAY_SID(text),
+        .backgroundColor = background,
         .cornerRadius = BUTTON_RADIUS,
     }) {
         FlagClickData *clickData = (FlagClickData *)(arena->memory + arena->offset);
@@ -304,7 +307,7 @@ void DocumentsUpdate() {
     documents.documents[MAGICK_OPEN_ON_DONE_I] = (Document){ .title = i18n(AS_TEXT_OPEN_ON_DONE), .contents = i18n(AS_TEXT_OPEN_ON_DONE_EXPL) };
     documents.documents[MAGICK_RESIZE_I] = (Document){ .title = i18n(AS_TEXT_ENABLE_RESIZE), .contents = i18n(AS_TEXT_ENABLE_RESIZE_EXPL) };
     documents.documents[MAGICK_SET_RESOLUTION_I] = (Document){ .title = i18n(AS_TEXT_SET_OUTPUT_RES), .contents = i18n(AS_TEXT_SET_OUTPUT_RES_EXPL) };
-    documents.documents[MAGICK_ADVANCED_SETTINGS] = (Document){ .title = i18n(AS_ADVANCED_SETTINGS_S), .contents = i18n(AS_TEXT_ADVANCED_SETTINGS_EXPL) };
+    documents.documents[MAGICK_ADVANCED_SETTINGS_I] = (Document){ .title = i18n(AS_ADVANCED_SETTINGS_S), .contents = i18n(AS_TEXT_ADVANCED_SETTINGS_EXPL) };
 }
 
 AppData AppDataInit(void) {
@@ -472,19 +475,19 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
                             .cornerRadius = BUTTON_RADIUS,
                         }) {
                             // Render dropdown items here
-                            RenderDropdownMenuItem(i18n(AS_BUTTON_OPEN_RESULT), "O");
+                            RenderDropdownMenuItem(i18n(AS_BUTTON_OPEN_RESULT),     "O");
                             RenderDropdownMenuItem(i18n(AS_BUTTON_CHANGE_UI_COLOR), "C");
                             RenderDropdownMenuItem(i18n(AS_BUTTON_CHANGE_LANGUAGE), "I");
+                            RenderDropdownMenuItem(i18n(AS_BUTTON_SETTINGS),        "S");
                             CLAY({
                                 .backgroundColor = c10n(COLOR_SURFACE0),
                                 .cornerRadius = BUTTON_RADIUS,
                                 .id = CLAY_ID(ID_QUIT),
                                 .layout = {
                                     .padding = CLAY_PADDING_ALL(S(16)),
-                                .sizing = {
-                                    .width = CLAY_SIZING_GROW(0)
+                                    .sizing = { .width = CLAY_SIZING_GROW(0) },
                                 },
-                            }}) {
+                            }) {
                                 CLAY_TEXT(i18n(AS_BUTTON_QUIT), BUTTON_TEXT);
                                 HorizontalSeparator();
                                 CLAY_TEXT(CLAY_STRING("Ctrl-Q"),
@@ -602,7 +605,7 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
                 .cornerRadius = LAYOUT_RADIUS,
             }) {
 
-                if (data->selectedDocumentIndex != MAGICK_WELCOME_PAGE_I) {
+                if (data->selectedDocumentIndex < MAGICK_WELCOME_PAGE_I) {
                     Document selectedDocument = documents.documents[data->selectedDocumentIndex];
                     CLAY_TEXT(selectedDocument.title, CLAY_TEXT_CONFIG({
                         .fontId = FONT_ID_TITLE,
@@ -613,7 +616,7 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
                 }
 
 
-                if (data->selectedDocumentIndex == MAGICK_ADVANCED_SETTINGS) {
+                if (data->selectedDocumentIndex == MAGICK_ADVANCED_SETTINGS_I) {
                     CLAY({
                         .layout = {
                             .layoutDirection = CLAY_LEFT_TO_RIGHT,
@@ -795,14 +798,27 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
                             }));
                         }
                     }
+                } else if (data->selectedDocumentIndex == MAGICK_SETTINGS_I) {
+                    CLAY() {
+                        CLAY_TEXT(i18n(AS_SETTINGS), CLAY_TEXT_CONFIG({
+                            .fontId = FONT_ID_DOCUMENT,
+                            .fontSize = S(document_font_size),
+                            .textColor = c10n(COLOR_TEXT),
+                            .textAlignment = CLAY_TEXT_ALIGN_CENTER,
+                        }));
+                        CLAY_TEXT(i18n(AS_SCALE), BUTTON_TEXT);
+
+                        char* scale_str = (char *)(data->frameArena.memory + data->frameArena.offset);
+#define little_float_len 4
+                        snprintf(scale_str, little_float_len, "%f", app_scale);
+                        data->frameArena.offset += little_float_len;
+                        RenderHeaderButton((Clay_String) { .chars = (const char *) scale_str, .length = little_float_len, .isStaticallyAllocated = false});
+                        // Clay_OnHover(HandleFlagInteraction, (intptr_t)clickData);
+                    };
                 }
             }
         }
     }
 
-    Clay_RenderCommandArray renderCommands = Clay_EndLayout();
-    for (int32_t i = 0; i < renderCommands.length; i++) {
-        Clay_RenderCommandArray_Get(&renderCommands, i)->boundingBox.y += data->yOffset;
-    }
-    return renderCommands;
+    return Clay_EndLayout();
 }
