@@ -367,20 +367,24 @@ AppData AppDataInit(void) {
                 },
                 .selected = 1,
             },
-#ifdef _WIN32
-            .logo = LoadTexture("banner.png"),
-#else
-  #ifdef INSTALLED
+#ifdef INSTALLED
             .logo = LoadTexture("/usr/share/dicolmumag/banner.png"),
-  #else
-            .logo = LoadTexture("../resources/banner.png"),
-  #endif // RELEASE
-#endif // _WIN32
+#endif // INSTALLED
         },
         .magickThread = {0},
     };
     nob_sb_append_cstr(&data.params.outputFile, "res.png");
     nob_sb_append_null(&data.params.outputFile);
+
+#ifndef INSTALLED
+    if (nob_file_exists("banner.png") == 1) {
+        data.params.logo = LoadTexture("banner.png");
+#ifndef _WIN32
+    } else if (nob_file_exists("../resources/banner.png") == 1) {
+        data.params.logo = LoadTexture("../resources/banner.png");
+#endif // _WIN32
+#endif // INSTALLED
+    }
 
 #ifdef _WIN32
     nob_sb_append_cstr(&data.params.magickBinary, "magick.exe");
@@ -669,7 +673,8 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
                             StatedText(i18n(AS_SECTION_RESIZE_EACH), data->params.state & MAGICK_RESIZE);
                             RenderResize(&data->params.resizes[RESIZES_INPUT], ID_RESIZE_INPUT);
                             Clay_OnHover(HandleResizes, (intptr_t) &data->params.state);
-                        }
+                        };
+                        // CLAY()
                         RenderFlag(i18n(AS_TEXT_IGNORE_ASPECT), &data->params.state, MAGICK_IGNORE_RATIO, MAGICK_IGNORE_RATIO, &data->frameArena);
                         // Well... this would only work for two
                         RenderFlag(i18n(AS_TEXT_SHRINK_LARGER), &data->params.state,

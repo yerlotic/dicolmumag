@@ -763,6 +763,22 @@ bool testMagick(char *magickBin) {
     return res;
 }
 
+void FigureOutMagick(Nob_String_Builder *magickBin, MagickStatus *errorIndex) {
+    if (testMagick(magickBin->items))
+        return;  // ok
+
+#if !defined(INSTALLED) && !defined(_WIN32)
+    if (testMagick("./magick")) {
+        nob_sb_append_cstr(magickBin, "./magick");
+        nob_sb_append_null(magickBin);
+        return;  // ok
+    }
+#endif // INSTALLED and _WIN32
+    // yes, this is an mdash
+    fprintf(stderr, "Sorry, no magick — no worky\n");
+    *errorIndex = MAGICK_ERROR_NOT_WORK;
+}
+
 void unloadFonts(const Font *fonts) {
     for (int font_id = 0; font_id < FONTS_IDS; font_id++) {
         UnloadFont(fonts[font_id]);
@@ -783,11 +799,17 @@ static inline void reloadFonts(Font *fonts, const char *fontpath, int codepoints
 }
 
 static inline Image LoadAppIcon(void) {
-#ifndef INSTALLED
-    return LoadImage("icon.png");
-#else
+#ifdef INSTALLED
     return LoadImage("/usr/share/dicolmumag/icon.png");
+#else
+    if (nob_file_exists("icon.png") == 1) {
+        return LoadImage("icon.png");
+#ifndef _WIN32
+    } else {
+        return LoadImage("../resources/icon.png");
 #endif // _WIN32
+    }
+#endif // INSTALLED
 }
 
 int SetAppFPS(void) {
@@ -802,6 +824,31 @@ int SetAppFPS(void) {
     SetTargetFPS(target_fps);
     fprintf(stderr, "Setting target fps to %d\n", target_fps);
     return target_fps;
+}
+
+uint8_t GetEnvLang() {
+    char* vars[] = {"LC_ALL", "LANG"};
+    char* langs[] = {
+        [APP_LANG_RUSSIAN] = "ru",
+        // other locales fall back to english
+    };
+    for (uint8_t var = 0; var < NOB_ARRAY_LEN(vars); var++) {
+        char *locale = getenv(vars[var]);
+        if (locale == NULL) continue;
+
+        fprintf(stderr, "Locale: %s\n", locale);
+        for (uint8_t lang = 0; lang < NOB_ARRAY_LEN(langs); lang++) {
+            if (strstr(locale, langs[lang])) {
+                if (lang > APP_LANGUAGES)
+                    lang = 1;
+                fprintf(stderr, "Cur lang: %d\n", lang);
+                return lang;
+                break;
+            }
+
+        }
+    }
+    return APP_LANG_ENGLISH; // english
 }
 
 static inline void SetAppIcon(void) {
@@ -846,6 +893,7 @@ int main(void) {
     for (int font_id = 0; font_id < FONTS_IDS; font_id++) {
         SetTextureFilter(fonts[font_id].texture, TEXTURE_FILTER_POINT);
     }
+    language = GetEnvLang();
 
     uint64_t clayRequiredMemory = Clay_MinMemorySize();
     Clay_Arena clayMemory = Clay_CreateArenaWithCapacityAndMemory(clayRequiredMemory, malloc(clayRequiredMemory));
@@ -853,12 +901,7 @@ int main(void) {
     AppData data = AppDataInit();
     Clay_SetMeasureTextFunction(Raylib_MeasureText, fonts);
 
-    if (!testMagick(data.params.magickBinary.items)) {
-        // yes, this is an mdash
-        fprintf(stderr, "Sorry, no magick — no worky\n");
-        data.errorIndex = MAGICK_ERROR_NOT_WORK;
-    }
-
+    FigureOutMagick(&data.params.magickBinary, &data.errorIndex);
     SetAppIcon();
 #ifdef LAZY_RENDER
     int fps = SetAppFPS();
@@ -931,9 +974,6 @@ int main(void) {
                 state = GetAppState(&data);
                 if (!(are_equal = StatesEqual(&state, &old_state))) break;
                 old_state = state;
-#ifdef DEBUG
-                fprintf(stderr, "Not rendering: %d\n", time);
-#endif // DEBUG
                 WaitTime(5*sleep_fps);
             } while (true);
             // Look! it moved!
