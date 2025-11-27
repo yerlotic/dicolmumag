@@ -383,8 +383,8 @@ AppData AppDataInit(void) {
     } else if (nob_file_exists("../resources/banner.png") == 1) {
         data.params.logo = LoadTexture("../resources/banner.png");
 #endif // _WIN32
-#endif // INSTALLED
     }
+#endif // INSTALLED
 
 #ifdef _WIN32
     nob_sb_append_cstr(&data.params.magickBinary, "magick.exe");
