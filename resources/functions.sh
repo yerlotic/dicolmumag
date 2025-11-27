@@ -6,6 +6,7 @@ export NAME=dicolmumag
 export ICON_BASE="icon.png"
 # relative to build directory
 export ICON="../resources/$ICON_BASE"
+export build=build
 # round corners in place
 # Usage round-corners radius input.png output.jpg
 round-corners() {
@@ -24,5 +25,13 @@ round-corners() {
         -composite "$3"
         )
     magick "${args[@]}"
+}
+
+go-to-build() {
+    # in case you run in not from build
+    if [ "$(basename "$PWD")" != "$(basename "$build")" ]; then
+        mkdir -p "$build"
+        cd "$build" || return 1
+    fi
 }
 
