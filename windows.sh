@@ -7,6 +7,7 @@ source "$(dirname -- "${BASH_SOURCE[0]}")/resources/functions.sh"
 
 build=build
 magick_ver=7.1.2-5
+magick_dir=magick_win
 raylib_ver=5.5
 raylib_platform="win64_mingw-w64"
 raylib_dir=raylib-"$raylib_ver"_"$raylib_platform"
@@ -25,11 +26,11 @@ if ! [ -d "$raylib_dir" ]; then
     unzip "$archive"
 fi
 
-if ! [ -f "magick/magick.exe" ]; then
-    mkdir -p magick
+if ! [ -f "$magick_dir/magick.exe" ]; then
+    mkdir -p "$magick_dir"
     m_archive="ImageMagick-$magick_ver-portable-Q16-HDRI-x64.7z"
     wget "https://github.com/ImageMagick/ImageMagick/releases/download/$magick_ver/$m_archive"
-    7z x -y "$m_archive" -o./magick
+    7z x -y "$m_archive" -o./"$magick_dir"
 fi
 
 if ! [ -f icon.ico ]; then
@@ -70,7 +71,7 @@ if [ "${1:-}" == pack ]; then
     mkdir "$out"
     cp "/usr/share/fonts/noto/NotoSans-Regular.ttf" font.ttf
     mv "$NAME.exe" font.ttf "$out"/
-    cp ../resources/{banner,icon}.png magick/magick.exe "$out"/
+    cp ../resources/{banner,icon}.png "$magick_dir"/magick.exe "$out"/
 
     # zip -o "$out".zip -r "$out"/
     zip -ro "$out"{.zip,} &

@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include "thirdparty/clay.h"
 
-uint8_t language = 0;
+uint8_t language = 1;
 
 // Prefix: AS - AppString
 CLAY_PACKED_ENUM {
@@ -92,90 +92,13 @@ CLAY_PACKED_ENUM {
 
 #define APP_STRING(AS_INDEX, STRING) [AS_INDEX] = CLAY_STRING(STRING)
 
+enum {
+    APP_LANG_RUSSIAN,
+    APP_LANG_ENGLISH,
+};
 
 static const Clay_String strings[APP_LANGUAGES][APP_STRINGS] = {
-    {
-#define ADVANCED_SETTINGS_S "Advanced Settings"
-#define ADVANCED_SETTINGS_Q "\"Advanced Settings\""
-
-        // Buttons
-        APP_STRING(AS_BUTTON_FILE, "File"),
-        APP_STRING(AS_BUTTON_OPEN_RESULT, "Open result"),
-        APP_STRING(AS_BUTTON_CHANGE_UI_COLOR, "Change colorscheme"),
-        APP_STRING(AS_BUTTON_CHANGE_LANGUAGE, "Change language"),
-        APP_STRING(AS_BUTTON_SETTINGS, "Settings"),
-        APP_STRING(AS_BUTTON_QUIT, "Quit"),
-        APP_STRING(AS_BUTTON_RUN, "Run"),
-        APP_STRING(AS_BUTTON_SELECT_IMAGES, "Select Images"),
-        APP_STRING(AS_BUTTON_STOP, "Stop"),
-        APP_STRING(AS_BUTTON_SUPPORT, "Support"),
-
-        // Text
-        APP_STRING(AS_TEXT_TRANSPARENT_BG_WARNING, "Transparent background setting overrides this option"),
-        APP_STRING(AS_TEXT_IGNORE_ASPECT, "Ignore aspect ratio"),
-        APP_STRING(AS_TEXT_SHRINK_LARGER, "Only Shrink Larger"),
-        APP_STRING(AS_TEXT_ENLARGE_SMALLER, "Only Enlarge Smaller"),
-        APP_STRING(AS_TEXT_FILL_AREA, "Fill area"),
-        APP_STRING(AS_TEXT_DIMENSIONS, "Dimentions:"),
-        APP_STRING(AS_TEXT_MARGIN, "Margin:"),
-        APP_STRING(AS_TEXT_CURRENT, "Current:"),
-        APP_STRING(AS_TEXT_WELCOME, "Welcome to Dicolmumag"),
-        APP_STRING(AS_TEXT_SLOGAN, "Create collages cuz why not"),
-        APP_STRING(AS_TEXT_BEST_FIT, "Best fit"),
-        APP_STRING(AS_TEXT_BEST_FIT_EXPL, "This ashlar option aligns images on both sides of the resulting image"),
-        APP_STRING(AS_TEXT_TRANSPARENT_BG, "Transparent background"),
-        APP_STRING(AS_TEXT_TRANSPARENT_BG_EXPL, "Makes the background transparent\nThis overrides background configuration in "ADVANCED_SETTINGS_Q"tab"),
-        APP_STRING(AS_TEXT_OPEN_ON_DONE, "Open when done"),
-        APP_STRING(AS_TEXT_OPEN_ON_DONE_EXPL, "Enable this to see the result right after it's done!\n\nNothing more\nsurely"),
-        APP_STRING(AS_TEXT_ENABLE_RESIZE, "Enable Resize"),
-        APP_STRING(AS_TEXT_ENABLE_RESIZE_EXPL, "This option enables resizes. You can configure how input images are resized in "ADVANCED_SETTINGS_Q),
-        APP_STRING(AS_TEXT_SET_OUTPUT_RES, "Set output resolution"),
-        APP_STRING(AS_TEXT_SET_OUTPUT_RES_EXPL, "With this option you can directly set the desired output resolution for the collage in "ADVANCED_SETTINGS_Q" tab\nIf this option is disabled, the resolution for the output image (filename at the top) will be chosen automatically"),
-        APP_STRING(AS_TEXT_ADVANCED_SETTINGS_EXPL, "This tab contains advanced settings (surprise!)"),
-        APP_STRING(AS_TEXT_TEMP_FILES, "Temporary files"),
-        APP_STRING(AS_TEXT_TEMP_DEFAULT, "default"),
-        APP_STRING(AS_TEXT_OUTPUT_PATH, "Path to output image"),
-        APP_STRING(AS_TEXT_INPUT_IMAGES, "Source images"),
-        APP_STRING(AS_TEXT_IMAGE_FILES, "Image files"),
-        APP_STRING(AS_TEXT_MAGICK_PATH, "Path to magick executable"),
-        APP_STRING(AS_TEXT_EXE_FILES, "Executable files"),
-
-        // Sections
-        APP_STRING(AS_SECTION_RESIZE, "Resize: "),
-        APP_STRING(AS_SECTION_BACKGROUND_COLOR, "Background Color: "),
-        APP_STRING(AS_SECTION_GRAVITY, "Gravity: "),
-        APP_STRING(AS_SECTION_RESIZE_EACH, "Resize each image: "),
-
-        // Errors
-        APP_STRING(AS_MAGICK_ERROR_OK, ""),
-        APP_STRING(AS_MAGICK_ERROR_CANCELLED, ""),
-        APP_STRING(AS_MAGICK_ERROR_RUNNING, "Running..."),
-        APP_STRING(AS_MAGICK_ERROR_NOT_WORK, "Magick binary does not work"),
-        APP_STRING(AS_MAGICK_ERROR_INVALID_BINARY_SELECTED, "Invalid binary selected"),
-        APP_STRING(AS_MAGICK_ERROR_NO_FILES, "Select some images"),
-        APP_STRING(AS_MAGICK_ERROR_PROCESS_CRASHED, "Magick crashed!"),
-        APP_STRING(AS_MAGICK_ERROR_PROCESS_TERMINATED, "Magick was terminated"),
-        APP_STRING(AS_MAGICK_ERROR_OS_BULLSHIT, "OS thinks stuff is VERY wrong"),
-
-        // Tips
-        APP_STRING(AS_MAGICK_TIP_SCROLL, "Scroll resize on \"x\" to change both values!"),
-        APP_STRING(AS_MAGICK_TIP_COLOR_PICKER, "Click on the color in "ADVANCED_SETTINGS_S" to launch the color picker"),
-
-        // Misc
-        APP_STRING(AS_ADVANCED_SETTINGS_S, ADVANCED_SETTINGS_S),
-        APP_STRING(AS_TEXT_OUTPUT_RES, "Output resolution"),
-
-        APP_STRING(AS_SELECT_TEMP, "Change location"),
-        APP_STRING(AS_TEMP_FILES_EXPLANATION, "When changed, it uses available storage as memory. This option allows to work around memory issues but makes everything slower"),
-
-        APP_STRING(AS_MAGICK_EXEC, "Magick executable:"),
-        APP_STRING(AS_START_USING, "Start using!"),
-
-        APP_STRING(AS_SETTINGS, "Settings"),
-        APP_STRING(AS_SCALE, "Scaling"),
-    },
-    {
-#undef ADVANCED_SETTINGS_S
+[APP_LANG_RUSSIAN] = {
 #define ADVANCED_SETTINGS_S "Расширенные настройки"
 #undef ADVANCED_SETTINGS_Q
 #define ADVANCED_SETTINGS_Q "\"Расширенные настройки\""
@@ -255,6 +178,88 @@ static const Clay_String strings[APP_LANGUAGES][APP_STRINGS] = {
 
         APP_STRING(AS_SETTINGS, "Настройки"),
         APP_STRING(AS_SCALE, "Масштабирование"),
+    },
+[APP_LANG_ENGLISH] = {
+#undef ADVANCED_SETTINGS_S
+#define ADVANCED_SETTINGS_S "Advanced Settings"
+#undef ADVANCED_SETTINGS_Q
+#define ADVANCED_SETTINGS_Q "\"Advanced Settings\""
+
+        // Buttons
+        APP_STRING(AS_BUTTON_FILE, "File"),
+        APP_STRING(AS_BUTTON_OPEN_RESULT, "Open result"),
+        APP_STRING(AS_BUTTON_CHANGE_UI_COLOR, "Change colorscheme"),
+        APP_STRING(AS_BUTTON_CHANGE_LANGUAGE, "Change language"),
+        APP_STRING(AS_BUTTON_SETTINGS, "Settings"),
+        APP_STRING(AS_BUTTON_QUIT, "Quit"),
+        APP_STRING(AS_BUTTON_RUN, "Run"),
+        APP_STRING(AS_BUTTON_SELECT_IMAGES, "Select Images"),
+        APP_STRING(AS_BUTTON_STOP, "Stop"),
+        APP_STRING(AS_BUTTON_SUPPORT, "Support"),
+
+        // Text
+        APP_STRING(AS_TEXT_TRANSPARENT_BG_WARNING, "Transparent background setting overrides this option"),
+        APP_STRING(AS_TEXT_IGNORE_ASPECT, "Ignore aspect ratio"),
+        APP_STRING(AS_TEXT_SHRINK_LARGER, "Only Shrink Larger"),
+        APP_STRING(AS_TEXT_ENLARGE_SMALLER, "Only Enlarge Smaller"),
+        APP_STRING(AS_TEXT_FILL_AREA, "Fill area"),
+        APP_STRING(AS_TEXT_DIMENSIONS, "Dimentions:"),
+        APP_STRING(AS_TEXT_MARGIN, "Margin:"),
+        APP_STRING(AS_TEXT_CURRENT, "Current:"),
+        APP_STRING(AS_TEXT_WELCOME, "Welcome to Dicolmumag"),
+        APP_STRING(AS_TEXT_SLOGAN, "Create collages cuz why not"),
+        APP_STRING(AS_TEXT_BEST_FIT, "Best fit"),
+        APP_STRING(AS_TEXT_BEST_FIT_EXPL, "This ashlar option aligns images on both sides of the resulting image"),
+        APP_STRING(AS_TEXT_TRANSPARENT_BG, "Transparent background"),
+        APP_STRING(AS_TEXT_TRANSPARENT_BG_EXPL, "Makes the background transparent\nThis overrides background configuration in "ADVANCED_SETTINGS_Q"tab"),
+        APP_STRING(AS_TEXT_OPEN_ON_DONE, "Open when done"),
+        APP_STRING(AS_TEXT_OPEN_ON_DONE_EXPL, "Enable this to see the result right after it's done!\n\nNothing more\nsurely"),
+        APP_STRING(AS_TEXT_ENABLE_RESIZE, "Enable Resize"),
+        APP_STRING(AS_TEXT_ENABLE_RESIZE_EXPL, "This option enables resizes. You can configure how input images are resized in "ADVANCED_SETTINGS_Q),
+        APP_STRING(AS_TEXT_SET_OUTPUT_RES, "Set output resolution"),
+        APP_STRING(AS_TEXT_SET_OUTPUT_RES_EXPL, "With this option you can directly set the desired output resolution for the collage in "ADVANCED_SETTINGS_Q" tab\nIf this option is disabled, the resolution for the output image (filename at the top) will be chosen automatically"),
+        APP_STRING(AS_TEXT_ADVANCED_SETTINGS_EXPL, "This tab contains advanced settings (surprise!)"),
+        APP_STRING(AS_TEXT_TEMP_FILES, "Temporary files"),
+        APP_STRING(AS_TEXT_TEMP_DEFAULT, "default"),
+        APP_STRING(AS_TEXT_OUTPUT_PATH, "Path to output image"),
+        APP_STRING(AS_TEXT_INPUT_IMAGES, "Source images"),
+        APP_STRING(AS_TEXT_IMAGE_FILES, "Image files"),
+        APP_STRING(AS_TEXT_MAGICK_PATH, "Path to magick executable"),
+        APP_STRING(AS_TEXT_EXE_FILES, "Executable files"),
+
+        // Sections
+        APP_STRING(AS_SECTION_RESIZE, "Resize: "),
+        APP_STRING(AS_SECTION_BACKGROUND_COLOR, "Background Color: "),
+        APP_STRING(AS_SECTION_GRAVITY, "Gravity: "),
+        APP_STRING(AS_SECTION_RESIZE_EACH, "Resize each image: "),
+
+        // Errors
+        APP_STRING(AS_MAGICK_ERROR_OK, ""),
+        APP_STRING(AS_MAGICK_ERROR_CANCELLED, ""),
+        APP_STRING(AS_MAGICK_ERROR_RUNNING, "Running..."),
+        APP_STRING(AS_MAGICK_ERROR_NOT_WORK, "Magick binary does not work"),
+        APP_STRING(AS_MAGICK_ERROR_INVALID_BINARY_SELECTED, "Invalid binary selected"),
+        APP_STRING(AS_MAGICK_ERROR_NO_FILES, "Select some images"),
+        APP_STRING(AS_MAGICK_ERROR_PROCESS_CRASHED, "Magick crashed!"),
+        APP_STRING(AS_MAGICK_ERROR_PROCESS_TERMINATED, "Magick was terminated"),
+        APP_STRING(AS_MAGICK_ERROR_OS_BULLSHIT, "OS thinks stuff is VERY wrong"),
+
+        // Tips
+        APP_STRING(AS_MAGICK_TIP_SCROLL, "Scroll resize on \"x\" to change both values!"),
+        APP_STRING(AS_MAGICK_TIP_COLOR_PICKER, "Click on the color in "ADVANCED_SETTINGS_S" to launch the color picker"),
+
+        // Misc
+        APP_STRING(AS_ADVANCED_SETTINGS_S, ADVANCED_SETTINGS_S),
+        APP_STRING(AS_TEXT_OUTPUT_RES, "Output resolution"),
+
+        APP_STRING(AS_SELECT_TEMP, "Change location"),
+        APP_STRING(AS_TEMP_FILES_EXPLANATION, "When changed, it uses available storage as memory. This option allows to work around memory issues but makes everything slower"),
+
+        APP_STRING(AS_MAGICK_EXEC, "Magick executable:"),
+        APP_STRING(AS_START_USING, "Start using!"),
+
+        APP_STRING(AS_SETTINGS, "Settings"),
+        APP_STRING(AS_SCALE, "Scaling"),
     },
 };
 

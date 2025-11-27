@@ -1807,13 +1807,13 @@ bool nob_sv_starts_with(Nob_String_View sv, Nob_String_View expected_prefix)
 }
 
 // RETURNS:
-//  0 - file does not exists
+//  0 - file does not exist
 //  1 - file exists
 // -1 - error while checking if file exists. The error is logged
 int nob_file_exists(const char *file_path)
 {
 #if _WIN32
-    // TODO: distinguish between "does not exists" and other errors
+    // TODO: distinguish between "does not exist" and other errors
     DWORD dwAttrib = GetFileAttributesA(file_path);
     return dwAttrib != INVALID_FILE_ATTRIBUTES;
 #else
