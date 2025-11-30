@@ -14,6 +14,7 @@ mkdir "$dir"
 cd "$dir"
 cp /bin/magick .
 cp ../dicolmumag ../../resources/{icon,banner}.png .
+magick morgify ./icon.png -resize 256x256
 
 set +e
 
