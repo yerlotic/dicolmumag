@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <assert.h>
 #include <time.h>
+#include <sys/time.h>
 #define SUPPORT_URL "https://youtu.be/dQw4w9WgXcQ"
 #ifdef _WIN32
 #include "thirdparty/raylib/fix_win32_compatibility.h"
@@ -858,6 +859,22 @@ static inline void SetAppIcon(void) {
     UnloadImage(icon);
 }
 
+long timeNow(void)
+{
+  // Special struct defined by sys/time.h
+  struct timeval tv;
+
+  // Long int to store the elapsed time
+  long fullTime;
+
+  // This only works under GNU C I think
+  gettimeofday(&tv, NULL);
+
+  // Do some math to convert struct -> long
+  fullTime = tv.tv_sec*1000000 + tv.tv_usec;
+  return fullTime;
+}
+
 int main(void) {
     srand(time(0)); // initialize random seed
     const char *title = "Dicolmumag — create collages with ease of creation, proceed to easily collide with creativity and proceedings";
@@ -929,8 +946,10 @@ int main(void) {
 #ifdef LAZY_RENDER
         old_state = state;
 #endif // LAZY_RENDER
+        long currentTime = timeNow();
         Clay_RenderCommandArray renderCommands = CreateLayout(clayContext, &data, state);
         state = GetAppState(&data);
+        printf("layout time: %ld microseconds\n", timeNow() - currentTime);
         BeginDrawing();
 #ifndef NO_SCALING
         if (IsKeyDown(KEY_LEFT_SHIFT) && IsKeyPressed(KEY_EQUAL)) {

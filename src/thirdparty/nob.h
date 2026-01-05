@@ -1875,11 +1875,15 @@ bool nob_set_current_dir(const char *path)
 /////////////// Dicolmumag additions ///////
 
 #ifdef _WIN32
-#define NOB_BLACKHOLE "nul"
-#define NOB_LAUNCHER "explorer.exe"
-#else
-#define NOB_BLACKHOLE "/dev/null"
-#define NOB_LAUNCHER  "xdg-open"
+  #define NOB_BLACKHOLE "nul"
+  #define NOB_LAUNCHER "explorer.exe"
+#else // UNIX
+  #define NOB_BLACKHOLE "/dev/null"
+  #ifdef __APPLE__
+    #define NOB_LAUNCHER  "open"
+  #else // POSIX or Android
+    #define NOB_LAUNCHER  "xdg-open"
+  #endif // __APPLE__
 #endif // _WIN32
 
 typedef enum __attribute__((__packed__)) Nob_ProcStatus {

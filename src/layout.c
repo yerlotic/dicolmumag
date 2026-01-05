@@ -670,7 +670,8 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
 
                     CLAY({.layout = {.layoutDirection = CLAY_TOP_TO_BOTTOM, .childGap = 8}}) {
                         CLAY({.layout = {.layoutDirection = CLAY_LEFT_TO_RIGHT, .childGap = S(8)}}) {
-                            StatedText(i18n(AS_SECTION_RESIZE_EACH), data->params.state & MAGICK_RESIZE);
+                            // StatedText(i18n(AS_SECTION_RESIZE_EACH), data->params.state & MAGICK_RESIZE);
+                            StatedText(i18n(AS_SECTION_RESIZE_EACH), 1);
                             RenderResize(&data->params.resizes[RESIZES_INPUT], ID_RESIZE_INPUT);
                             Clay_OnHover(HandleResizes, (intptr_t) &data->params.state);
                         };
