@@ -71,6 +71,7 @@ CLAY_PACKED_ENUM {
     // Tips
     AS_MAGICK_TIP_SCROLL,
     AS_MAGICK_TIP_COLOR_PICKER,
+    AS_MAGICK_TIP_NO_ERROR,
 
     // Misc
     AS_ADVANCED_SETTINGS_S,
@@ -165,6 +166,7 @@ static const Clay_String strings[APP_LANGUAGES][APP_STRINGS] = {
         // Tips
         APP_STRING(AS_MAGICK_TIP_SCROLL, "Если скроллить на \"x\", то оба значения будут меняться"),
         APP_STRING(AS_MAGICK_TIP_COLOR_PICKER, "Нажмите на цвет в Расширенных настройках, чтобы открыть выбор цвета"),
+        APP_STRING(AS_MAGICK_TIP_NO_ERROR, "Нажмите на текст ошибки вверху экрана, чтобы снова увидеть название файла коллажа"),
 
         // Misc
         APP_STRING(AS_ADVANCED_SETTINGS_S, ADVANCED_SETTINGS_S),
@@ -247,6 +249,7 @@ static const Clay_String strings[APP_LANGUAGES][APP_STRINGS] = {
         // Tips
         APP_STRING(AS_MAGICK_TIP_SCROLL, "Scroll resize on \"x\" to change both values!"),
         APP_STRING(AS_MAGICK_TIP_COLOR_PICKER, "Click on the color in "ADVANCED_SETTINGS_S" to launch the color picker"),
+        APP_STRING(AS_MAGICK_TIP_NO_ERROR, "Click on the error message at the top to see the name of your collage"),
 
         // Misc
         APP_STRING(AS_ADVANCED_SETTINGS_S, ADVANCED_SETTINGS_S),
@@ -302,12 +305,14 @@ int errors[] = {
 typedef CLAY_PACKED_ENUM {
     MAGICK_TIP_SCROLL = 0,
     MAGICK_TIP_COLOR_PICKER,
+    MAGICK_TIP_NO_ERROR,
     APP_TIPS
 } MagickTips;
 
 int tips[APP_TIPS] = {
     [MAGICK_TIP_SCROLL] = AS_MAGICK_TIP_SCROLL,
     [MAGICK_TIP_COLOR_PICKER] = AS_MAGICK_TIP_COLOR_PICKER,
+    [MAGICK_TIP_NO_ERROR] = AS_MAGICK_TIP_NO_ERROR,
 };
 
 // Internationalization

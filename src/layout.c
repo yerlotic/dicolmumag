@@ -512,13 +512,13 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
             } else if (data->errorIndex == MAGICK_ERROR_RUNNING) {
                 CLAY({.id = CLAY_ID(ID_ERROR)}) {
                   CLAY_TEXT(i18n(errors[data->errorIndex]),
-                      JUST_TEXT_CONFIG(S(document_font_size), FONT_ID_DOCUMENT, c10n(COLOR_BLUE))
+                      JUST_TEXT_CONFIG(document_font_size, FONT_ID_DOCUMENT, c10n(COLOR_BLUE))
                   );
                 }
             } else {
                 CLAY({.id = CLAY_ID(ID_ERROR)}) {
                   CLAY_TEXT(i18n(errors[data->errorIndex]),
-                      JUST_TEXT_CONFIG(S(document_font_size), FONT_ID_DOCUMENT, c10n(COLOR_RED))
+                      JUST_TEXT_CONFIG(document_font_size, FONT_ID_DOCUMENT, c10n(COLOR_RED))
                   );
                 }
             }
