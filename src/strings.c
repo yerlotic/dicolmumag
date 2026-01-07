@@ -72,8 +72,11 @@ CLAY_PACKED_ENUM {
     AS_MAGICK_TIP_SCROLL,
     AS_MAGICK_TIP_COLOR_PICKER,
     AS_MAGICK_TIP_NO_ERROR,
+    AS_MAGICK_TIP_KEYBIND_C,
+    AS_MAGICK_TIP_KEYBIND_I,
 
     // Misc
+    AS_TITLE,
     AS_ADVANCED_SETTINGS_S,
     AS_TEXT_OUTPUT_RES,
     AS_SELECT_TEMP,
@@ -147,7 +150,7 @@ static const Clay_String strings[APP_LANGUAGES][APP_STRINGS] = {
         APP_STRING(AS_TEXT_EXE_FILES, "Исполняемые файлы"),
 
         // Sections
-        APP_STRING(AS_SECTION_RESIZE, "Масштабирование: "),
+        APP_STRING(AS_SECTION_RESIZE, "Размер: "),
         APP_STRING(AS_SECTION_BACKGROUND_COLOR, "Цвет фона: "),
         APP_STRING(AS_SECTION_GRAVITY, "Гравитация: "),
         APP_STRING(AS_SECTION_RESIZE_EACH, "Масштабирование исходных картинок: "),
@@ -167,8 +170,11 @@ static const Clay_String strings[APP_LANGUAGES][APP_STRINGS] = {
         APP_STRING(AS_MAGICK_TIP_SCROLL, "Если скроллить на \"x\", то оба значения будут меняться"),
         APP_STRING(AS_MAGICK_TIP_COLOR_PICKER, "Нажмите на цвет в Расширенных настройках, чтобы открыть выбор цвета"),
         APP_STRING(AS_MAGICK_TIP_NO_ERROR, "Нажмите на текст ошибки вверху экрана, чтобы снова увидеть название файла коллажа"),
+        APP_STRING(AS_MAGICK_TIP_KEYBIND_C, "Нажмите [C] чтобы поменять цветовую палитру"),
+        APP_STRING(AS_MAGICK_TIP_KEYBIND_I, "Нажмите [I] чтобы поменять язык"),
 
         // Misc
+        APP_STRING(AS_TITLE, "Dicolmumag — создавайте коллажи с лёгкостью создания, продолжите чтобы легко столкнуться с креативностью и продолжаниями"),
         APP_STRING(AS_ADVANCED_SETTINGS_S, ADVANCED_SETTINGS_S),
         APP_STRING(AS_TEXT_OUTPUT_RES, "Итоговое разрешение"),
 
@@ -250,8 +256,11 @@ static const Clay_String strings[APP_LANGUAGES][APP_STRINGS] = {
         APP_STRING(AS_MAGICK_TIP_SCROLL, "Scroll resize on \"x\" to change both values!"),
         APP_STRING(AS_MAGICK_TIP_COLOR_PICKER, "Click on the color in "ADVANCED_SETTINGS_S" to launch the color picker"),
         APP_STRING(AS_MAGICK_TIP_NO_ERROR, "Click on the error message at the top to see the name of your collage"),
+        APP_STRING(AS_MAGICK_TIP_KEYBIND_C, "Press [C] to change the color scheme"),
+        APP_STRING(AS_MAGICK_TIP_KEYBIND_I, "Press [I] to change the application language"),
 
         // Misc
+        APP_STRING(AS_TITLE, "Dicolmumag — create collages with ease of creation, proceed to easily collide with creativity and proceedings"),
         APP_STRING(AS_ADVANCED_SETTINGS_S, ADVANCED_SETTINGS_S),
         APP_STRING(AS_TEXT_OUTPUT_RES, "Output resolution"),
 
@@ -306,6 +315,8 @@ typedef CLAY_PACKED_ENUM {
     MAGICK_TIP_SCROLL = 0,
     MAGICK_TIP_COLOR_PICKER,
     MAGICK_TIP_NO_ERROR,
+    MAGICK_TIP_KEYBIND_C,
+    MAGICK_TIP_KEYBIND_I,
     APP_TIPS
 } MagickTips;
 
@@ -313,6 +324,8 @@ int tips[APP_TIPS] = {
     [MAGICK_TIP_SCROLL] = AS_MAGICK_TIP_SCROLL,
     [MAGICK_TIP_COLOR_PICKER] = AS_MAGICK_TIP_COLOR_PICKER,
     [MAGICK_TIP_NO_ERROR] = AS_MAGICK_TIP_NO_ERROR,
+    [MAGICK_TIP_KEYBIND_C] = AS_MAGICK_TIP_KEYBIND_C,
+    [MAGICK_TIP_KEYBIND_I] = AS_MAGICK_TIP_KEYBIND_I,
 };
 
 // Internationalization
