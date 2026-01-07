@@ -877,7 +877,8 @@ long timeNow(void)
 
 int main(void) {
     srand(time(0)); // initialize random seed
-    const char *title = "Dicolmumag — create collages with ease of creation, proceed to easily collide with creativity and proceedings";
+    language = GetEnvLang();
+    const char *title = i18n(AS_TITLE).chars;
     // vsync makes resizes slower, we don't want this
     // but antialiasing is nice
     //
@@ -910,7 +911,6 @@ int main(void) {
     for (int font_id = 0; font_id < FONTS_IDS; font_id++) {
         SetTextureFilter(fonts[font_id].texture, TEXTURE_FILTER_POINT);
     }
-    language = GetEnvLang();
 
     uint64_t clayRequiredMemory = Clay_MinMemorySize();
     Clay_Arena clayMemory = Clay_CreateArenaWithCapacityAndMemory(clayRequiredMemory, malloc(clayRequiredMemory));
@@ -946,10 +946,14 @@ int main(void) {
 #ifdef LAZY_RENDER
         old_state = state;
 #endif // LAZY_RENDER
-        long currentTime = timeNow();
-        Clay_RenderCommandArray renderCommands = CreateLayout(clayContext, &data, state);
+        // long currentTime = timeNow();
+
+        // PollInputEvents();
         state = GetAppState(&data);
-        printf("layout time: %ld microseconds\n", timeNow() - currentTime);
+        Clay_RenderCommandArray renderCommands = CreateLayout(clayContext, &data, state);
+
+        // printf("layout time: %ld microseconds\n", timeNow() - currentTime);
+
         BeginDrawing();
 #ifndef NO_SCALING
         if (IsKeyDown(KEY_LEFT_SHIFT) && IsKeyPressed(KEY_EQUAL)) {
@@ -1007,9 +1011,9 @@ int main(void) {
         EndDrawing();
     }
 
-    Clay_Raylib_Close();
     // Freeing memory
     unloadFonts(fonts);
+    Clay_Raylib_Close();
 #ifndef _WIN32 // it is constant on windows
     free(fontpath);
 #endif // _WIN32
@@ -1020,4 +1024,5 @@ int main(void) {
     nob_cmd_free(data.params.inputFiles);
     nob_cmd_free(data.params.outputFile);
     nob_cmd_free(data.params.magickBinary);
+    return 0;
 }
