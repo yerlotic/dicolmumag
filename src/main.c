@@ -275,7 +275,8 @@ MagickStatus RunMagick(magick_params_t *params) {
         nob_cmd_append(&cmd, temp_path);
         free_buf = true;
     }
-    nob_cmd_append(&cmd, "-gravity", params->gravity.values[params->gravity.selected]);
+    if (params->state & MAGICK_GRAVITY)
+        nob_cmd_append(&cmd, "-gravity", params->gravity.values[params->gravity.selected]);
     nob_cmd_append(&cmd, ashlar_path.items);
 
     fprintf(stderr, "Staring magick\n");
@@ -661,6 +662,8 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, AppData *data, AppSt
         RunMagickThreaded();
     } else if (released_s(i18n(AS_SELECT_TEMP))) {
         SetTempDir(&data->params.tempDir);
+    } else if (IsKeyPressed(KEY_N)) {
+        data->params.tip = (data->params.tip + 1) % APP_TIPS;
     } else if (released_s(i18n(AS_BUTTON_RUN)) || ((IsKeyPressed(KEY_R) && data->params.magickProc == NOB_INVALID_PROC))) {
         nob_kill(&data->params.magickProc);
         RunMagickThreaded();
@@ -805,12 +808,13 @@ static inline Image LoadAppIcon(void) {
 #else
     if (nob_file_exists("icon.png") == 1) {
         return LoadImage("icon.png");
-#ifndef _WIN32
+  #ifndef _WIN32
     } else {
         return LoadImage("../resources/icon.png");
-#endif // _WIN32
+  #endif // _WIN32
     }
 #endif // INSTALLED
+    return LoadImage("");
 }
 
 int SetAppFPS(void) {
