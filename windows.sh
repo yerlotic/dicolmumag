@@ -80,7 +80,7 @@ fi
 
 if [ "${1:-}" == run ]; then
     cd "$out"
-    [ -n "${WAYLAND_DISPLAY:-}" ] && unset DISPLAY
+    # [ -n "${WAYLAND_DISPLAY:-}" ] && unset DISPLAY
     # WINEDEBUG=-all wine "$NAME.exe" || winedbg --gdb "$NAME.exe"
     wine "$NAME.exe" || winedbg --gdb "$NAME.exe" &
     # WINEDEBUG=+all

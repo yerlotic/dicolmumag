@@ -53,6 +53,7 @@ typedef CLAY_PACKED_ENUM {
     MAGICK_PERCENTAGE      = 1 << 8,
     MAGICK_PIXEL_LIMIT     = 1 << 9,
     MAGICK_SET_RESOLUTION  = 1 << 10,
+    MAGICK_GRAVITY         = 1 << 11,
 } MagickState;
 
 CLAY_PACKED_ENUM {
@@ -222,6 +223,17 @@ static inline void HandleResizes(
     uint16_t *state = (uint16_t*)userData;
     if (pointerData.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME)
         *state ^= MAGICK_RESIZE;
+}
+
+static inline void HandleGravity(
+    Clay_ElementId elementId,
+    Clay_PointerData pointerData,
+    intptr_t userData
+) {
+    (void) elementId;
+    uint16_t *state = (uint16_t*)userData;
+    if (pointerData.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME)
+        *state ^= MAGICK_GRAVITY;
 }
 
 static inline void RenderMagickColor(const rgba *color, const uint16_t state) {
@@ -656,7 +668,8 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
                         }
                     }) {
                         CLAY({.layout = {.layoutDirection = CLAY_LEFT_TO_RIGHT, .childGap = S(8)}}) {
-                            CLAY_TEXT(i18n(AS_SECTION_GRAVITY), DEFAULT_TEXT);
+                            StatedText(i18n(AS_SECTION_GRAVITY), data->params.state & MAGICK_GRAVITY);
+                            Clay_OnHover(HandleGravity, (intptr_t) &data->params.state);
                             CLAY({
                                 .backgroundColor = BUTTON_COLOR,
                                 .cornerRadius = BUTTON_RADIUS,
@@ -670,8 +683,7 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
 
                     CLAY({.layout = {.layoutDirection = CLAY_TOP_TO_BOTTOM, .childGap = 8}}) {
                         CLAY({.layout = {.layoutDirection = CLAY_LEFT_TO_RIGHT, .childGap = S(8)}}) {
-                            // StatedText(i18n(AS_SECTION_RESIZE_EACH), data->params.state & MAGICK_RESIZE);
-                            StatedText(i18n(AS_SECTION_RESIZE_EACH), 1);
+                            StatedText(i18n(AS_SECTION_RESIZE_EACH), data->params.state & MAGICK_RESIZE);
                             RenderResize(&data->params.resizes[RESIZES_INPUT], ID_RESIZE_INPUT);
                             Clay_OnHover(HandleResizes, (intptr_t) &data->params.state);
                         };
