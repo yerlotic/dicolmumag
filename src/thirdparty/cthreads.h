@@ -73,15 +73,15 @@ struct cthreads_thread_attr {
   #ifdef _WIN32
     int dwCreationFlags;
   #else
-    void *stackaddr;
-    int detachstate;
     size_t guardsize;
-    int inheritsched;
-    int schedpolicy;
-    int scope;
     #ifdef CTHREADS_THREAD_STACK
       size_t stack;
     #endif
+    void *stackaddr;
+    int detachstate;
+    int inheritsched;
+    int schedpolicy;
+    int scope;
   #endif
 };
 
@@ -215,10 +215,10 @@ struct cthreads_thread cthreads_thread_self(void);
 
 /**
  * Retrieves the thread identifier of the specified thread.
- * 
+ *
  * - pthread: N/A
  * - windows threads: GetThreadId
- * 
+ *
  * @param thread Thread structure to retrieve the identifier from.
  * @return Thread identifier of the specified thread.
 */
@@ -447,7 +447,7 @@ int cthreads_cond_timedwait(struct cthreads_cond *cond, struct cthreads_mutex *m
 #endif
 
 /**
- * Obtains the error code and writes at most `length` 
+ * Obtains the error code and writes at most `length`
  * bytes of the associated message to `buf`.
  *
  * @param error_code Platform-specific error code. (See: `cthreads_error_code()`)
