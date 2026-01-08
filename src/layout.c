@@ -110,48 +110,45 @@ typedef struct gravity_t {
 
 #define resizes_len 3
 typedef struct magick_params_t {
-    uint16_t state;
-    uint8_t tip;
+    gravity_t gravity;
+    resize_element_t resizes[resizes_len];
     Nob_Cmd inputFiles;
     Nob_String_Builder outputFile;
     Nob_String_Builder tempDir;
-
-    gravity_t gravity;
-
-    resize_element_t resizes[resizes_len];
-
-    rgba color;
-    rgba_str color_str;
-
-    Texture2D logo;
-
     Nob_String_Builder magickBinary;
+    Texture2D logo;
+    rgba_str color_str;
+    rgba color;
     Nob_Proc magickProc;
+
+
+    uint16_t state;
+    uint8_t tip;
     Nob_ProcStatus threadRunning;
 } magick_params_t;
 
 typedef struct {
+    magick_params_t params;
+    AppArena frameArena;
+    struct cthreads_args threadArgs;
+    struct cthreads_thread magickThread;
+    uint16_t tabWidth;
     uint8_t selectedDocumentIndex;
     MagickStatus errorIndex;
-    uint16_t tabWidth;
-    AppArena frameArena;
-    magick_params_t params;
     // These should be stored on the heap to prevent
     // race condition caused by stack being gone
-    struct cthreads_thread magickThread;
-    struct cthreads_args threadArgs;
     bool shouldClose;
 } AppData;
 
 typedef struct {
-    uint16_t flag;
     uint16_t *state;
+    uint16_t flag;
 } FlagClickData;
 
 typedef struct {
-    uint8_t requestedDocumentIndex;
-    uint8_t* selectedDocumentIndex;
     uint16_t* state;
+    uint8_t* selectedDocumentIndex;
+    uint8_t requestedDocumentIndex;
 } SidebarClickData;
 
 static inline void HandleSidebarInteraction(
@@ -203,38 +200,19 @@ static inline void HandleActiveColor(
     }
 }
 
-static inline void HandleOutputRes(
-    Clay_ElementId elementId,
-    Clay_PointerData pointerData,
-    intptr_t userData
-) {
-    (void) elementId;
-    uint16_t *state = (uint16_t*)userData;
-    if (pointerData.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME)
-        *state ^= MAGICK_SET_RESOLUTION;
+#define HANDLE_TOGGLE(name, flag)                                  \
+static inline void Handle##name(Clay_ElementId elementId,          \
+                                Clay_PointerData pointerData,      \
+                                intptr_t userData) {               \
+    (void)elementId;                                               \
+    uint16_t *state = (uint16_t *)userData;                        \
+    if (pointerData.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME) \
+      *state ^= (flag);                                            \
 }
 
-static inline void HandleResizes(
-    Clay_ElementId elementId,
-    Clay_PointerData pointerData,
-    intptr_t userData
-) {
-    (void) elementId;
-    uint16_t *state = (uint16_t*)userData;
-    if (pointerData.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME)
-        *state ^= MAGICK_RESIZE;
-}
-
-static inline void HandleGravity(
-    Clay_ElementId elementId,
-    Clay_PointerData pointerData,
-    intptr_t userData
-) {
-    (void) elementId;
-    uint16_t *state = (uint16_t*)userData;
-    if (pointerData.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME)
-        *state ^= MAGICK_GRAVITY;
-}
+HANDLE_TOGGLE(OutputRes, MAGICK_SET_RESOLUTION)
+HANDLE_TOGGLE(Resizes, MAGICK_RESIZE)
+HANDLE_TOGGLE(Gravity, MAGICK_GRAVITY)
 
 static inline void RenderMagickColor(const rgba *color, const uint16_t state) {
     if (state & MAGICK_TRANSPARENT_BG) {

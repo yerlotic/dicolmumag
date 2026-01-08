@@ -33,7 +33,7 @@ target_include_directories(dicolmumag PUBLIC .)
 target_link_libraries(dicolmumag PUBLIC raylib fontconfig m SDL3)
 
 # set(CMAKE_C_FLAGS "-Werror -Wall -Wextra -Wpedantic -fwrapv -fanalyzer")
-set(CMAKE_C_FLAGS "-Wall -Wextra -fwrapv -Wno-missing-braces")
+set(CMAKE_C_FLAGS "-Wall -Wextra -fwrapv -Wno-missing-braces -Wpadded")
 set(USE_EXTERNAL_GLFW ON)
 
 # set(PLATFORM PLATFORM_DESKTOP)

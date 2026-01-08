@@ -26,10 +26,10 @@ typedef struct
 
 typedef struct
 {
-    CustomLayoutElementType type;
     union {
         CustomLayoutElement_3DModel model;
     } customData;
+    CustomLayoutElementType type;
 } CustomLayoutElement;
 
 // Get a ray trace from the screen position (i.e mouse) within a specific section of the screen

@@ -565,8 +565,6 @@ bool UpdateResizes(resize_element_t *resizes, int8_t scroll) {
         if (!Clay_PointerOver(Clay_GetElementId(resize->id))) continue;
         scrolled = true;
 
-        // All this could have been done with a macro
-        // probably
         sb.count = 0;
         nob_sb_append_buf(&sb, resize->id.chars, resize->id.length);
 
