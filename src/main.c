@@ -999,7 +999,7 @@ int main(void) {
                 state = GetAppState(&data);
                 if (!(are_equal = StatesEqual(&state, &old_state))) break;
                 old_state = state;
-                WaitTime(5*sleep_fps);
+                WaitTime(10*sleep_fps);
             } while (true);
             // Look! it moved!
             prevtime = time + SLEEP_THRESHOLD;

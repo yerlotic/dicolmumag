@@ -257,10 +257,10 @@ static inline void HandleFlagInteraction(
 void RenderFlag(Clay_String text,
                 uint16_t *state,
                 uint16_t triggerFlag,
-                uint16_t displayFlag,
+                bool enabled,
                 AppArena *arena) {
     Clay_Color background = BUTTON_COLOR;
-    if (*state & displayFlag)
+    if (enabled)
         background = OPACITY(c10n(COLOR_GREEN), 35);
     CLAY({
         .clip = {.horizontal = true},
@@ -310,7 +310,7 @@ AppData AppDataInit(void) {
         .errorIndex = 0,
         .tabWidth = 260,
         .params = {
-            .state = MAGICK_BEST_FIT | MAGICK_OPEN_ON_DONE | MAGICK_RESIZE,
+            .state = MAGICK_OPEN_ON_DONE | MAGICK_RESIZE,
             .tip = rand() % APP_TIPS,
             .outputFile = {0},
             .tempDir = {0},
@@ -665,14 +665,16 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
                             RenderResize(&data->params.resizes[RESIZES_INPUT], ID_RESIZE_INPUT);
                             Clay_OnHover(HandleResizes, (intptr_t) &data->params.state);
                         };
-                        // CLAY()
-                        RenderFlag(i18n(AS_TEXT_IGNORE_ASPECT), &data->params.state, MAGICK_IGNORE_RATIO, MAGICK_IGNORE_RATIO, &data->frameArena);
+                        uint16_t state = data->params.state;
+                        RenderFlag(i18n(AS_TEXT_IGNORE_ASPECT), &data->params.state, MAGICK_IGNORE_RATIO, state & MAGICK_IGNORE_RATIO, &data->frameArena);
                         // Well... this would only work for two
                         RenderFlag(i18n(AS_TEXT_SHRINK_LARGER), &data->params.state,
-                                (data->params.state & MAGICK_ENLARGE_SMALLER) ? MAGICK_ENLARGE_SMALLER | MAGICK_SHRINK_LARGER : MAGICK_SHRINK_LARGER, MAGICK_SHRINK_LARGER, &data->frameArena);
+                                (data->params.state & MAGICK_ENLARGE_SMALLER) ? MAGICK_ENLARGE_SMALLER | MAGICK_SHRINK_LARGER : MAGICK_SHRINK_LARGER, state & MAGICK_SHRINK_LARGER, &data->frameArena);
                         RenderFlag(i18n(AS_TEXT_ENLARGE_SMALLER), &data->params.state,
-                                (data->params.state & MAGICK_SHRINK_LARGER) ? MAGICK_SHRINK_LARGER | MAGICK_ENLARGE_SMALLER : MAGICK_ENLARGE_SMALLER, MAGICK_ENLARGE_SMALLER, &data->frameArena);
-                        RenderFlag(i18n(AS_TEXT_FILL_AREA), &data->params.state, MAGICK_FILL_AREA, MAGICK_FILL_AREA, &data->frameArena);
+                                (data->params.state & MAGICK_SHRINK_LARGER) ? MAGICK_SHRINK_LARGER | MAGICK_ENLARGE_SMALLER : MAGICK_ENLARGE_SMALLER, state & MAGICK_ENLARGE_SMALLER, &data->frameArena);
+                        RenderFlag(i18n(AS_TEXT_FILL_AREA), &data->params.state, MAGICK_FILL_AREA, state & MAGICK_FILL_AREA, &data->frameArena);
+                        // if not set - MAGICK
+                        RenderFlag(i18n(AS_TEXT_NOT_FILL_AREA), &data->params.state, MAGICK_FILL_AREA, !(state & MAGICK_FILL_AREA), &data->frameArena);
                     }
 
                     CLAY({
