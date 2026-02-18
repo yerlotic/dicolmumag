@@ -71,7 +71,8 @@ if [ "${1:-}" == pack ]; then
     mkdir "$out"
     cp "/usr/share/fonts/noto/NotoSans-Regular.ttf" font.ttf
     mv "$NAME.exe" font.ttf "$out"/
-    cp ../resources/{banner,icon}.png "$magick_dir"/magick.exe "$out"/
+    cp ../resources/banner.png "$magick_dir"/magick.exe "$out"/
+    magick ../resources/icon.png -resize $ICON_RES "$out"/icon.png
 
     # zip -o "$out".zip -r "$out"/
     zip -ro "$out"{.zip,} &

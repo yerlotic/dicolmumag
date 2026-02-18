@@ -41,7 +41,7 @@ cmake .. "${cmake_flags[@]}" -DAPPIMAGE=OFF && make "-j$(nproc)"
 sudo rm /bin/"$NAME" || true
 sudo cp "$NAME" /bin/
 sudo mkdir -p /usr/share/$NAME
-! [ -f "./icon.png" ] && magick ../resources/icon.png -resize 256x256 icon.png
+! [ -f "./icon.png" ] && magick ../resources/icon.png -resize $ICON_RES icon.png
 sudo cp ../resources/banner.png /usr/share/$NAME
 sudo cp icon.png /usr/share/$NAME/
 
