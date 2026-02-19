@@ -543,7 +543,7 @@ bool StatesEqual(const AppState *this, const AppState *that) {
 }
 #endif // LAZY_RENDER
 
-bool UpdateResizes(resize_element_t *resizes, int8_t scroll) {
+bool UpdateResizes(resize_element_t *resizes, int8_t scroll, uint8_t override) {
     bool scrolled = false;
 
     // Handle one in header bar
@@ -560,7 +560,10 @@ bool UpdateResizes(resize_element_t *resizes, int8_t scroll) {
     // Number pickers handling (questionable)
     for (size_t i = 0; i < resizes_len; i++) {
         resize = &resizes[i];
-        step = resize->step;
+        if (override)
+            step = override;
+        else
+            step = resize->step;
 
         if (!Clay_PointerOver(Clay_GetElementId(resize->id))) continue;
         scrolled = true;
@@ -620,6 +623,12 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, AppData *data, AppSt
     );
 
     Nob_Cmd cmd = {0};
+    int8_t step_override = 0;
+    if (IsKeyDown(KEY_LEFT_SHIFT)) {
+        step_override = 1;
+    } else if (IsKeyDown(KEY_LEFT_CONTROL)) {
+        step_override = 100;
+    }
 
     if (data->params.state & MAGICK_OPEN_ON_DONE && data->params.magickProc != NOB_INVALID_PROC) {
         Nob_ProcStatus status = nob_proc_running(data->params.magickProc);
@@ -706,7 +715,7 @@ Clay_RenderCommandArray CreateLayout(Clay_Context* context, AppData *data, AppSt
     // Update only on interaction
     bool scrolled = false;
     if (scroll) {
-        scrolled = UpdateResizes((resize_element_t *) &data->params.resizes, scroll);
+        scrolled = UpdateResizes((resize_element_t *) &data->params.resizes, scroll, step_override);
 
         // colors
         if (Clay_PointerOver(Clay_GetElementId(CLAY_STRING("r")))) {
