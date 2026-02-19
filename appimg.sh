@@ -24,7 +24,7 @@ else
     tool_available=false
 fi
 
-[ "$(basename "$PWD")" != build ] && cd build
+go-to-build
 
 rm -rf "$APP_ROOT"
 cmake_flags=(

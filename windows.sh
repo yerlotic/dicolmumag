@@ -15,11 +15,7 @@ raylib_dir=raylib-"$raylib_ver"_"$raylib_platform"
 
 archive="$raylib_dir.zip"
 
-# in case you run in not from build
-if [ "$(basename "$PWD")" != "$(basename "$build")" ]; then
-    mkdir -p "$build"
-    cd "$build"
-fi
+go-to-build
 
 if ! [ -d "$raylib_dir" ]; then
     wget "https://github.com/raysan5/raylib/releases/download/$raylib_ver/$archive"
