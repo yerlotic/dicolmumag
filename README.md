@@ -59,7 +59,6 @@ App for creating collages with [ImageMagick](https://imagemagick.org)
 1. Clone the repo
 2. Compile
     <details><summary>
-
     Compile definitions
     </summary>
 
