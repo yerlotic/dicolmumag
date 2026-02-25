@@ -200,6 +200,17 @@ static inline void HandleActiveColor(
     }
 }
 
+static inline void HandleNextTip(
+    Clay_ElementId elementId,
+    Clay_PointerData pointerData,
+    intptr_t userData
+) {
+    (void) elementId;
+    if (pointerData.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME) {
+        uint8_t *tip = (uint8_t*)userData;
+        *tip = (*tip + 1) % APP_TIPS;
+    }
+}
 #define HANDLE_TOGGLE(name, flag)                                  \
 static inline void Handle##name(Clay_ElementId elementId,          \
                                 Clay_PointerData pointerData,      \
@@ -767,12 +778,15 @@ Clay_RenderCommandArray AppCreateLayout(AppData *data) {
                             .textColor = c10n(COLOR_TEXT),
                             .textAlignment = CLAY_TEXT_ALIGN_CENTER,
                         }));
-                        CLAY_TEXT(i18n(tips[data->params.tip]), CLAY_TEXT_CONFIG({
-                            .fontId = FONT_ID_DOCUMENT,
-                            .fontSize = S(document_font_size),
-                            .textColor = c10n(COLOR_TEXT),
-                            .textAlignment = CLAY_TEXT_ALIGN_CENTER,
-                        }));
+                        CLAY() {
+                            CLAY_TEXT(i18n(tips[data->params.tip]), CLAY_TEXT_CONFIG({
+                                        .fontId = FONT_ID_DOCUMENT,
+                                        .fontSize = S(document_font_size),
+                                        .textColor = c10n(COLOR_TEXT),
+                                        .textAlignment = CLAY_TEXT_ALIGN_CENTER,
+                                        }));
+                            Clay_OnHover(HandleNextTip, (intptr_t) &data->params.tip);
+                        }
 
                         Clay_String start = i18n(AS_START_USING);
                         CLAY({
