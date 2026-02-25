@@ -71,6 +71,7 @@ CLAY_PACKED_ENUM {
 
     // Tips
     AS_MAGICK_TIP_SCROLL,
+    AS_MAGICK_TIP_SCROLL_MODS,
     AS_MAGICK_TIP_COLOR_PICKER,
     AS_MAGICK_TIP_NO_ERROR,
     AS_MAGICK_TIP_KEYBIND_C,
@@ -170,6 +171,7 @@ static const Clay_String strings[APP_LANGUAGES][APP_STRINGS] = {
 
         // Tips
         APP_STRING(AS_MAGICK_TIP_SCROLL, "Если скроллить на \"x\", то оба значения будут меняться"),
+        APP_STRING(AS_MAGICK_TIP_SCROLL_MODS, "Нажмите [CTRL], чтобы скроллить сразу на 100 и [SHIFT] чтобы скроллить по единице"),
         APP_STRING(AS_MAGICK_TIP_COLOR_PICKER, "Нажмите на цвет в Расширенных настройках, чтобы открыть выбор цвета"),
         APP_STRING(AS_MAGICK_TIP_NO_ERROR, "Нажмите на текст ошибки вверху экрана, чтобы снова увидеть название файла коллажа"),
         APP_STRING(AS_MAGICK_TIP_KEYBIND_C, "Нажмите [C] чтобы поменять цветовую палитру"),
@@ -257,6 +259,7 @@ static const Clay_String strings[APP_LANGUAGES][APP_STRINGS] = {
 
         // Tips
         APP_STRING(AS_MAGICK_TIP_SCROLL, "Scroll resize on \"x\" to change both values!"),
+        APP_STRING(AS_MAGICK_TIP_SCROLL_MODS, "Press [CTRL], to scroll by 100 and [SHIFT] to scroll by one"),
         APP_STRING(AS_MAGICK_TIP_COLOR_PICKER, "Click on the color in "ADVANCED_SETTINGS_S" to launch the color picker"),
         APP_STRING(AS_MAGICK_TIP_NO_ERROR, "Click on the error message at the top to see the name of your collage"),
         APP_STRING(AS_MAGICK_TIP_KEYBIND_C, "Press [C] to change the color scheme"),
@@ -316,6 +319,7 @@ int errors[] = {
 
 typedef CLAY_PACKED_ENUM {
     MAGICK_TIP_SCROLL = 0,
+    MAGICK_TIP_SCROLL_MODS,
     MAGICK_TIP_COLOR_PICKER,
     MAGICK_TIP_NO_ERROR,
     MAGICK_TIP_KEYBIND_C,
@@ -325,6 +329,7 @@ typedef CLAY_PACKED_ENUM {
 
 int tips[APP_TIPS] = {
     [MAGICK_TIP_SCROLL] = AS_MAGICK_TIP_SCROLL,
+    [MAGICK_TIP_SCROLL_MODS] = AS_MAGICK_TIP_SCROLL_MODS,
     [MAGICK_TIP_COLOR_PICKER] = AS_MAGICK_TIP_COLOR_PICKER,
     [MAGICK_TIP_NO_ERROR] = AS_MAGICK_TIP_NO_ERROR,
     [MAGICK_TIP_KEYBIND_C] = AS_MAGICK_TIP_KEYBIND_C,
