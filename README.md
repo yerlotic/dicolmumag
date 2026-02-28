@@ -109,5 +109,12 @@ App for creating collages with [ImageMagick](https://imagemagick.org)
   ```
 </details>
 
+## Libraries used
+
+- [raylib](https://www.raylib.com/)
+- [CThreads](https://github.com/PerformanC/CThreads) with [modifications](./src/thirdparty/cthreads.c)
+- [Clay](https://github.com/nicbarker/clay) with [modifications](./src/thirdparty/clay.h)
+- [tinyfiledialogs](https://sourceforge.net/projects/tinyfiledialogs/) with [modifications](./src/thirdparty/tinyfiledialogs.c)
+
 <br>
 <div align="center">Made on 🌍 with ❤️</div>
