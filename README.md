@@ -23,7 +23,9 @@ App for creating collages with [ImageMagick](https://imagemagick.org)
 </summary>
 <br>
 <div align="center">
-![presentation](./resources/presentation.mp4)
+
+[Cool presentation video](./resources/presentation.mp4)
+
 <img src="resources/welcome.png" width=80% height=80% alt="Welcome screenshot">
 <img src="resources/screenshot.png" width=80% height=80% alt="Screenshot">
 <img src="resources/collage1.avif" width=80% height=80% alt="Collage 1">
