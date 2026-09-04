@@ -2706,7 +2706,7 @@ NOBDEF bool nob_sv_starts_with(Nob_String_View sv, Nob_String_View expected_pref
 }
 
 // RETURNS:
-//  0 - file does not exists
+//  0 - file does not exist
 //  1 - file exists
 NOBDEF int nob_file_exists(const char *file_path)
 {
