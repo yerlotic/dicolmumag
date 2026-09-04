@@ -31,10 +31,11 @@
 #define ICON_BASE "icon.png"
 #define ICON "../resources/"ICON_BASE
 
-#define unwrap(fn) if (!fn) return false;
-#define write_literal(fd, literal) write((fd), ("" literal ""), sizeof("" literal "")-1)
-// nob run reset
-#define nob_rr nob_cmd_run_sync_and_reset
+enum {
+    PARAMS_LIN = 1 << 0,
+    PARAMS_WIN = 1 << 1,
+    PARAMS_PACK= 1 << 2,
+};
 
 bool round_corners(const char* input, const char* output) {
     Nob_Cmd cmd = {0};
@@ -56,7 +57,7 @@ bool round_corners(const char* input, const char* output) {
         "-compose", "CopyOpacity",
         "-composite", output
     );
-    unwrap(nob_rr(&cmd))
+    unwrap(nob_rr(&cmd));
 
     nob_cmd_free(cmd);
     return true;
@@ -65,7 +66,7 @@ bool round_corners(const char* input, const char* output) {
 bool ensure_downloaded(bool for_windows, Nob_String_Builder raylib_include_dir) {
     nob_log(INFO, "Making sure the dependencies are ready");
     Nob_Cmd cmd = {0};
-    if (!nob_file_exists(raylib_include_dir.items)) {
+    if (!dir_exists(raylib_include_dir.items)) {
         cmd_append(&cmd, "wget");
         if (for_windows)
             cmd_append(&cmd, "https://github.com/raysan5/raylib/releases/download/"RAYLIB_VER"/"RAYLIB_WIN_DIR".zip");
@@ -82,6 +83,17 @@ bool ensure_downloaded(bool for_windows, Nob_String_Builder raylib_include_dir) 
         unwrap(nob_rr(&cmd));
     }
 
+#define MAGICK_ARCHIVE "ImageMagick-"MAGICK_VER"-portable-Q16-HDRI-x64.7z"
+    if (!file_exists(MAGICK_DIR"/magick.exe")) {
+        unwrap(mkdir_if_not_exists(MAGICK_DIR));
+
+        cmd_append(&cmd, "wget", "https://github.com/ImageMagick/ImageMagick/releases/download/"MAGICK_VER"/"MAGICK_ARCHIVE);
+        unwrap(nob_rr(&cmd));
+
+        cmd_append(&cmd, "7z", "x", "-y", MAGICK_ARCHIVE, "-o./"MAGICK_DIR);
+        unwrap(nob_rr(&cmd));
+    }
+
     if (!file_exists("icon.ico")) {
         nob_log(INFO, "Rounding the corners");
         unwrap(round_corners(ICON, "icon.ico"));
@@ -92,7 +104,6 @@ bool ensure_downloaded(bool for_windows, Nob_String_Builder raylib_include_dir) 
         Nob_Fd file = nob_fd_open_for_write(ICON_RC);
         write_literal(file, "id ICON icon.ico\n");
         close(file);
-
     }
 
     if (!file_exists(ICON_RES)) {
@@ -105,10 +116,13 @@ bool ensure_downloaded(bool for_windows, Nob_String_Builder raylib_include_dir) 
     return true;
 }
 
-bool go_build(bool for_windows) {
+bool go_to_build() {
     unwrap(mkdir_if_not_exists(BUILD_FOLDER));
-    set_current_dir(BUILD_FOLDER);
+    unwrap(set_current_dir(BUILD_FOLDER));
+    return true;
+}
 
+bool go_build(bool for_windows) {
     Nob_Cmd cmd = {0};
 
     Nob_String_Builder raylib_include_dir = {0};
@@ -174,12 +188,59 @@ bool go_build(bool for_windows) {
     return true;
 }
 
-int main(int argc, char **argv)
-{
-    NOB_GO_REBUILD_URSELF(argc, argv);
+#define OUT NAME"_win"
 
-    bool for_windows = 1;
-    if (!go_build(for_windows)) return 1;
+bool go_pack() {
+    Nob_Cmd cmd = {0};
+    cmd_append(&cmd, "rm", "-rf", OUT, OUT".zip");
+    unwrap(nob_rr(&cmd));
+
+    unwrap(mkdir_if_not_exists(OUT));
+    unwrap(copy_file("/usr/share/fonts/noto/NotoSans-Regular.ttf", OUT"/font.ttf"));
+    unwrap(copy_file(NAME".exe", OUT"/"NAME".exe"));
+
+    unwrap(copy_file("../resources/banner.png", OUT"/banner.png"));
+    unwrap(copy_file(MAGICK_DIR"/magick.exe",   OUT"/magick.exe"));
+    cmd_append(&cmd, "magick", "../resources/icon.png", "-resize", ICON_RESOLUTION, OUT"/icon.png");
+    unwrap(nob_rr(&cmd));
+
+    cmd_append(&cmd, "zip", "-ro", OUT".zip", OUT);
+    unwrap(nob_rr(&cmd));
+    return true;
+}
+
+bool run_build_jobs(int argc, char **argv) {
+    unwrap(go_to_build());
+
+    uint8_t build_params = 0;
+    while (argc > 1) {
+        if (strcmp(argv[1], "lin") == 0) {
+            unwrap(go_build(0));
+            build_params |= PARAMS_LIN;
+        } else if (strcmp(argv[1], "win") == 0) {
+            build_params |= PARAMS_WIN;
+            unwrap(go_build(1));
+        } else if (strcmp(argv[1], "pack") == 0) {
+            build_params |= PARAMS_PACK;
+            unwrap(go_pack());
+        }
+        nob_shift(argv, argc);
+    }
+
+    if (build_params == 0) {
+        printf("Usage: %s [command]\n", argv[0]);
+        printf("Commands:\n");
+        printf("   lin  - compile for Linux\n");
+        printf("   win  - compile for Windows\n");
+        printf("   pack - pack for Windows\n");
+    }
+
+    return true;
+}
+
+int main(int argc, char **argv) {
+    NOB_GO_REBUILD_URSELF(argc, argv);
+    if (!run_build_jobs(argc, argv)) return 1;
 
     return 0;
 }

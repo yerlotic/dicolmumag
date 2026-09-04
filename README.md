@@ -78,9 +78,23 @@ https://github.com/user-attachments/assets/8c1dec43-ad1c-4d18-b3a7-17b743488abf
     | `UI_TESTING`   | Enable FPS counter and Clay debug mode         |       |
     </details>
 
+    With CMake:
+
     ```shell
     mkdir -p build
     (cd build && cmake -DCMAKE_BUILD_TYPE=Debug -DLAZY_RENDER=ON .. && make -j$(nproc))
+    ```
+
+    With nob:
+
+    ```shell
+    gcc nob.c -o nob && ./nob
+    ```
+
+    Then you don't have to recompile nob, just run it:
+
+    ```shell
+    ./nob
     ```
 
 3. Run:

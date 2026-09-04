@@ -3028,6 +3028,19 @@ wchar_t* fromUTF8(
 	return output_buffer;
 }
 #endif // _WIN32
+
+#define unwrap(fn) if (!fn) return false
+
+NOBDEF bool nob_dir_exists(const char *file_path) {
+    unwrap(nob_file_exists(file_path));
+    if (nob_get_file_type(file_path) != NOB_FILE_DIRECTORY) return false;
+    return true;
+}
+
+#define write_literal(fd, literal) write((fd), ("" literal ""), sizeof("" literal "")-1)
+// nob run reset
+#define nob_rr nob_cmd_run_sync_and_reset
+
 /////////////// Dicolmumag additions end ///////
 
 #endif // NOB_IMPLEMENTATION
@@ -3201,6 +3214,9 @@ wchar_t* fromUTF8(
         #define nprocs nob_nprocs
         #define nanos_since_unspecified_epoch nob_nanos_since_unspecified_epoch
         #define NANOS_PER_SEC NOB_NANOS_PER_SEC
+        /// Dicolmumag ///
+        #define dir_exists nob_dir_exists
+        //////////////////
     #endif // NOB_STRIP_PREFIX
 #endif // NOB_STRIP_PREFIX_GUARD_
 
