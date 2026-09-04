@@ -17,6 +17,8 @@
 App for creating collages with [ImageMagick](https://imagemagick.org)
 </div>
 
+https://github.com/user-attachments/assets/8c1dec43-ad1c-4d18-b3a7-17b743488abf
+
 <details><summary>
 
 ## Gallery
