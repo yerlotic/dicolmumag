@@ -223,7 +223,7 @@ bool go_check() {
 
 #define check_one(name, ...)                                    \
     do {                                                        \
-      fprintf(stderr, NOB_INFO_TEXT "Checking %s... ", (name)); \
+      fprintf(stderr, NOB_INFO_TEXT "  Checking %s... ", (name)); \
       cmd_append(&cmd, (name), __VA_ARGS__);                    \
       if (nob_rrs(&cmd)) {                                      \
         fprintf(stderr, "\e[92mFOUND\e[0m");                    \
@@ -236,13 +236,17 @@ bool go_check() {
 
     nob_set_log_handler(nob_null_log_handler);
 
+    fprintf(stderr, NOB_INFO_TEXT"For core:\n");
     check_one("magick", "--version");
-    check_one("wget", "--version");
+    fprintf(stderr, NOB_INFO_TEXT"For packing:\n");
     check_one("zip", "--version");
+    fprintf(stderr, NOB_INFO_TEXT"For Windows:\n");
+    check_one("x86_64-w64-mingw32-windres", "--version");
+    fprintf(stderr, NOB_INFO_TEXT"For downoading dependencies:\n");
     check_one("unzip", "-v");
+    check_one("wget", "--version");
     check_one("tar", "--version");
     check_one("7z", "-h");
-    check_one("x86_64-w64-mingw32-windres", "--version");
 
     nob_set_log_handler(nob_default_log_handler);
 
