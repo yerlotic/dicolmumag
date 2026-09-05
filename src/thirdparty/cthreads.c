@@ -153,6 +153,8 @@ int cthreads_thread_cancel(struct cthreads_thread thread) {
 
   #ifdef _WIN32
     return TerminateThread(thread.wThread, 0);
+  #elif __ANDROID__
+    return pthread_kill(thread.pThread, SIGKILL);
   #else
     return pthread_cancel(thread.pThread);
   #endif

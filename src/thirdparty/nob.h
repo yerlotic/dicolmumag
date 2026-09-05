@@ -1907,13 +1907,25 @@ NOBDEF void nob_default_log_handler(Nob_Log_Level level, const char *fmt, va_lis
 
     switch (level) {
     case NOB_INFO:
+#ifdef _WIN32
         fprintf(stderr, "[INFO] ");
+#else // POSIX
+        fprintf(stderr, "\e[96m[INFO]\e[0m ");
+#endif // _WIN32
         break;
     case NOB_WARNING:
+#ifdef _WIN32
         fprintf(stderr, "[WARNING] ");
+#else // POSIX
+        fprintf(stderr, "\e[93m[WARNING]\e[0m ");
+#endif // _WIN32
         break;
     case NOB_ERROR:
+#ifdef _WIN32
         fprintf(stderr, "[ERROR] ");
+#else // POSIX
+        fprintf(stderr, "\e[91m[ERROR]\e[0m ");
+#endif // _WIN32
         break;
     case NOB_NO_LOGS: return;
     default:
@@ -2892,6 +2904,11 @@ typedef enum __attribute__((__packed__)) Nob_ProcStatus {
     nob_cmd_run_async_redirect(cmd, (Nob_Cmd_Redirect) {.fdout = &blackhole, .fderr = &blackhole}); \
 } while(0)
 
+#define nob_setup_blackhole() Nob_Fd blackhole = nob_fd_open_for_write(NOB_BLACKHOLE)
+// run reset silent
+#define nob_rrs(cmd) nob_cmd_run_sync_redirect_and_reset_leave_fd((cmd), (Nob_Cmd_Redirect){.fdout = &blackhole, .fderr = &blackhole})
+#define nob_rr(cmd) nob_cmd_run_sync_and_reset((cmd))
+
 void nob_kill(Nob_Proc *proc) {
     fprintf(stderr, "nob_kill\n");
     if (*proc == NOB_INVALID_PROC) return;
@@ -3037,9 +3054,15 @@ NOBDEF bool nob_dir_exists(const char *file_path) {
     return true;
 }
 
+NOBDEF bool nob_cmd_run_sync_redirect_and_reset_leave_fd(Nob_Cmd *cmd, Nob_Cmd_Redirect redirect)
+{
+    Nob_Proc p = nob__cmd_start_process(*cmd, redirect.fdin, redirect.fdout, redirect.fderr);
+    cmd->count = 0;
+    return nob_proc_wait(p);
+}
+
 #define write_literal(fd, literal) write((fd), ("" literal ""), sizeof("" literal "")-1)
 // nob run reset
-#define nob_rr nob_cmd_run_sync_and_reset
 
 /////////////// Dicolmumag additions end ///////
 
@@ -3216,6 +3239,7 @@ NOBDEF bool nob_dir_exists(const char *file_path) {
         #define NANOS_PER_SEC NOB_NANOS_PER_SEC
         /// Dicolmumag ///
         #define dir_exists nob_dir_exists
+        #define cmd_run_async_silent nob_cmd_run_async_silent
         //////////////////
     #endif // NOB_STRIP_PREFIX
 #endif // NOB_STRIP_PREFIX_GUARD_

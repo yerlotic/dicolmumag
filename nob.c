@@ -10,6 +10,7 @@
 // the implementations go.
 #define NOB_IMPLEMENTATION
 #include "src/thirdparty/nob.h"
+#include <stdio.h>
 
 // Some folder paths that we use throughout the build process.
 #define BUILD_FOLDER "./build/"
@@ -30,11 +31,13 @@
 #define ICON_RADIUS "50"
 #define ICON_BASE "icon.png"
 #define ICON "../resources/"ICON_BASE
+#define WGET "wget", "-nv", "--show-progress", "-c"
 
 enum {
-    PARAMS_LIN = 1 << 0,
-    PARAMS_WIN = 1 << 1,
-    PARAMS_PACK= 1 << 2,
+    PARAMS_LIN   = 1 << 0,
+    PARAMS_WIN   = 1 << 1,
+    PARAMS_PACK  = 1 << 2,
+    PARAMS_CHECK = 1 << 3,
 };
 
 bool round_corners(const char* input, const char* output) {
@@ -67,7 +70,7 @@ bool ensure_downloaded(bool for_windows, Nob_String_Builder raylib_include_dir) 
     nob_log(INFO, "Making sure the dependencies are ready");
     Nob_Cmd cmd = {0};
     if (!dir_exists(raylib_include_dir.items)) {
-        cmd_append(&cmd, "wget");
+        cmd_append(&cmd, WGET);
         if (for_windows)
             cmd_append(&cmd, "https://github.com/raysan5/raylib/releases/download/"RAYLIB_VER"/"RAYLIB_WIN_DIR".zip");
         else
@@ -87,7 +90,7 @@ bool ensure_downloaded(bool for_windows, Nob_String_Builder raylib_include_dir) 
     if (!file_exists(MAGICK_DIR"/magick.exe")) {
         unwrap(mkdir_if_not_exists(MAGICK_DIR));
 
-        cmd_append(&cmd, "wget", "https://github.com/ImageMagick/ImageMagick/releases/download/"MAGICK_VER"/"MAGICK_ARCHIVE);
+        cmd_append(&cmd, WGET, "https://github.com/ImageMagick/ImageMagick/releases/download/"MAGICK_VER"/"MAGICK_ARCHIVE);
         unwrap(nob_rr(&cmd));
 
         cmd_append(&cmd, "7z", "x", "-y", MAGICK_ARCHIVE, "-o./"MAGICK_DIR);
@@ -180,7 +183,7 @@ bool go_build(bool for_windows) {
     } else {
         cmd_append(&cmd, "-lm");
         cmd_append(&cmd, "-lfontconfig");
-        cmd_append(&cmd, "-lSDL3");
+        // cmd_append(&cmd, "-lSDL3");
     }
 
     nob_cc_output(&cmd, NAME);
@@ -206,33 +209,76 @@ bool go_pack() {
 
     cmd_append(&cmd, "zip", "-ro", OUT".zip", OUT);
     unwrap(nob_rr(&cmd));
+
+    nob_cmd_free(cmd);
     return true;
+}
+
+bool go_check() {
+    Nob_Cmd cmd = {0};
+    bool ok = 1;
+    nob_setup_blackhole();
+
+    nob_set_log_handler(nob_null_log_handler);
+    cmd_append(&cmd, "magick", "--version");
+
+    if (!nob_rrs(&cmd)) ok = 0;
+
+    cmd_append(&cmd, "wget", "--version");
+    if (!nob_rrs(&cmd)) ok = 0;
+
+    cmd_append(&cmd, "zip", "--version");
+    if (!nob_rrs(&cmd)) ok = 0;
+
+    cmd_append(&cmd, "unzip", "-v");
+    if (!nob_rrs(&cmd)) ok = 0;
+
+    cmd_append(&cmd, "tar", "--version");
+    if (!nob_rrs(&cmd)) ok = 0;
+
+    cmd_append(&cmd, "7z", "-h");
+    if (!nob_rrs(&cmd)) ok = 0;
+
+    if (ok) {
+        nob_log(NOB_INFO, "All dependencies were found");
+    } else {
+        nob_log(NOB_INFO, "Not all dependencies were found");
+    }
+
+    nob_cmd_free(cmd);
+    return ok;
 }
 
 bool run_build_jobs(int argc, char **argv) {
     unwrap(go_to_build());
 
-    uint8_t build_params = 0;
+    bool did_something = 1;
     while (argc > 1) {
         if (strcmp(argv[1], "lin") == 0) {
             unwrap(go_build(0));
-            build_params |= PARAMS_LIN;
+            did_something = 1;
         } else if (strcmp(argv[1], "win") == 0) {
-            build_params |= PARAMS_WIN;
+            did_something = 1;
             unwrap(go_build(1));
         } else if (strcmp(argv[1], "pack") == 0) {
-            build_params |= PARAMS_PACK;
+            did_something = 1;
             unwrap(go_pack());
+        } else if (strcmp(argv[1], "check") == 0) {
+            did_something = 1;
+            unwrap(go_check());
+        } else {
+            nob_log(NOB_ERROR, "idk fym \"%s\"", argv[1]);
         }
         nob_shift(argv, argc);
     }
 
-    if (build_params == 0) {
+    if (!did_something) {
         printf("Usage: %s [command]\n", argv[0]);
         printf("Commands:\n");
-        printf("   lin  - compile for Linux\n");
-        printf("   win  - compile for Windows\n");
-        printf("   pack - pack for Windows\n");
+        printf("   lin   - compile for Linux\n");
+        printf("   win   - compile for Windows\n");
+        printf("   pack  - pack for Windows\n");
+        printf("   check - check the dependencies\n");
     }
 
     return true;
