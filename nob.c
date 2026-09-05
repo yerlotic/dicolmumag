@@ -16,9 +16,9 @@
 #define BUILD_FOLDER "./build/"
 #define SRC_FOLDER   "../src/"
 
-#define MAGICK_VER "7.1.2-5"
+#define MAGICK_VER "7.1.2-31"
 #define MAGICK_DIR "magick_win"
-#define RAYLIB_VER "5.5"
+#define RAYLIB_VER "6.0"
 #define RAYLIB_WIN "win64_mingw-w64"
 #define RAYLIB_LIN "linux_amd64"
 #define RAYLIB_LIN_DIR "raylib-"RAYLIB_VER"_"RAYLIB_LIN
@@ -185,11 +185,15 @@ bool go_build(bool for_windows) {
     } else {
         cmd_append(&cmd, "-lm");
         cmd_append(&cmd, "-lfontconfig");
+        cmd_append(&cmd, "-lX11");
         // cmd_append(&cmd, "-lSDL3");
     }
 
     nob_cc_output(&cmd, NAME);
     unwrap(cmd_run(&cmd));
+
+    nob_log(NOB_INFO, "Compilation successfull");
+
     return true;
 }
 
@@ -213,6 +217,7 @@ bool go_pack() {
     unwrap(nob_rr(&cmd));
 
     nob_cmd_free(cmd);
+    nob_log(NOB_INFO, "Packing successfull");
     return true;
 }
 
