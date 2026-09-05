@@ -102,17 +102,19 @@ bool ensure_downloaded(bool for_windows, Nob_String_Builder raylib_include_dir) 
         unwrap(round_corners(ICON, "icon.ico"));
     }
 
-    if (!file_exists(ICON_RC)) {
-        nob_log(INFO, "Creating the "ICON_RC" file");
-        Nob_Fd file = nob_fd_open_for_write(ICON_RC);
-        write_literal(file, "id ICON icon.ico\n");
-        close(file);
-    }
+    if (for_windows) {
+        if (!file_exists(ICON_RC)) {
+            nob_log(INFO, "Creating the "ICON_RC" file");
+            Nob_Fd file = nob_fd_open_for_write(ICON_RC);
+            write_literal(file, "id ICON icon.ico\n");
+            close(file);
+        }
 
-    if (!file_exists(ICON_RES)) {
-        nob_log(INFO, "Creating the "ICON_RES" file");
-        cmd_append(&cmd, "x86_64-w64-mingw32-windres", ICON_RC, "-O", "coff", "-o", ICON_RES);
-        unwrap(nob_rr(&cmd));
+        if (!file_exists(ICON_RES)) {
+            nob_log(INFO, "Creating the "ICON_RES" file");
+            cmd_append(&cmd, "x86_64-w64-mingw32-windres", ICON_RC, "-O", "coff", "-o", ICON_RES);
+            unwrap(nob_rr(&cmd));
+        }
     }
 
     nob_cmd_free(cmd);
@@ -219,30 +221,35 @@ bool go_check() {
     bool ok = 1;
     nob_setup_blackhole();
 
+#define check_one(name, ...)                                    \
+    do {                                                        \
+      fprintf(stderr, NOB_INFO_TEXT "Checking %s... ", (name)); \
+      cmd_append(&cmd, (name), __VA_ARGS__);                    \
+      if (nob_rrs(&cmd)) {                                      \
+        fprintf(stderr, "\e[92mFOUND\e[0m");                    \
+      } else {                                                  \
+        ok = 0;                                                 \
+        fprintf(stderr, "\e[91mFAIL\e[0m");                     \
+      }                                                         \
+      fprintf(stderr, "\n");                                    \
+    } while (0)
+
     nob_set_log_handler(nob_null_log_handler);
-    cmd_append(&cmd, "magick", "--version");
 
-    if (!nob_rrs(&cmd)) ok = 0;
+    check_one("magick", "--version");
+    check_one("wget", "--version");
+    check_one("zip", "--version");
+    check_one("unzip", "-v");
+    check_one("tar", "--version");
+    check_one("7z", "-h");
+    check_one("x86_64-w64-mingw32-windres", "--version");
 
-    cmd_append(&cmd, "wget", "--version");
-    if (!nob_rrs(&cmd)) ok = 0;
-
-    cmd_append(&cmd, "zip", "--version");
-    if (!nob_rrs(&cmd)) ok = 0;
-
-    cmd_append(&cmd, "unzip", "-v");
-    if (!nob_rrs(&cmd)) ok = 0;
-
-    cmd_append(&cmd, "tar", "--version");
-    if (!nob_rrs(&cmd)) ok = 0;
-
-    cmd_append(&cmd, "7z", "-h");
-    if (!nob_rrs(&cmd)) ok = 0;
+    nob_set_log_handler(nob_default_log_handler);
 
     if (ok) {
         nob_log(NOB_INFO, "All dependencies were found");
     } else {
-        nob_log(NOB_INFO, "Not all dependencies were found");
+        nob_log(NOB_ERROR, "Not all dependencies were found");
     }
 
     nob_cmd_free(cmd);
@@ -252,7 +259,7 @@ bool go_check() {
 bool run_build_jobs(int argc, char **argv) {
     unwrap(go_to_build());
 
-    bool did_something = 1;
+    bool did_something = 0;
     while (argc > 1) {
         if (strcmp(argv[1], "lin") == 0) {
             unwrap(go_build(0));

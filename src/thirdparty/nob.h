@@ -1900,6 +1900,15 @@ NOBDEF Nob_Log_Handler *nob_get_log_handler(void)
 {
     return nob__log_handler;
 }
+#ifdef _WIN32
+    #define NOB_INFO_TEXT    "[INFO] "
+    #define NOB_WARNING_TEXT "[WARNING] "
+    #define NOB_ERROR_TEXT   "[ERROR] "
+#else // POSIX
+    #define NOB_INFO_TEXT    "\e[96m[INFO]\e[0m "
+    #define NOB_WARNING_TEXT "\e[93m[WARNING]\e[0m "
+    #define NOB_ERROR_TEXT   "\e[91m[ERROR]\e[0m "
+#endif // _WIN32
 
 NOBDEF void nob_default_log_handler(Nob_Log_Level level, const char *fmt, va_list args)
 {
@@ -1907,25 +1916,13 @@ NOBDEF void nob_default_log_handler(Nob_Log_Level level, const char *fmt, va_lis
 
     switch (level) {
     case NOB_INFO:
-#ifdef _WIN32
-        fprintf(stderr, "[INFO] ");
-#else // POSIX
-        fprintf(stderr, "\e[96m[INFO]\e[0m ");
-#endif // _WIN32
+        fprintf(stderr, NOB_INFO_TEXT);
         break;
     case NOB_WARNING:
-#ifdef _WIN32
-        fprintf(stderr, "[WARNING] ");
-#else // POSIX
-        fprintf(stderr, "\e[93m[WARNING]\e[0m ");
-#endif // _WIN32
+        fprintf(stderr, NOB_WARNING_TEXT);
         break;
     case NOB_ERROR:
-#ifdef _WIN32
-        fprintf(stderr, "[ERROR] ");
-#else // POSIX
-        fprintf(stderr, "\e[91m[ERROR]\e[0m ");
-#endif // _WIN32
+        fprintf(stderr, NOB_ERROR_TEXT);
         break;
     case NOB_NO_LOGS: return;
     default:
